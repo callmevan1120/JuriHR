@@ -179,7 +179,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Payroll",
         icon: Wallet,
         phase: 5,
-        available: false,
+        available: true,
         description: "Preview payroll dengan adjustment manual dan status Draft/Reviewed/Finalized.",
       },
       {
@@ -187,7 +187,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Notifikasi",
         icon: Bell,
         phase: 5,
-        available: false,
+        available: true,
         description: "Pusat notifikasi dengan filter kategori dan deep link.",
       },
       {
@@ -195,7 +195,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Laporan",
         icon: FileBarChart,
         phase: 5,
-        available: false,
+        available: true,
         description: "Laporan multi-modul dengan filter, grafik, dan export.",
       },
       {
@@ -203,7 +203,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Audit Log",
         icon: ScrollText,
         phase: 5,
-        available: false,
+        available: true,
         description: "Catatan perubahan penting: aktor, waktu, modul, aksi, data sebelum & sesudah.",
       },
     ],

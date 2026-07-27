@@ -6,8 +6,9 @@
 **Fase 2 — Core HR & Master Data: SELESAI** ✅
 **Fase 3 — Shift, Jadwal, dan Hari Libur: SELESAI** ✅
 **Fase 4 — Absensi, Cuti, dan Lembur: SELESAI** ✅
+**Fase 5 — Payroll, Notification, dan Laporan: SELESAI** ✅
 
-Aplikasi JURI HR berhasil dibangun hingga Fase 4. Modul kehadiran & lembur lengkap (Absensi dengan input individual/massal + rekap harian/bulanan + potongan Rp7000, Cuti/Izin/Sakit dengan saldo otomatis + anti-tabrakan + approval, Lembur dengan Planning + Actual + verifikasi + deteksi anomali) berfungsi penuh. Aplikasi berjalan tanpa error TypeScript/build/runtime. Menunggu persetujuan user sebelum melanjutkan ke Fase 5.
+Aplikasi JURI HR berhasil dibangun hingga Fase 5. Modul payroll & pelaporan lengkap (Payroll Preview dengan generate + adjustment + status flow Draft/Reviewed/Finalized + export CSV/Excel/PDF, Notification Center dengan filter kategori + mark read + archive + deep link, Laporan multi-modul dengan 9 tipe laporan + grafik + summary + export, Audit Log dengan timeline + before/after) berfungsi penuh. Seluruh 5 fase aplikasi telah selesai. Aplikasi berjalan tanpa error TypeScript/build/runtime.
 
 ---
 
@@ -239,6 +240,73 @@ Stage Summary:
 - Service layer siap di-extend: `payrollService` (generate preview baca dari attendance + overtime verified), `notificationService`, `reportService`.
 - `attendanceService.dailyRecap/monthlyRecap` + `overtimeService.verifiedOvertimeAmount` + `leaveService` sudah siap dipakai payroll Fase 5.
 - `overtimeService.anomalies()` terhubung ke dashboard "Lembur Menunggu Review" — konsistensi terjaga.
+
+## Catatan Arsitektur (untuk integrasi backend nyata)
+
+- `src/lib/data/store.ts` = central data service (in-memory). `src/lib/services/*` = dummy API (pure functions).
+- Untuk integrasi backend: ganti isi service layer dengan `fetch()` ke API nyata; hook `useStore` diganti dengan TanStack Query hooks. Signature service tetap sama → UI tidak perlu berubah.
+- Prisma + SQLite tersedia (`src/lib/db.ts`) bila ingin persistensi, namun prototype Fase 1 memakai in-memory store sesuai prinsip "central data service, bukan localStorage".
+
+---
+
+## Task ID: FASE-5
+Agent: Z.ai Code (webDevReview cron)
+Task: QA Fase 4 + Membangun Fase 5 — Payroll, Notification, dan Laporan
+
+Work Log:
+- **QA Fase 4**: verifikasi overtime view stabil, dev.log bersih, lint 0 error. Dev server sempat down, direstart. Fase 4 dinilai stabil → lanjut Fase 5.
+- **Service layer** `src/lib/services/finance.ts`:
+  - `payrollService`: generatePreview (baca gaji dasar + PH + lembur terverifikasi + potongan keterlambatan/ketidakhadiran, skip FINALIZED), update (recompute total), addComponent/removeComponent (adjustment), computeTotal, setStatus (flow DRAFT→REVIEWED→FINALIZED), bulkSetStatus, remove, exportCSV.
+  - `notificationService`: list, unreadCount, byCategory, markAsRead, markAllAsRead, archive/unarchive, create.
+  - `reportService`: workforceSummary (agregasi attendance/leaves/overtime/contracts), employeeDistribution, auditLogs.
+- **Router** `routes.ts`: modul Fase 5 (Payroll, Notifikasi, Laporan, Audit Log) ditandai `available: true`. `route-view.tsx` registrasi 4 view baru.
+- **Modul Payroll Preview** (`payroll-view.tsx`): 5 summary card (Total Entri/Draft/Reviewed/Finalized/Grand Total), filter (period month + outlet + status), DataTable dengan kolom karyawan/outlet/gaji dasar/lembur/potongan/total/status. Generate dialog (scope all/per outlet). Detail dialog dengan rincian gaji (gaji dasar, PH, lembur terverifikasi, additions, deductions, potongan keterlambatan/ketidakhadiran, total akhir), status flow (DRAFT→REVIEWED→FINALIZED), adjustment dialog (tambah penambah/pengurang). Bulk action (tandai reviewed/finalize massal). Export CSV/Excel/PDF (print). Payroll FINALIZED tidak dapat diubah.
+- **Modul Notification Center** (`notification-view.tsx`): filter kategori (11 kategori dengan dot warna & count), toggle arsip, list notifikasi dengan kategori/title/message/timestamp, mark as read individual, mark all read, archive/unarchive, deep link ke modul terkait. Empty state.
+- **Modul Laporan** (`reports-view.tsx`): 9 tipe laporan (Ringkasan Workforce, Data Karyawan, Distribusi Outlet & Divisi, Kehadiran, Keterlambatan, Cuti & Izin, Planning vs Actual Lembur, Kontrak Akan Berakhir, Payroll Preview). Filter periode (date range) + outlet + report type. Summary cards, grafik Recharts (bar chart distribusi outlet, pie chart distribusi divisi, bar chart planning vs actual, pie chart distribusi kehadiran), tabel detail. Print/PDF + Export CSV.
+- **Modul Audit Log** (`audit-view.tsx`): 4 stat card (Total/Create/Update/Delete), filter (search + module + action), timeline aktivitas dengan dot warna per modul & badge aksi, expandable before/after data (JSON pretty print), export CSV.
+
+Stage Summary:
+- **Verifikasi end-to-end via Agent Browser + VLM**:
+  - Semua 4 modul Fase 5 + dashboard dapat diakses (judul halaman benar).
+  - Payroll: 5 summary cards (Total Entri 20, Draft 14, Reviewed 6, Finalized 0, Grand Total Rp 98jt), filter bar, DataTable — VLM verified.
+  - Generate payroll: 54 preview digenerate.
+  - Payroll detail: rincian gaji (gaji dasar, lembur terverifikasi, potongan), status flow DRAFT→Reviewed→Finalized (toast "Payroll difinalisasi").
+  - Notification Center: filter kategori dengan dot warna & count, list notifikasi dengan kategori/title/message/timestamp — VLM verified.
+  - Reports: filter bar + 8 summary cards — VLM verified. Distribusi report dengan bar chart + pie chart — VLM verified.
+  - Audit Log: mencatat aktivitas Payroll (generate, update, finalize). Timeline dengan before/after.
+  - Dashboard tidak ada regresi (Fase 1-4 tetap stabil).
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error pada kode JURI HR.
+- **Runtime**: tidak ada error di dev.log.
+
+## SELURUH 5 FASE APLIKASI JURI HR TELAH SELESAI
+
+Aplikasi JURI HR kini memiliki 17 modul fungsional penuh:
+1. Dashboard HRD (Fase 1)
+2. Data Karyawan + 9-tab detail (Fase 2)
+3. Outlet + detail (Fase 2)
+4. Posisi & Divisi (Fase 2)
+5. Domisili & Peta Leaflet (Fase 2)
+6. Kontrak & Monitoring (Fase 2)
+7. Shift Template (Fase 3)
+8. Shift Group (Fase 3)
+9. Kalender Jadwal harian/mingguan/bulanan (Fase 3)
+10. Pengajuan & Tukar Shift (Fase 3)
+11. Holiday Group + Override (Fase 3)
+12. Absensi harian/bulanan/rekap (Fase 4)
+13. Cuti/Izin/Sakit + approval (Fase 4)
+14. Lembur Planning + Actual + Anomali (Fase 4)
+15. Payroll Preview + status flow + export (Fase 5)
+16. Notification Center (Fase 5)
+17. Laporan multi-modul + Audit Log (Fase 5)
+
+Semua modul terintegrasi via central data service (single source of truth). CRUD bekerja, data konsisten antar-modul, audit log mencatat perubahan, notifikasi terhubung via deep link.
+
+## Rekomendasi Fase 6 (Finalisasi & QA)
+
+- Periksa konsistensi desain, responsive, navigasi, form, CRUD, filter, pagination, loading/empty/error state, toast, confirmation dialog, relasi data, dashboard, peta, kalender, payroll, laporan, audit log.
+- Hapus placeholder & tombol tidak berfungsi.
+- Buat README dokumentasi.
 
 ## Catatan Arsitektur (untuk integrasi backend nyata)
 
