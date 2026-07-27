@@ -21,6 +21,7 @@ import { PayrollView } from "@/components/views/payroll-view";
 import { NotificationView } from "@/components/views/notification-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AuditView } from "@/components/views/audit-view";
+import { SettingsView } from "@/components/views/settings-view";
 
 // DomicileView memakai Leaflet (akses `window` saat import) → client-only.
 const DomicileView = dynamic(
@@ -46,6 +47,7 @@ const VIEWS: Record<string, React.ComponentType> = {
   "#/notifikasi": NotificationView,
   "#/laporan": ReportsView,
   "#/audit": AuditView,
+  "#/pengaturan": SettingsView,
 };
 
 export function RouteView() {

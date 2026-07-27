@@ -21,6 +21,8 @@ import {
   Bell,
   FileBarChart,
   ScrollText,
+  Settings,
+  HelpCircle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -205,6 +207,19 @@ export const NAV_GROUPS: NavGroup[] = [
         phase: 5,
         available: true,
         description: "Catatan perubahan penting: aktor, waktu, modul, aksi, data sebelum & sesudah.",
+      },
+    ],
+  },
+  {
+    label: "Sistem",
+    items: [
+      {
+        path: "#/pengaturan",
+        label: "Pengaturan",
+        icon: Settings,
+        phase: 6,
+        available: true,
+        description: "Kelola data mock, reset, statistik, dan informasi sistem.",
       },
     ],
   },

@@ -13,7 +13,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { useDataState } from "@/hooks/use-store";
 import { computeDashboardStats } from "@/lib/services/dashboard";
 import { navigate } from "@/lib/router/use-route";
-import { todayISODate, formatDateLong } from "@/lib/utils";
+import { todayISODate, formatDateLong, cn } from "@/lib/utils";
 import {
   Users,
   Building2,
@@ -25,6 +25,10 @@ import {
   Clock,
   Wallet,
   CalendarDays,
+  Zap,
+  ClipboardCheck,
+  Palmtree,
+  FileBarChart,
 } from "lucide-react";
 import {
   Card,
@@ -135,6 +139,9 @@ export function DashboardView() {
           onAction={() => navigate("#/payroll?filter=draft")}
         />
       </div>
+
+      {/* Quick Actions */}
+      <QuickActions />
 
       {/* Charts row 1 */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -259,3 +266,51 @@ function SummaryRow({
 }
 
 type LucideIconType = React.ComponentType<{ className?: string }>;
+
+// ------------------------------------------------------------
+// Quick Actions — shortcut ke aksi umum HRD
+// ------------------------------------------------------------
+function QuickActions() {
+  const actions = [
+    { label: "Tambah Karyawan", desc: "Daftarkan karyawan baru", icon: Users, href: "#/karyawan", color: "bg-primary/10 text-primary" },
+    { label: "Atur Jadwal", desc: "Kelola kalender jadwal", icon: CalendarDays, href: "#/jadwal", color: "bg-info/10 text-info" },
+    { label: "Input Absensi", desc: "Catat kehadiran hari ini", icon: ClipboardCheck, href: "#/absensi", color: "bg-success/10 text-success" },
+    { label: "Review Cuti", desc: "Setujui pengajuan cuti", icon: Palmtree, href: "#/cuti?filter=PENDING", color: "bg-success/10 text-success" },
+    { label: "Review Lembur", desc: "Verifikasi actual lembur", icon: Clock, href: "#/lembur", color: "bg-primary/10 text-primary" },
+    { label: "Generate Payroll", desc: "Buat preview payroll", icon: Wallet, href: "#/payroll", color: "bg-chart-4/10 text-foreground" },
+    { label: "Lihat Laporan", desc: "Analisis data workforce", icon: FileBarChart, href: "#/laporan", color: "bg-info/10 text-info" },
+    { label: "Monitoring Kontrak", desc: "Cek jatuh tempo", icon: FileText, href: "#/kontrak", color: "bg-warning/10 text-warning" },
+  ];
+  return (
+    <Card className="border-border shadow-soft">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Zap className="size-4 text-primary" /> Aksi Cepat
+        </CardTitle>
+        <CardDescription className="text-xs">Shortcut ke aktivitas HRD yang sering dilakukan.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {actions.map((a) => {
+            const Icon = a.icon;
+            return (
+              <button
+                key={a.label}
+                onClick={() => navigate(a.href)}
+                className="group flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft"
+              >
+                <div className={cn("flex size-9 items-center justify-center rounded-lg transition-transform group-hover:scale-110", a.color)}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-foreground">{a.label}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">{a.desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

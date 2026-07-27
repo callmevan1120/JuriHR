@@ -201,4 +201,36 @@
       0 2px 4px -1px rgb(58 37 24 / 0.06),
       0 4px 6px -1px rgb(58 37 24 / 0.08);
   }
+  /* Animasi fade-in untuk konten view */
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /* Animasi slide-in untuk card */
+  .animate-slide-in {
+    animation: slide-in 0.4s ease-out;
+  }
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  /* Smooth focus ring */
+  .focus-ring {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }

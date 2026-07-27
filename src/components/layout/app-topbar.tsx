@@ -14,7 +14,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Sun, Moon, Search, Users, Building2, User } from "lucide-react";
+import { Sun, Moon, Search, Users, Building2, User, HelpCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTheme } from "next-themes";
 import { AppBreadcrumb } from "./app-breadcrumb";
 import { NotificationPopover } from "./notification-popover";
@@ -26,16 +33,22 @@ export function AppTopbar() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [helpOpen, setHelpOpen] = React.useState(false);
   const employees = useStore((s) => s.employees);
   const outlets = useStore((s) => s.outlets);
   React.useEffect(() => setMounted(true), []);
 
-  // Shortcut Ctrl/Cmd + K
+  // Shortcut Ctrl/Cmd + K (search) dan ? (help)
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setSearchOpen(true);
+      }
+      // ? untuk help (hanya jika bukan sedang mengetik di input)
+      if (e.key === "?" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        setHelpOpen(true);
       }
     };
     window.addEventListener("keydown", handler);
@@ -83,6 +96,16 @@ export function AppTopbar() {
           ) : (
             <Moon className="size-5" />
           )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden size-9 rounded-full sm:inline-flex"
+          onClick={() => setHelpOpen(true)}
+          aria-label="Bantuan"
+        >
+          <HelpCircle className="size-5" />
         </Button>
 
         <NotificationPopover />
@@ -148,6 +171,53 @@ export function AppTopbar() {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="size-5 text-primary" /> Bantuan & Pintasan
+            </DialogTitle>
+            <DialogDescription>Pintasan keyboard dan tips penggunaan JURI HR.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pintasan Keyboard</p>
+              <div className="space-y-1.5">
+                <ShortcutRow keys={["⌘/Ctrl", "K"]} desc="Buka pencarian global" />
+                <ShortcutRow keys={["?"]} desc="Buka bantuan ini" />
+                <ShortcutRow keys={["⌘/Ctrl", "B"]} desc="Toggle sidebar" />
+                <ShortcutRow keys={["Esc"]} desc="Tutup dialog" />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tips</p>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p>• Klik kartu di dashboard untuk navigasi dengan filter otomatis.</p>
+                <p>• Klik baris tabel untuk membuka detail.</p>
+                <p>• Gunakan filter di setiap modul untuk menyaring data.</p>
+                <p>• Semua perubahan tercatat di Audit Log.</p>
+                <p>• Reset data kapan saja di Pengaturan.</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
+  );
+}
+
+function ShortcutRow({ keys, desc }: { keys: string[]; desc: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-xs text-muted-foreground">{desc}</span>
+      <div className="flex items-center gap-1">
+        {keys.map((k, i) => (
+          <kbd key={i} className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground">
+            {k}
+          </kbd>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -17,7 +17,9 @@ export function AppShell() {
         <AppTopbar />
         <div className="flex flex-1 flex-col">
           <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6 sm:py-6">
-            <RouteView />
+            <div key={typeof window !== "undefined" ? window.location.hash : "init"} className="animate-fade-in">
+              <RouteView />
+            </div>
           </main>
           <footer className="mt-auto border-t border-border bg-card px-4 py-3 sm:px-6">
             <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-1 text-xs text-muted-foreground sm:flex-row">
