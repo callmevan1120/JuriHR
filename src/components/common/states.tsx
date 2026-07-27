@@ -20,12 +20,15 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-gradient-to-b from-muted/40 to-muted/10 px-6 py-14 text-center",
         className,
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        {icon ?? <Inbox className="size-6" />}
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl" />
+        <div className="relative flex size-16 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground shadow-soft">
+          {icon ?? <Inbox className="size-7" />}
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
@@ -52,12 +55,15 @@ export function ErrorState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-12 text-center",
+        "flex flex-col items-center justify-center gap-4 rounded-xl border border-destructive/30 bg-gradient-to-b from-destructive/10 to-destructive/5 px-6 py-14 text-center",
         className,
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-        <AlertTriangle className="size-6" />
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-destructive/15 blur-xl" />
+        <div className="relative flex size-16 items-center justify-center rounded-2xl border border-destructive/30 bg-card text-destructive shadow-soft">
+          <AlertTriangle className="size-7" />
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>

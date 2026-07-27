@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Sun, Moon, Search, Users, Building2, User, HelpCircle } from "lucide-react";
+import { Sun, Moon, Search, Users, Building2, User, HelpCircle, FileText, Palmtree, Clock, Wallet, LayoutDashboard, ArrowRight, Hash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,10 @@ export function AppTopbar() {
   const [helpOpen, setHelpOpen] = React.useState(false);
   const employees = useStore((s) => s.employees);
   const outlets = useStore((s) => s.outlets);
+  const contracts = useStore((s) => s.contracts);
+  const leaves = useStore((s) => s.leaves);
+  const overtimePlannings = useStore((s) => s.overtimePlannings);
+  const payrolls = useStore((s) => s.payrolls);
   React.useEffect(() => setMounted(true), []);
 
   // Shortcut Ctrl/Cmd + K (search) dan ? (help)
@@ -123,51 +127,123 @@ export function AppTopbar() {
       </div>
 
       <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <CommandInput placeholder="Cari karyawan (nama/NIK) atau outlet..." />
+        <CommandInput placeholder="Cari karyawan, outlet, kontrak, cuti, lembur, payroll, atau navigasi..." />
         <CommandList>
           <CommandEmpty>Tidak ada hasil.</CommandEmpty>
+          <CommandGroup heading="Navigasi Cepat">
+            {[
+              { label: "Dashboard", href: "#/", icon: LayoutDashboard },
+              { label: "Data Karyawan", href: "#/karyawan", icon: Users },
+              { label: "Kalender Jadwal", href: "#/jadwal", icon: Hash },
+              { label: "Absensi", href: "#/absensi", icon: Hash },
+              { label: "Cuti & Izin", href: "#/cuti", icon: Palmtree },
+              { label: "Lembur", href: "#/lembur", icon: Clock },
+              { label: "Payroll", href: "#/payroll", icon: Wallet },
+              { label: "Laporan", href: "#/laporan", icon: Hash },
+              { label: "Pengaturan", href: "#/pengaturan", icon: Hash },
+            ].map((n) => {
+              const Icon = n.icon;
+              return (
+                <CommandItem
+                  key={n.href}
+                  value={"navigasi " + n.label}
+                  onSelect={() => { navigate(n.href); setSearchOpen(false); }}
+                  className="gap-2"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-muted text-muted-foreground"><Icon className="size-3" /></div>
+                  <span className="flex-1 text-sm">{n.label}</span>
+                  <ArrowRight className="size-3 text-muted-foreground" />
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
           <CommandGroup heading="Karyawan">
-            {employees.slice(0, 12).map((e) => (
+            {employees.slice(0, 8).map((e) => (
               <CommandItem
                 key={e.id}
                 value={`${e.fullName} ${e.nik}`}
-                onSelect={() => {
-                  navigate(`#/karyawan?id=${e.id}`);
-                  setSearchOpen(false);
-                }}
+                onSelect={() => { navigate(`#/karyawan?id=${e.id}`); setSearchOpen(false); }}
                 className="gap-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">
-                  {initials(e.fullName)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm">{e.fullName}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{e.nik}</p>
-                </div>
+                <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">{initials(e.fullName)}</div>
+                <div className="flex-1"><p className="text-sm">{e.fullName}</p><p className="font-mono text-[10px] text-muted-foreground">{e.nik}</p></div>
                 <User className="size-3 text-muted-foreground" />
               </CommandItem>
             ))}
           </CommandGroup>
           <CommandGroup heading="Outlet">
-            {outlets.map((o) => (
+            {outlets.slice(0, 6).map((o) => (
               <CommandItem
                 key={o.id}
                 value={o.name + " " + o.code}
-                onSelect={() => {
-                  navigate(`#/outlet?id=${o.id}`);
-                  setSearchOpen(false);
-                }}
+                onSelect={() => { navigate(`#/outlet?id=${o.id}`); setSearchOpen(false); }}
                 className="gap-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-md bg-info/15 text-info">
-                  <Building2 className="size-3" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm">{o.name}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{o.code}</p>
-                </div>
+                <div className="flex size-6 items-center justify-center rounded-md bg-info/15 text-info"><Building2 className="size-3" /></div>
+                <div className="flex-1"><p className="text-sm">{o.name}</p><p className="font-mono text-[10px] text-muted-foreground">{o.code}</p></div>
               </CommandItem>
             ))}
+          </CommandGroup>
+          <CommandGroup heading="Kontrak">
+            {contracts.slice(0, 6).map((c) => {
+              const emp = employees.find((e) => e.id === c.employeeId);
+              return (
+                <CommandItem
+                  key={c.id}
+                  value={`kontrak ${c.contractNo} ${emp?.fullName ?? ""}`}
+                  onSelect={() => { navigate(`#/kontrak`); setSearchOpen(false); }}
+                  className="gap-2"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-warning/15 text-warning"><FileText className="size-3" /></div>
+                  <div className="flex-1"><p className="text-sm">{c.contractNo}</p><p className="text-[10px] text-muted-foreground">{emp?.fullName} · {c.endDate}</p></div>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+          <CommandGroup heading="Cuti/Izin/Sakit">
+            {leaves.slice(0, 6).map((l) => {
+              const emp = employees.find((e) => e.id === l.employeeId);
+              return (
+                <CommandItem
+                  key={l.id}
+                  value={`cuti ${l.type} ${emp?.fullName ?? ""} ${l.reason}`}
+                  onSelect={() => { navigate(`#/cuti`); setSearchOpen(false); }}
+                  className="gap-2"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-success/15 text-success"><Palmtree className="size-3" /></div>
+                  <div className="flex-1"><p className="text-sm">{emp?.fullName} · {l.type}</p><p className="text-[10px] text-muted-foreground">{l.startDate} — {l.endDate}</p></div>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+          <CommandGroup heading="Lembur (Planning)">
+            {overtimePlannings.slice(0, 6).map((p) => (
+              <CommandItem
+                key={p.id}
+                value={`lembur ${p.requestNo} ${p.reason} ${p.workDescription}`}
+                onSelect={() => { navigate(`#/lembur`); setSearchOpen(false); }}
+                className="gap-2"
+              >
+                <div className="flex size-6 items-center justify-center rounded-md bg-primary/15 text-primary"><Clock className="size-3" /></div>
+                <div className="flex-1"><p className="text-sm">{p.requestNo}</p><p className="text-[10px] text-muted-foreground">{p.date} · {p.startTime}–{p.endTime}</p></div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Payroll">
+            {payrolls.slice(0, 6).map((p) => {
+              const emp = employees.find((e) => e.id === p.employeeId);
+              return (
+                <CommandItem
+                  key={p.id}
+                  value={`payroll ${p.period} ${emp?.fullName ?? ""}`}
+                  onSelect={() => { navigate(`#/payroll`); setSearchOpen(false); }}
+                  className="gap-2"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-chart-4/15 text-foreground"><Wallet className="size-3" /></div>
+                  <div className="flex-1"><p className="text-sm">{emp?.fullName} · {p.period}</p><p className="text-[10px] text-muted-foreground">{p.status}</p></div>
+                </CommandItem>
+              );
+            })}
           </CommandGroup>
         </CommandList>
       </CommandDialog>

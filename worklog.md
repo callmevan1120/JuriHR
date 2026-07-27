@@ -401,3 +401,42 @@ JURI HR v1.0 — **18 modul** fungsional penuh:
 18. **Pengaturan** (Fase 7-extra) — manajemen data, tema, statistik, info sistem.
 
 Plus: Quick Actions dashboard, Help dialog dengan pintasan keyboard, animasi micro-interactions.
+
+---
+
+## Task ID: FASE-8-EXTRA
+Agent: Z.ai Code (webDevReview cron)
+Task: QA + enhance Global Search + Notification generator + polish empty states
+
+Work Log:
+- **QA**: server running, dev.log bersih, lint 0 error, type-check 0 error. Settings view stabil.
+- **Fitur Baru: Global Search Enhancement** (`app-topbar.tsx`):
+  - Sebelumnya: hanya cari Karyawan + Outlet (2 grup).
+  - Sekarang: **7 grup** — Navigasi Cepat (9 shortcut modul), Karyawan, Outlet, Kontrak, Cuti/Izin/Sakit, Lembur (Planning), Payroll.
+  - Setiap hasil: icon berwarna per kategori, label, info tambahan (NIK/tanggal/status), navigasi deep-link.
+  - Placeholder diperbarui: "Cari karyawan, outlet, kontrak, cuti, lembur, payroll, atau navigasi..."
+- **Fitur Baru: Notification Generator Otomatis** (`workforce.ts` + `finance.ts`):
+  - Helper `notify()` di workforce.ts untuk create notifikasi ke store.
+  - `leaveService.approve` → auto-create notifikasi "Pengajuan cuti disetujui" (CUTI, deep-link #/cuti?filter=APPROVED).
+  - `leaveService.reject` → notifikasi "Pengajuan cuti ditolak".
+  - `overtimeService.verifyActual` → notifikasi "Actual lembur terverifikasi/ditolak" (LEMBUR, dengan nominal).
+  - `payrollService.setStatus(FINALIZED)` → notifikasi "Payroll difinalisasi" (PAYROLL, dengan total).
+  - Semua notifikasi otomatis muncul di Notification Center & badge topbar.
+- **Polish: Empty State ilustrasi** (`states.tsx`):
+  - EmptyState: icon dalam rounded-2xl card dengan border + shadow + blur glow primary di belakang, gradient background.
+  - ErrorState: ikon AlertTriangle dalam card dengan destructive glow, gradient background.
+  - Lebih visual & profesional.
+
+Stage Summary:
+- **Verifikasi via Agent Browser**:
+  - Notification generator: approve cuti → notifikasi naik 5→6, notifikasi "Pengajuan cuti disetujui" muncul dengan deep-link ✓.
+  - Enhanced search: 7 grup tersedia (Navigasi, Karyawan, Outlet, Kontrak, Cuti, Lembur, Payroll). Search "kontrak" → hasil CTR/2026/0001 ✓.
+  - Empty states: ilustrasi lebih menarik dengan glow + gradient.
+  - Tidak ada regresi.
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error.
+- **Runtime**: 0 errors, dev.log bersih.
+
+## Status Akhir
+
+JURI HR v1.0 — 18 modul + enhanced search (7 grup) + notification generator otomatis + polished empty states.

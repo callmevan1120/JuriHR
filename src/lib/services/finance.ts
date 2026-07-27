@@ -174,7 +174,24 @@ export const payrollService = {
     if (status === "FINALIZED" && entry.status !== "REVIEWED") {
       throw new Error("Payroll harus berstatus Reviewed sebelum difinalisasi.");
     }
-    return this.update(id, { status });
+    const result = this.update(id, { status });
+    // Auto-create notifikasi saat finalize
+    if (status === "FINALIZED" && result) {
+      const empName = lookupEmpName(entry.employeeId);
+      const store = getStore();
+      const notif: AppNotification = {
+        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        category: "PAYROLL",
+        title: "Payroll difinalisasi",
+        message: `${empName} — periode ${entry.period} · ${Math.round(entry.total).toLocaleString("id-ID")} (finalized).`,
+        read: false,
+        archived: false,
+        createdAt: new Date().toISOString(),
+        link: "#/payroll?filter=FINALIZED",
+      };
+      store.setCollection("notifications", [notif, ...store.getState().notifications]);
+    }
+    return result;
   },
   bulkSetStatus(ids: string[], status: PayrollStatus): number {
     let count = 0;

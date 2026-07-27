@@ -5,11 +5,13 @@
 import { getStore } from "@/lib/data/store";
 import { logAudit, logChangeHistory } from "@/lib/services/audit";
 import type {
+  AppNotification,
   Attendance,
   AttendanceStatus,
   Leave,
   LeaveStatus,
   LeaveType,
+  NotificationCategory,
   OvertimeActual,
   OvertimeApprovalStatus,
   OvertimePlanning,
@@ -18,9 +20,12 @@ import type {
 import {
   addDaysISO,
   daysBetween,
+  formatRupiah,
   todayISODate,
   uid,
 } from "@/lib/utils";
+
+const formatRupiahLocal = formatRupiah;
 
 const ACTOR = "HRD Admin";
 const NOW = () => new Date().toISOString();
@@ -28,6 +33,27 @@ const NOW = () => new Date().toISOString();
 /** Aturan demo: terlambat <=5 menit tidak dipotong; >5 menit potongan Rp7.000. */
 export const LATE_TOLERANCE_MINUTES = 5;
 export const LATE_DEDUCTION_RUPIAH = 7000;
+
+/** Helper: buat notifikasi otomatis ke central store. */
+function notify(input: {
+  category: NotificationCategory;
+  title: string;
+  message: string;
+  link?: string;
+}): void {
+  const store = getStore();
+  const item: AppNotification = {
+    id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    category: input.category,
+    title: input.title,
+    message: input.message,
+    read: false,
+    archived: false,
+    createdAt: NOW(),
+    link: input.link,
+  };
+  store.setCollection("notifications", [item, ...store.getState().notifications]);
+}
 
 // ------------------------------------------------------------
 // Attendance Service
@@ -287,11 +313,28 @@ export const leaveService = {
         logChangeHistory({ entityType: "EMPLOYEE", entityId: emp.id, field: "leaveBalanceDays", oldValue: String(emp.leaveBalanceDays), newValue: String(newBalance), reason: `Approval cuti ${leave.startDate}–${leave.endDate}` });
       }
     }
-    return this.update(id, { status: "APPROVED", approverId, approvalNote: note });
+    const result = this.update(id, { status: "APPROVED", approverId, approvalNote: note });
+    notify({
+      category: "CUTI",
+      title: "Pengajuan cuti disetujui",
+      message: `${lookupEmpName(leave.employeeId)} — ${leave.type} ${leave.startDate}–${leave.endDate} disetujui. Saldo cuti diperbarui.`,
+      link: "#/cuti?filter=APPROVED",
+    });
+    return result;
   },
   /** Reject: tidak mengurangi saldo. */
   reject(id: string, approverId: string, note?: string): Leave | undefined {
-    return this.update(id, { status: "REJECTED", approverId, approvalNote: note });
+    const result = this.update(id, { status: "REJECTED", approverId, approvalNote: note });
+    const leave = getStore().getState().leaves.find((l) => l.id === id);
+    if (leave) {
+      notify({
+        category: "CUTI",
+        title: "Pengajuan cuti ditolak",
+        message: `${lookupEmpName(leave.employeeId)} — ${leave.type} ${leave.startDate}–${leave.endDate} ditolak.`,
+        link: "#/cuti?filter=REJECTED",
+      });
+    }
+    return result;
   },
   /** Cancel approved: kembalikan saldo cuti. */
   cancelApproved(id: string, reason?: string): Leave | undefined {
@@ -468,6 +511,12 @@ export const overtimeService = {
     next[idx] = after;
     store.setCollection("overtimeActuals", next);
     logAudit({ module: "Lembur", action: "VERIFY", description: `${approved ? "Memverifikasi" : "Menolak"} actual lembur ${lookupEmpName(before.employeeId)}.`, before, after });
+    notify({
+      category: "LEMBUR",
+      title: approved ? "Actual lembur terverifikasi" : "Actual lembur ditolak",
+      message: `${lookupEmpName(before.employeeId)} — ${before.date}${after.estimatedNominal > 0 ? ` · ${formatRupiahLocal(after.estimatedNominal)}` : ""}`,
+      link: "#/lembur",
+    });
     return after;
   },
   /** Daftar anomali lembur. */
