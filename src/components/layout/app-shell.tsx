@@ -8,8 +8,10 @@ import {
 import { AppSidebar } from "./app-sidebar";
 import { AppTopbar } from "./app-topbar";
 import { RouteView } from "@/components/views/route-view";
+import { useKeyboardNav } from "@/hooks/use-keyboard-nav";
 
 export function AppShell() {
+  useKeyboardNav();
   return (
     <SidebarProvider>
       <AppSidebar />

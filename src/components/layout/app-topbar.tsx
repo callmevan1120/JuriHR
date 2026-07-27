@@ -231,16 +231,15 @@ export function AppTopbar() {
           </CommandGroup>
           <CommandGroup heading="Payroll">
             {payrolls.slice(0, 6).map((p) => {
-              const emp = employees.find((e) => e.id === p.employeeId);
               return (
                 <CommandItem
                   key={p.id}
-                  value={`payroll ${p.period} ${emp?.fullName ?? ""}`}
+                  value={`payroll ${p.fullName} ${p.nik} ${p.outletName}`}
                   onSelect={() => { navigate(`#/payroll`); setSearchOpen(false); }}
                   className="gap-2"
                 >
                   <div className="flex size-6 items-center justify-center rounded-md bg-chart-4/15 text-foreground"><Wallet className="size-3" /></div>
-                  <div className="flex-1"><p className="text-sm">{emp?.fullName} · {p.period}</p><p className="text-[10px] text-muted-foreground">{p.status}</p></div>
+                  <div className="flex-1"><p className="text-sm">{p.fullName} · {p.outletName}</p><p className="text-[10px] text-muted-foreground">{p.status}</p></div>
                 </CommandItem>
               );
             })}
@@ -264,6 +263,26 @@ export function AppTopbar() {
                 <ShortcutRow keys={["?"]} desc="Buka bantuan ini" />
                 <ShortcutRow keys={["⌘/Ctrl", "B"]} desc="Toggle sidebar" />
                 <ShortcutRow keys={["Esc"]} desc="Tutup dialog" />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Navigasi Cepat (g + huruf)</p>
+              <p className="mb-2 text-[10px] text-muted-foreground">Tekan <kbd className="rounded border border-border bg-muted px-1 text-[9px]">g</kbd> lalu huruf kedua untuk lompat ke modul.</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <ShortcutRow keys={["g", "d"]} desc="Dashboard" />
+                <ShortcutRow keys={["g", "k"]} desc="Karyawan" />
+                <ShortcutRow keys={["g", "o"]} desc="Outlet" />
+                <ShortcutRow keys={["g", "c"]} desc="Kontrak" />
+                <ShortcutRow keys={["g", "j"]} desc="Jadwal" />
+                <ShortcutRow keys={["g", "a"]} desc="Absensi" />
+                <ShortcutRow keys={["g", "l"]} desc="Cuti" />
+                <ShortcutRow keys={["g", "e"]} desc="Lembur" />
+                <ShortcutRow keys={["g", "w"]} desc="Payroll" />
+                <ShortcutRow keys={["g", "r"]} desc="Laporan" />
+                <ShortcutRow keys={["g", "n"]} desc="Notifikasi" />
+                <ShortcutRow keys={["g", "u"]} desc="Audit Log" />
+                <ShortcutRow keys={["g", "m"]} desc="Domisili" />
+                <ShortcutRow keys={["g", "t"]} desc="Pengaturan" />
               </div>
             </div>
             <div>

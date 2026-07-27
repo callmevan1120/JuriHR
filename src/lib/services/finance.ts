@@ -1,5 +1,5 @@
 // ============================================================
-// JURI HR — Fase 5 Services: Payroll, Notification, Report
+// JURI HR — Payroll, Notification, Report Services
 // ============================================================
 import { getStore } from "@/lib/data/store";
 import { logAudit } from "@/lib/services/audit";
@@ -9,9 +9,11 @@ import type {
   NotificationCategory,
   PayrollComponent,
   PayrollEntry,
-  PayrollStatus,
+  PayrollEntryStatus,
+  PayrollPeriod,
+  PayrollPeriodStatus,
 } from "@/lib/types";
-import { todayISODate, uid } from "@/lib/utils";
+import { formatRupiah, monthLabel, todayISODate, uid } from "@/lib/utils";
 
 const ACTOR = "HRD Admin";
 const NOW = () => new Date().toISOString();
@@ -20,184 +22,220 @@ const NOW = () => new Date().toISOString();
 // Payroll Service
 // ------------------------------------------------------------
 export const payrollService = {
-  list(): PayrollEntry[] {
-    return getStore().getState().payrolls;
+  // ---- Period ----
+  listPeriods(): PayrollPeriod[] {
+    return getStore().getState().payrollPeriods.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
-  byPeriod(period: string): PayrollEntry[] {
-    return getStore()
-      .getState()
-      .payrolls.filter((p) => p.period === period);
+  getPeriod(id: string): PayrollPeriod | undefined {
+    return getStore().getState().payrollPeriods.find((p) => p.id === id);
   },
-  get(id: string): PayrollEntry | undefined {
+  createPeriod(input: Omit<PayrollPeriod, "id" | "createdAt" | "updatedAt" | "status">): PayrollPeriod {
+    const store = getStore();
+    const now = NOW();
+    const item: PayrollPeriod = { ...input, id: uid("pp"), status: "DRAFT", createdAt: now, updatedAt: now };
+    store.setCollection("payrollPeriods", [item, ...store.getState().payrollPeriods]);
+    logAudit({ module: "Payroll", action: "CREATE_PERIOD", description: `Membuat periode payroll "${item.name}".`, after: item });
+    return item;
+  },
+  updatePeriod(id: string, patch: Partial<PayrollPeriod>): PayrollPeriod | undefined {
+    const store = getStore();
+    const list = store.getState().payrollPeriods;
+    const idx = list.findIndex((p) => p.id === id);
+    if (idx < 0) return undefined;
+    const before = list[idx]!;
+    if (before.status === "FINALIZED") throw new Error("Periode sudah difinalisasi.");
+    const after: PayrollPeriod = { ...before, ...patch, id, updatedAt: NOW() };
+    const next = [...list];
+    next[idx] = after;
+    store.setCollection("payrollPeriods", next);
+    return after;
+  },
+  setPeriodStatus(id: string, status: PayrollPeriodStatus): PayrollPeriod | undefined {
+    return this.updatePeriod(id, { status });
+  },
+
+  // ---- Entries ----
+  listEntries(periodId: string): PayrollEntry[] {
+    return getStore().getState().payrolls.filter((p) => p.periodId === periodId);
+  },
+  getEntry(id: string): PayrollEntry | undefined {
     return getStore().getState().payrolls.find((p) => p.id === id);
   },
-  /** Generate payroll preview untuk periode & karyawan tertentu.
-   *  Membaca: gaji dasar, PH, lembur terverifikasi, potongan keterlambatan & ketidakhadiran.
-   */
-  generatePreview(period: string, employeeIds?: string[]): number {
+  byEmployee(employeeId: string): PayrollEntry[] {
+    return getStore().getState().payrolls.filter((p) => p.employeeId === employeeId);
+  },
+
+  /** Generate payroll entries untuk periode — dengan SNAPSHOT.
+   *  Membaca: gaji dasar, PH, lembur terverifikasi, potongan keterlambatan/ketidakhadiran.
+   *  Snapshot: NIK, nama, posisi, divisi, outlet, jenis gaji, tarif — disimpan saat generate.
+   *  Perubahan data karyawan setelah generate TIDAK mengubah entry. */
+  generate(periodId: string, generatedBy: string): number {
     const store = getStore();
     const state = store.getState();
-    const [y, m] = period.split("-");
-    const fromDate = `${y}-${m}-01`;
-    const toDate = `${y}-${m}-${new Date(Number(y), Number(m), 0).getDate()}`;
-    const emps = employeeIds
-      ? state.employees.filter((e) => employeeIds.includes(e.id) && e.status === "AKTIF")
-      : state.employees.filter((e) => e.status === "AKTIF");
+    const period = state.payrollPeriods.find((p) => p.id === periodId);
+    if (!period) throw new Error("Periode tidak ditemukan.");
 
-    const existing = state.payrolls.filter((p) => p.period === period);
-    const existingMap = new Map(existing.map((p) => [p.employeeId, p]));
-    let count = 0;
+    // Filter karyawan berdasarkan scope
+    const emps = state.employees.filter((e) => {
+      if (e.status !== "AKTIF") return false;
+      if (period.scopeType === "OUTLET" && e.primaryOutletId !== period.scopeId) return false;
+      if (period.scopeType === "DIVISI" && e.divisionId !== period.scopeId) return false;
+      return true;
+    });
+
+    // Hapus entry lama untuk periode ini (jika regenerate)
+    const existingEntries = state.payrolls.filter((p) => p.periodId === periodId);
     const now = NOW();
     const newEntries: PayrollEntry[] = [];
 
     for (const emp of emps) {
-      // Skip jika sudah finalized
-      const ex = existingMap.get(emp.id);
-      if (ex?.status === "FINALIZED") continue;
+      const pos = state.positions.find((p) => p.id === emp.positionId);
+      const div = state.divisions.find((d) => d.id === emp.divisionId);
+      const out = state.outlets.find((o) => o.id === emp.primaryOutletId);
 
-      const baseSalary = emp.salaryType === "BULANAN" ? emp.salaryAmount : emp.salaryAmount * 25;
-      // Absensi periode ini
+      // Snapshot
+      const dailyRate = emp.salaryType === "BULANAN" ? Math.round(emp.salaryAmount / 25) : emp.salaryAmount;
+      const paidDays = emp.salaryType === "BULANAN" ? 25 : 22;
+      const baseSalary = emp.salaryType === "BULANAN" ? emp.salaryAmount : paidDays * dailyRate;
+
+      // Baca data absensi & lembur dari periode
       const attendances = state.attendances.filter(
-        (a) => a.employeeId === emp.id && a.date >= fromDate && a.date <= toDate,
+        (a) => a.employeeId === emp.id && a.date >= period.startDate && a.date <= period.endDate,
       );
       const lateDeduction = attendances.reduce((s, a) => s + a.deduction, 0);
-      const phCount = attendances.filter((a) => a.status === "PH").length;
-      const absenceCount = attendances.filter((a) => a.status === "TIDAK_HADIR").length;
-      // Potongan ketidakhadiran: proporsional gaji harian (untuk harian), untuk bulanan = gaji/25 per hari
-      const dailyRate = emp.salaryType === "BULANAN" ? Math.round(emp.salaryAmount / 25) : emp.salaryAmount;
-      const absenceDeduction = absenceCount * dailyRate;
-      // Lembur terverifikasi
+      const absenceDeduction = attendances.filter((a) => a.status === "TIDAK_HADIR").length * dailyRate;
       const overtimeAmount = state.overtimeActuals
         .filter(
           (a) =>
             a.employeeId === emp.id &&
-            a.date >= fromDate &&
-            a.date <= toDate &&
+            a.date >= period.startDate &&
+            a.date <= period.endDate &&
             a.verificationStatus === "TERVERIFIKASI",
         )
         .reduce((s, a) => s + a.estimatedNominal, 0);
 
       const total = Math.max(0, baseSalary + overtimeAmount - lateDeduction - absenceDeduction);
 
-      const entry: PayrollEntry = ex
-        ? {
-            ...ex,
-            baseSalary,
-            phCount,
-            phDeduction: 0,
-            overtimeAmount,
-            lateDeduction,
-            absenceDeduction,
-            total,
-            updatedAt: now,
-          }
-        : {
-            id: uid("pay"),
-            employeeId: emp.id,
-            period,
-            baseSalary,
-            phCount,
-            phDeduction: 0,
-            overtimeAmount,
-            additions: [],
-            deductions: [],
-            lateDeduction,
-            absenceDeduction,
-            total,
-            status: "DRAFT",
-            createdAt: now,
-            updatedAt: now,
-          };
-      newEntries.push(entry);
-      count += 1;
+      newEntries.push({
+        id: uid("pay"),
+        periodId,
+        employeeId: emp.id,
+        nik: emp.nik,
+        fullName: emp.fullName,
+        positionName: pos?.name ?? "-",
+        divisionName: div?.name ?? "-",
+        outletName: out?.name ?? "-",
+        salaryType: emp.salaryType,
+        salaryRate: emp.salaryAmount,
+        paidDays,
+        baseSalary,
+        dailyRate,
+        phAllowance: 0,
+        overtimeAmount,
+        bonus: 0,
+        incentive: 0,
+        kasbon: 0,
+        lateDeduction,
+        absenceDeduction,
+        otherDeduction: 0,
+        additions: [],
+        deductions: [],
+        total,
+        needsReview: false,
+        status: "DRAFT",
+        createdAt: now,
+        updatedAt: now,
+      });
     }
 
-    // Merge: replace existing (non-finalized) + add new
+    // Merge: hapus entry lama untuk periode ini, tambah yang baru
     const merged = [
       ...newEntries,
-      ...state.payrolls.filter(
-        (p) => !(p.period === period && newEntries.some((n) => n.employeeId === p.employeeId)),
-      ),
+      ...state.payrolls.filter((p) => p.periodId !== periodId),
     ];
     store.setCollection("payrolls", merged);
-    logAudit({ module: "Payroll", action: "GENERATE", description: `Generate ${count} preview payroll periode ${period}.` });
-    return count;
+
+    // Update period status
+    this.updatePeriod(periodId, { status: "GENERATED", generatedBy, generatedAt: now });
+
+    logAudit({ module: "Payroll", action: "GENERATE", description: `Generate ${newEntries.length} entry payroll untuk periode "${period.name}".` });
+    return newEntries.length;
   },
-  update(id: string, patch: Partial<PayrollEntry>): PayrollEntry | undefined {
+
+  /** Update entry (hanya jika belum finalized). */
+  updateEntry(id: string, patch: Partial<PayrollEntry>): PayrollEntry | undefined {
     const store = getStore();
     const list = store.getState().payrolls;
     const idx = list.findIndex((p) => p.id === id);
     if (idx < 0) return undefined;
     const before = list[idx]!;
-    if (before.status === "FINALIZED") {
-      throw new Error("Payroll sudah difinalisasi. Tidak dapat diubah.");
-    }
-    // Recompute total
+    if (before.status === "FINALIZED") throw new Error("Entry sudah difinalisasi.");
     const after: PayrollEntry = { ...before, ...patch, id, updatedAt: NOW() };
     after.total = this.computeTotal(after);
     const next = [...list];
     next[idx] = after;
     store.setCollection("payrolls", next);
-    logAudit({ module: "Payroll", action: "UPDATE", description: `Memperbarui payroll ${lookupEmpName(after.employeeId)} (${after.period}).`, before, after });
+    logAudit({ module: "Payroll", action: "UPDATE_ENTRY", description: `Memperbarui entry payroll ${after.fullName}.`, before, after });
     return after;
   },
-  /** Tambah/pilih komponen adjustment. */
-  addComponent(id: string, component: PayrollComponent): PayrollEntry | undefined {
-    const entry = this.get(id);
-    if (!entry) return undefined;
-    const list = component.type === "ADDITION" ? [...entry.additions, component] : [...entry.deductions, component];
-    return this.update(id, component.type === "ADDITION" ? { additions: list } : { deductions: list });
-  },
-  removeComponent(id: string, type: "ADDITION" | "DEDUCTION", index: number): PayrollEntry | undefined {
-    const entry = this.get(id);
-    if (!entry) return undefined;
-    if (type === "ADDITION") {
-      const list = entry.additions.filter((_, i) => i !== index);
-      return this.update(id, { additions: list });
-    }
-    const list = entry.deductions.filter((_, i) => i !== index);
-    return this.update(id, { deductions: list });
-  },
-  /** Hitung total akhir. */
+
+  /** Hitung total akhir berdasarkan formula:
+   *  Total = Gaji Dasar + PH + Lembur + Bonus + Insentif + Adjustment Penambah
+   *          - Kasbon - Potongan Keterlambatan - Potongan Tidak Hadir - Potongan Lain - Adjustment Pengurang */
   computeTotal(entry: PayrollEntry): number {
     const additions = entry.additions.reduce((s, c) => s + c.amount, 0);
     const deductions = entry.deductions.reduce((s, c) => s + c.amount, 0);
     return Math.max(
       0,
-      entry.baseSalary + entry.overtimeAmount + additions - entry.lateDeduction - entry.absenceDeduction - entry.phDeduction - deductions,
+      entry.baseSalary +
+        entry.phAllowance +
+        entry.overtimeAmount +
+        entry.bonus +
+        entry.incentive +
+        additions -
+        entry.kasbon -
+        entry.lateDeduction -
+        entry.absenceDeduction -
+        entry.otherDeduction -
+        deductions,
     );
   },
-  setStatus(id: string, status: PayrollStatus): PayrollEntry | undefined {
-    const entry = this.get(id);
+
+  /** Tambah adjustment component. */
+  addComponent(id: string, component: PayrollComponent): PayrollEntry | undefined {
+    const entry = this.getEntry(id);
     if (!entry) return undefined;
-    // REVIEWED -> FINALIZED hanya jika sudah REVIEWED
-    if (status === "FINALIZED" && entry.status !== "REVIEWED") {
-      throw new Error("Payroll harus berstatus Reviewed sebelum difinalisasi.");
-    }
-    const result = this.update(id, { status });
-    // Auto-create notifikasi saat finalize
-    if (status === "FINALIZED" && result) {
-      const empName = lookupEmpName(entry.employeeId);
-      const store = getStore();
-      const notif: AppNotification = {
-        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        category: "PAYROLL",
-        title: "Payroll difinalisasi",
-        message: `${empName} — periode ${entry.period} · ${Math.round(entry.total).toLocaleString("id-ID")} (finalized).`,
-        read: false,
-        archived: false,
-        createdAt: new Date().toISOString(),
-        link: "#/payroll?filter=FINALIZED",
-      };
-      store.setCollection("notifications", [notif, ...store.getState().notifications]);
-    }
-    return result;
+    const list = component.type === "ADDITION" ? [...entry.additions, component] : [...entry.deductions, component];
+    return this.updateEntry(id, component.type === "ADDITION" ? { additions: list } : { deductions: list });
   },
-  bulkSetStatus(ids: string[], status: PayrollStatus): number {
+
+  removeComponent(id: string, type: "ADDITION" | "DEDUCTION", index: number): PayrollEntry | undefined {
+    const entry = this.getEntry(id);
+    if (!entry) return undefined;
+    if (type === "ADDITION") {
+      return this.updateEntry(id, { additions: entry.additions.filter((_, i) => i !== index) });
+    }
+    return this.updateEntry(id, { deductions: entry.deductions.filter((_, i) => i !== index) });
+  },
+
+  /** Toggle needsReview flag. */
+  toggleReview(id: string): PayrollEntry | undefined {
+    const entry = this.getEntry(id);
+    if (!entry) return undefined;
+    return this.updateEntry(id, { needsReview: !entry.needsReview });
+  },
+
+  /** Set entry status. */
+  setEntryStatus(id: string, status: PayrollEntryStatus): PayrollEntry | undefined {
+    return this.updateEntry(id, { status });
+  },
+
+  /** Bulk set status for entries. */
+  bulkSetStatus(ids: string[], status: PayrollEntryStatus): number {
     let count = 0;
     for (const id of ids) {
       try {
-        this.setStatus(id, status);
+        this.setEntryStatus(id, status);
         count += 1;
       } catch {
         // skip
@@ -205,39 +243,122 @@ export const payrollService = {
     }
     return count;
   },
-  /** Hapus payroll (hanya DRAFT). */
-  remove(id: string): void {
+
+  /** Review periode: set semua entry ke REVIEWED, period ke REVIEWED. */
+  reviewPeriod(periodId: string): void {
+    const entries = this.listEntries(periodId);
+    for (const e of entries) {
+      if (e.status === "DRAFT") this.setEntryStatus(e.id, "REVIEWED");
+    }
+    this.setPeriodStatus(periodId, "REVIEWED");
+    logAudit({ module: "Payroll", action: "REVIEW", description: `Periode payroll direview (${entries.length} entry).` });
+  },
+
+  /** Finalisasi periode: set semua entry ke FINALIZED (terkunci), period ke FINALIZED. */
+  finalizePeriod(periodId: string, finalizedBy: string): void {
+    const period = this.getPeriod(periodId);
+    if (!period) throw new Error("Periode tidak ditemukan.");
+    if (period.status !== "REVIEWED") throw new Error("Periode harus berstatus Reviewed sebelum difinalisasi.");
+    const entries = this.listEntries(periodId);
+    for (const e of entries) {
+      if (e.status !== "FINALIZED") this.setEntryStatus(e.id, "FINALIZED");
+    }
+    const now = NOW();
+    this.updatePeriod(periodId, { status: "FINALIZED", finalizedBy, finalizedAt: now });
+    logAudit({ module: "Payroll", action: "FINALIZE", description: `Periode payroll "${period.name}" difinalisasi (${entries.length} entry terkunci).` });
+
+    // Auto-create notification
+    const store = getStore();
+    const notif: AppNotification = {
+      id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      category: "PAYROLL",
+      title: "Payroll difinalisasi",
+      message: `Periode "${period.name}" — ${entries.length} karyawan · Total ${formatRupiah(entries.reduce((s, e) => s + e.total, 0))}`,
+      read: false,
+      archived: false,
+      createdAt: now,
+      link: "#/payroll",
+    };
+    store.setCollection("notifications", [notif, ...store.getState().notifications]);
+  },
+
+  /** Hapus entry (hanya DRAFT). */
+  removeEntry(id: string): void {
     const store = getStore();
     const entry = store.getState().payrolls.find((p) => p.id === id);
-    if (!entry || entry.status !== "DRAFT") {
-      throw new Error("Hanya payroll DRAFT yang dapat dihapus.");
-    }
+    if (!entry || entry.status !== "DRAFT") throw new Error("Hanya entry DRAFT yang dapat dihapus.");
     store.setCollection("payrolls", store.getState().payrolls.filter((p) => p.id !== id));
-    logAudit({ module: "Payroll", action: "DELETE", description: `Menghapus payroll ${lookupEmpName(entry.employeeId)}.` });
+    logAudit({ module: "Payroll", action: "DELETE_ENTRY", description: `Menghapus entry payroll ${entry.fullName}.` });
   },
-  /** Export CSV untuk periode. */
-  exportCSV(period: string): string {
-    const entries = this.byPeriod(period);
-    const headers = ["NIK", "Nama", "Outlet", "Gaji Dasar", "PH", "Lembur", "Penambah", "Potongan Telat", "Potongan TH", "Pengurang", "Total", "Status"];
-    const rows = entries.map((p) => {
-      const emp = getStore().getState().employees.find((e) => e.id === p.employeeId);
-      const outlet = getStore().getState().outlets.find((o) => o.id === emp?.primaryOutletId)?.name ?? "";
-      const additions = p.additions.reduce((s, c) => s + c.amount, 0);
-      const deductions = p.deductions.reduce((s, c) => s + c.amount, 0);
+
+  /** Dashboard agregasi untuk periode. */
+  dashboard(periodId: string) {
+    const entries = this.listEntries(periodId);
+    const state = getStore().getState();
+    const outlets = state.outlets;
+    const perOutlet = outlets.map((o) => ({
+      outlet: o,
+      count: entries.filter((e) => e.outletName === o.name).length,
+      total: entries.filter((e) => e.outletName === o.name).reduce((s, e) => s + e.total, 0),
+    })).filter((x) => x.count > 0);
+
+    return {
+      totalPayroll: entries.reduce((s, e) => s + e.total, 0),
+      totalBaseSalary: entries.reduce((s, e) => s + e.baseSalary, 0),
+      totalPH: entries.reduce((s, e) => s + e.phAllowance, 0),
+      totalOvertime: entries.reduce((s, e) => s + e.overtimeAmount, 0),
+      totalBonus: entries.reduce((s, e) => s + e.bonus + e.incentive, 0),
+      totalAdditions: entries.reduce((s, e) => s + e.additions.reduce((x, c) => x + c.amount, 0), 0),
+      totalDeductions: entries.reduce((s, e) => s + e.lateDeduction + e.absenceDeduction + e.otherDeduction + e.kasbon + e.deductions.reduce((x, c) => x + c.amount, 0), 0),
+      employeeCount: entries.length,
+      needsReviewCount: entries.filter((e) => e.needsReview).length,
+      draftCount: entries.filter((e) => e.status === "DRAFT").length,
+      reviewedCount: entries.filter((e) => e.status === "REVIEWED").length,
+      finalizedCount: entries.filter((e) => e.status === "FINALIZED").length,
+      perOutlet,
+    };
+  },
+
+  /** Export CSV (Excel-compatible). */
+  exportCSV(periodId: string): string {
+    const period = this.getPeriod(periodId);
+    const entries = this.listEntries(periodId);
+    const headers = ["NIK", "Nama", "Posisi", "Outlet", "Jenis Gaji", "Tarif", "Hari Dibayar", "Gaji Dasar", "PH", "Lembur", "Bonus/Insentif", "Adjustment+", "Potongan Telat", "Potongan Absen", "Potongan Lain", "Total", "Status", "Catatan"];
+    const rows = entries.map((e) => {
+      const additions = e.additions.reduce((s, c) => s + c.amount, 0);
+      const deductions = e.deductions.reduce((s, c) => s + c.amount, 0);
       return [
-        emp?.nik ?? "", emp?.fullName ?? "", outlet,
-        p.baseSalary, p.phCount, p.overtimeAmount, additions,
-        p.lateDeduction, p.absenceDeduction, deductions,
-        p.total, p.status,
+        e.nik, e.fullName, e.positionName, e.outletName, e.salaryType, e.salaryRate, e.paidDays,
+        e.baseSalary, e.phAllowance, e.overtimeAmount, e.bonus + e.incentive, additions,
+        e.lateDeduction, e.absenceDeduction, e.otherDeduction + e.kasbon + deductions,
+        e.total, e.status, e.note ?? "",
       ];
     });
-    return [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    // Tambah baris total
+    const totalRow = ["", "TOTAL", "", "", "", "", "", 
+      entries.reduce((s, e) => s + e.baseSalary, 0),
+      entries.reduce((s, e) => s + e.phAllowance, 0),
+      entries.reduce((s, e) => s + e.overtimeAmount, 0),
+      entries.reduce((s, e) => s + e.bonus + e.incentive, 0),
+      entries.reduce((s, e) => s + e.additions.reduce((x, c) => x + c.amount, 0), 0),
+      entries.reduce((s, e) => s + e.lateDeduction, 0),
+      entries.reduce((s, e) => s + e.absenceDeduction, 0),
+      entries.reduce((s, e) => s + e.otherDeduction + e.kasbon + e.deductions.reduce((x, c) => x + c.amount, 0), 0),
+      entries.reduce((s, e) => s + e.total, 0),
+      "", ""];
+    const header = [`JURI HR - Payroll ${period?.name ?? ""}`, `Periode: ${period?.period ?? ""}`, `Generated: ${period?.generatedAt ?? ""}`, ""];
+    return [...header, headers, ...rows, totalRow].map((r) => (Array.isArray(r) ? r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",") : `"${r}"`)).join("\n");
+  },
+
+  /** Export per outlet summary. */
+  exportPerOutlet(periodId: string): string {
+    const dash = this.dashboard(periodId);
+    const headers = ["Outlet", "Jumlah Karyawan", "Total Payroll"];
+    const rows = dash.perOutlet.map((p) => [p.outlet.name.replace("JURI Bun — ", ""), p.count, p.total]);
+    const totalRow = ["TOTAL", dash.employeeCount, dash.totalPayroll];
+    return [headers, ...rows, totalRow].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   },
 };
-
-function lookupEmpName(id: string): string {
-  return getStore().getState().employees.find((e) => e.id === id)?.fullName ?? id;
-}
 
 // ------------------------------------------------------------
 // Notification Service
@@ -299,10 +420,9 @@ export const notificationService = {
 };
 
 // ------------------------------------------------------------
-// Report Service (agregasi lintas modul)
+// Report Service
 // ------------------------------------------------------------
 export const reportService = {
-  /** Ringkasan workforce untuk periode. */
   workforceSummary(fromDate: string, toDate: string) {
     const state = getStore().getState();
     const attendances = state.attendances.filter((a) => a.date >= fromDate && a.date <= toDate);
@@ -345,7 +465,6 @@ export const reportService = {
       },
     };
   },
-  /** Data distribusi karyawan per outlet. */
   employeeDistribution() {
     const state = getStore().getState();
     return state.outlets
@@ -363,7 +482,6 @@ export const reportService = {
       }))
       .filter((x) => x.employees > 0);
   },
-  /** Audit log list. */
   auditLogs(): AuditLog[] {
     return getStore()
       .getState()

@@ -513,3 +513,38 @@ Stage Summary:
 ## Status Akhir
 
 JURI HR v1.0 — 18 modul + enhanced search + notification generator + print stylesheet + skeleton charts + employee quick-view popover + smooth transitions.
+
+---
+
+## Task ID: FASE-11-EXTRA
+Agent: Z.ai Code (webDevReview cron)
+Task: Global keyboard navigation (g+key) + Help dialog enhancement
+
+Work Log:
+- **QA**: server running, dev.log bersih, lint 0 error, type-check 0 error. Dashboard stabil.
+- **Fitur Baru: Global Keyboard Navigation** (`use-keyboard-nav.ts`):
+  - Hook `useKeyboardNav` dengan two-key sequence ala Gmail/GitHub: tekan `g` lalu huruf kedua untuk navigasi cepat.
+  - 18 shortcut: g+d (Dashboard), g+k (Karyawan), g+o (Outlet), g+p (Posisi), g+m (Domisili), g+c (Kontrak), g+s (Shift), g+g (Shift Group), g+j (Jadwal), g+h (Holiday), g+a (Absensi), g+l (Cuti), g+e (Lembur), g+w (Payroll), g+n (Notifikasi), g+r (Laporan), g+u (Audit), g+t (Pengaturan).
+  - Timeout 800ms reset jika tidak ada key kedua.
+  - Abaikan jika sedang mengetik di input/textarea/select/contentEditable.
+  - Abaikan jika modifier (meta/ctrl/alt) ditekan.
+  - Integrasi: `useKeyboardNav()` di AppShell.
+  - Ekspor `KEYBOARD_NAV_SHORTCUTS` untuk ditampilkan di Help dialog.
+- **Help Dialog Enhancement** (`app-topbar.tsx`):
+  - Section baru "Navigasi Cepat (g + huruf)" dengan penjelasan + grid 2 kolom 14 shortcut (g+d Dashboard s/d g+t Pengaturan).
+  - Setiap shortcut: kbd styling untuk readability.
+
+Stage Summary:
+- **Verifikasi via Agent Browser**:
+  - g+k → navigasi ke Data Karyawan ✓.
+  - g+w → navigasi ke Payroll Preview ✓.
+  - g+r → navigasi ke Laporan ✓.
+  - Help dialog: section "Navigasi Cepat (g + huruf)" muncul dengan 14 shortcut ✓.
+  - Tidak ada regresi.
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error.
+- **Runtime**: 0 errors, dev.log bersih.
+
+## Status Akhir
+
+JURI HR v1.0 — 18 modul + enhanced search + notification generator + print stylesheet + skeleton charts + employee quick-view + smooth transitions + **global keyboard navigation (g+key)**.

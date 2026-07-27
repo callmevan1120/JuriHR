@@ -21,6 +21,7 @@ import type {
   OvertimePlanning,
   Outlet,
   PayrollEntry,
+  PayrollPeriod,
   Position,
   Schedule,
   ShiftGroup,
@@ -46,6 +47,7 @@ export interface DataState {
   leaves: Leave[];
   overtimePlannings: OvertimePlanning[];
   overtimeActuals: OvertimeActual[];
+  payrollPeriods: PayrollPeriod[];
   payrolls: PayrollEntry[];
   notifications: AppNotification[];
   auditLogs: AuditLog[];
@@ -74,6 +76,7 @@ function createInitialState(): DataState {
     leaves: seed.leaves,
     overtimePlannings: seed.overtimePlannings,
     overtimeActuals: seed.overtimeActuals,
+    payrollPeriods: seed.payrollPeriods,
     payrolls: seed.payrolls,
     notifications: seed.notifications,
     auditLogs: seed.auditLogs,

@@ -444,7 +444,8 @@ export interface OvertimeActual {
 // Payroll
 // ------------------------------------------------------------
 
-export type PayrollStatus = "DRAFT" | "REVIEWED" | "FINALIZED";
+export type PayrollPeriodStatus = "DRAFT" | "GENERATED" | "REVIEWED" | "FINALIZED";
+export type PayrollEntryStatus = "DRAFT" | "REVIEWED" | "FINALIZED";
 
 export interface PayrollComponent {
   label: string;
@@ -453,21 +454,57 @@ export interface PayrollComponent {
   note?: string;
 }
 
+/** Periode payroll — mengelola satu siklus penggajian. */
+export interface PayrollPeriod {
+  id: string;
+  name: string;
+  period: string; // "YYYY-MM"
+  startDate: ISODate;
+  endDate: ISODate;
+  scopeType: "ALL" | "OUTLET" | "DIVISI";
+  scopeId?: string;
+  status: PayrollPeriodStatus;
+  generatedBy?: string;
+  generatedAt?: ISODate;
+  finalizedBy?: string;
+  finalizedAt?: ISODate;
+  note?: string;
+  createdAt: ISODate;
+  updatedAt: ISODate;
+}
+
+/** Entri payroll per karyawan — dengan snapshot saat generate.
+ *  Perubahan data karyawan/gaji setelah generate TIDAK mengubah entry ini. */
 export interface PayrollEntry {
   id: string;
+  periodId: string;
   employeeId: string;
-  period: string; // "YYYY-MM"
-  baseSalary: number;
-  phCount: number;
-  phDeduction: number;
-  overtimeAmount: number; // dari lembur terverifikasi
-  additions: PayrollComponent[];
-  deductions: PayrollComponent[];
-  lateDeduction: number;
-  absenceDeduction: number;
+  // Snapshot (tersimpan saat generate)
+  nik: string;
+  fullName: string;
+  positionName: string;
+  divisionName: string;
+  outletName: string;
+  salaryType: SalaryType;
+  salaryRate: number; // tarif gaji (bulanan atau harian)
+  paidDays: number; // hari dibayar
+  // Komponen gaji
+  baseSalary: number; // gaji dasar (harian: paidDays × dailyRate; bulanan: monthlyRate)
+  dailyRate: number; // gaji harian (untuk referensi)
+  phAllowance: number; // tunjangan PH
+  overtimeAmount: number; // lembur terverifikasi
+  bonus: number;
+  incentive: number;
+  kasbon: number; // potongan kasbon
+  lateDeduction: number; // potongan keterlambatan
+  absenceDeduction: number; // potongan tidak hadir
+  otherDeduction: number; // potongan lain
+  additions: PayrollComponent[]; // adjustment penambah
+  deductions: PayrollComponent[]; // adjustment pengurang
   total: number;
-  status: PayrollStatus;
+  needsReview: boolean;
   note?: string;
+  status: PayrollEntryStatus;
   createdAt: ISODate;
   updatedAt: ISODate;
 }

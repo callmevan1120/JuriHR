@@ -22,6 +22,7 @@ import type {
   OvertimePlanning,
   Outlet,
   PayrollEntry,
+  PayrollPeriod,
   Position,
   Schedule,
   ShiftGroup,
@@ -31,6 +32,7 @@ import type {
 import {
   addDaysISO,
   daysBetween,
+  monthLabel,
   todayISODate,
 } from "@/lib/utils";
 
@@ -1187,35 +1189,75 @@ const _overtimeActuals: OvertimeActual[] = [
 export const overtimeActuals: OvertimeActual[] = _overtimeActuals.filter((a) => a.employeeId !== "");
 
 // ------------------------------------------------------------
-// Payroll — periode bulan lalu (draft) & bulan ini (draft)
+// Payroll — periode & entri dengan snapshot
 // ------------------------------------------------------------
+export const payrollPeriods: PayrollPeriod[] = [];
 export const payrolls: PayrollEntry[] = [];
-const lastPeriod = addDaysISO(TODAY, -30).slice(0, 7);
-const thisPeriod = TODAY.slice(0, 7);
-const payrollEmps = employees.filter((e) => e.status === "AKTIF").slice(0, 20);
-payrollEmps.forEach((emp, i) => {
-  const base = emp.salaryType === "BULANAN" ? emp.salaryAmount : emp.salaryAmount * 25;
-  const lateDeduction = i % 3 === 0 ? 7000 : 0;
-  const overtimeAmount = i % 4 === 0 ? Math.round((180 / 60) * OT_RATE) : 0;
-  const total = Math.max(0, base - lateDeduction + overtimeAmount);
-  payrolls.push({
-    id: `pay-${emp.id}-${thisPeriod}`,
-    employeeId: emp.id,
+{
+  const thisPeriod = TODAY.slice(0, 7);
+  const [y, m] = thisPeriod.split("-").map(Number);
+  const periodStart = `${y}-${String(m).padStart(2, "0")}-01`;
+  const periodEnd = `${y}-${String(m).padStart(2, "0")}-${new Date(y, m, 0).getDate()}`;
+  const periodId = `pp-${thisPeriod}`;
+  payrollPeriods.push({
+    id: periodId,
+    name: `Payroll ${monthLabel(thisPeriod)}`,
     period: thisPeriod,
-    baseSalary: base,
-    phCount: i % 5 === 0 ? 1 : 0,
-    phDeduction: 0,
-    overtimeAmount,
-    additions: [],
-    deductions: [],
-    lateDeduction,
-    absenceDeduction: 0,
-    total,
-    status: i < 14 ? "DRAFT" : "REVIEWED",
+    startDate: periodStart,
+    endDate: periodEnd,
+    scopeType: "ALL",
+    status: "GENERATED",
+    generatedBy: "HRD Admin",
+    generatedAt: NOW,
+    note: "Payroll periode berjalan",
     createdAt: NOW,
     updatedAt: NOW,
   });
-});
+  const payrollEmps = employees.filter((e) => e.status === "AKTIF").slice(0, 20);
+  payrollEmps.forEach((emp, i) => {
+    const pos = positions.find((p) => p.id === emp.positionId);
+    const div = divisions.find((d) => d.id === emp.divisionId);
+    const out = outlets.find((o) => o.id === emp.primaryOutletId);
+    const dailyRate = emp.salaryType === "BULANAN" ? Math.round(emp.salaryAmount / 25) : emp.salaryAmount;
+    const paidDays = emp.salaryType === "BULANAN" ? 25 : 22;
+    const baseSalary = emp.salaryType === "BULANAN" ? emp.salaryAmount : paidDays * dailyRate;
+    const lateDeduction = i % 3 === 0 ? 7000 : 0;
+    const overtimeAmount = i % 4 === 0 ? Math.round((180 / 60) * OT_RATE) : 0;
+    const bonus = i % 6 === 0 ? 500000 : 0;
+    const total = Math.max(0, baseSalary + overtimeAmount + bonus - lateDeduction);
+    payrolls.push({
+      id: `pay-${emp.id}-${thisPeriod}`,
+      periodId,
+      employeeId: emp.id,
+      nik: emp.nik,
+      fullName: emp.fullName,
+      positionName: pos?.name ?? "-",
+      divisionName: div?.name ?? "-",
+      outletName: out?.name ?? "-",
+      salaryType: emp.salaryType,
+      salaryRate: emp.salaryAmount,
+      paidDays,
+      baseSalary,
+      dailyRate,
+      phAllowance: 0,
+      overtimeAmount,
+      bonus,
+      incentive: 0,
+      kasbon: 0,
+      lateDeduction,
+      absenceDeduction: 0,
+      otherDeduction: 0,
+      additions: [],
+      deductions: [],
+      total,
+      needsReview: i % 7 === 0,
+      note: undefined,
+      status: i < 14 ? "DRAFT" : "REVIEWED",
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+  });
+}
 
 // ------------------------------------------------------------
 // Notifications

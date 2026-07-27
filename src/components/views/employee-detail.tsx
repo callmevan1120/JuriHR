@@ -478,32 +478,36 @@ function LemburTab({ employee }: { employee: Employee }) {
 // Tab Payroll
 // ------------------------------------------------------------
 function PayrollTab({ employee }: { employee: Employee }) {
-  const payrolls = useStore((s) => s.payrolls.filter((p) => p.employeeId === employee.id).sort((a, b) => b.period.localeCompare(a.period)));
+  const periods = useStore((s) => s.payrollPeriods);
+  const payrolls = useStore((s) => s.payrolls.filter((p) => p.employeeId === employee.id));
   if (payrolls.length === 0) {
     return <EmptyState title="Belum ada payroll" description="Karyawan ini belum memiliki record payroll." />;
   }
   return (
     <div className="space-y-3">
-      {payrolls.map((p) => (
-        <Card key={p.id} className="border-border shadow-soft">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Periode {p.period}</CardTitle>
-            <StatusBadge status={p.status} />
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-              <InfoRow label="Gaji Dasar" value={<span className="tabular-nums">{formatRupiah(p.baseSalary)}</span>} />
-              <InfoRow label="Lembur Terverifikasi" value={<span className="tabular-nums">{formatRupiah(p.overtimeAmount)}</span>} />
-              <InfoRow label="Potongan Terlambat" value={<span className="tabular-nums text-destructive">-{formatRupiah(p.lateDeduction)}</span>} />
-              <InfoRow label="PH" value={`${p.phCount} hari`} />
-            </div>
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-              <span className="text-sm font-medium text-foreground">Total</span>
-              <span className="text-lg font-bold tabular-nums text-foreground">{formatRupiah(p.total)}</span>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {payrolls.map((p) => {
+        const period = periods.find((pp) => pp.id === p.periodId);
+        return (
+          <Card key={p.id} className="border-border shadow-soft">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Periode {period?.period ?? p.periodId}</CardTitle>
+              <StatusBadge status={p.status} />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+                <InfoRow label="Gaji Dasar" value={<span className="tabular-nums">{formatRupiah(p.baseSalary)}</span>} />
+                <InfoRow label="Lembur Terverifikasi" value={<span className="tabular-nums">{formatRupiah(p.overtimeAmount)}</span>} />
+                <InfoRow label="Potongan Terlambat" value={<span className="tabular-nums text-destructive">-{formatRupiah(p.lateDeduction)}</span>} />
+                <InfoRow label="Tunjangan PH" value={<span className="tabular-nums">{formatRupiah(p.phAllowance)}</span>} />
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <span className="text-sm font-medium text-foreground">Total</span>
+                <span className="text-lg font-bold tabular-nums text-foreground">{formatRupiah(p.total)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
