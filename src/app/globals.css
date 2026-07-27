@@ -234,3 +234,61 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
+
+/* ============================================================
+   Print Stylesheet — untuk laporan & payroll PDF
+   Hide sidebar, topbar, footer; optimasi A4.
+   ============================================================ */
+@media print {
+  /* Sembunyikan elemen non-esensial */
+  [data-slot="sidebar"],
+  [data-sidebar="sidebar"],
+  header.sticky,
+  footer,
+  [data-slot="sidebar-wrapper"] > aside,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Layout print penuh */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Pastikan card tidak terpotong */
+  [data-slot="card"] {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    page-break-inside: avoid;
+  }
+
+  /* Background putih untuk semua */
+  [data-slot="sidebar-inset"] {
+    background: white !important;
+  }
+
+  /* Heading lebih besar & hitam */
+  h1 { font-size: 18pt; color: black !important; }
+  h2 { font-size: 14pt; color: black !important; }
+  h3 { font-size: 12pt; color: black !important; }
+
+  /* Tabel: border tipis, hindari break baris */
+  table { width: 100% !important; font-size: 9pt; }
+  tr { page-break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* Margin A4 */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}

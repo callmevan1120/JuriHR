@@ -37,6 +37,17 @@ import {
 } from "@/lib/services/dashboard";
 import { useDataState } from "@/hooks/use-store";
 import { statusLabel } from "@/components/common/status-badge";
+import { ChartSkeleton } from "@/components/common/chart-skeleton";
+
+/** Hook simulasi loading awal chart (200ms) untuk efek skeleton. */
+function useChartLoading(delay = 200) {
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    const t = setTimeout(() => setLoading(false), delay);
+    return () => clearTimeout(t);
+  }, [delay]);
+  return loading;
+}
 
 const ATTENDANCE_CONFIG: ChartConfig = {
   hadir: { label: "Hadir", color: "var(--chart-1)" },
@@ -46,6 +57,7 @@ const ATTENDANCE_CONFIG: ChartConfig = {
 
 export function AttendanceTrendChart() {
   const state = useDataState();
+  const loading = useChartLoading();
   const data = computeAttendanceTrend(state);
   return (
     <Card className="border-border shadow-soft">
@@ -56,6 +68,7 @@ export function AttendanceTrendChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {loading ? <ChartSkeleton /> : (
         <ChartContainer config={ATTENDANCE_CONFIG} className="h-[220px] w-full">
           <LineChart data={data} margin={{ left: -16, right: 8, top: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
@@ -100,6 +113,7 @@ export function AttendanceTrendChart() {
             />
           </LineChart>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );
@@ -111,6 +125,7 @@ const OUTLET_CONFIG: ChartConfig = {
 
 export function OutletDistributionChart() {
   const state = useDataState();
+  const loading = useChartLoading(300);
   const data = computeOutletDistribution(state);
   return (
     <Card className="border-border shadow-soft">
@@ -121,6 +136,7 @@ export function OutletDistributionChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {loading ? <ChartSkeleton /> : (
         <ChartContainer config={OUTLET_CONFIG} className="h-[220px] w-full">
           <BarChart
             data={data}
@@ -154,6 +170,7 @@ export function OutletDistributionChart() {
             />
           </BarChart>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );
@@ -173,6 +190,7 @@ const CONTRACT_CONFIG: ChartConfig = {
 
 export function ContractStatusChart() {
   const state = useDataState();
+  const loading = useChartLoading(400);
   const raw = computeContractStatus(state);
   const data = raw.map((d) => ({ ...d, label: statusLabel(d.status) }));
   const total = data.reduce((s, d) => s + d.count, 0);
@@ -186,6 +204,8 @@ export function ContractStatusChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {loading ? <ChartSkeleton /> : (
+        <>
         <div className="relative">
           <ChartContainer config={CONTRACT_CONFIG} className="mx-auto h-[220px] w-full">
             <PieChart>
@@ -226,6 +246,8 @@ export function ContractStatusChart() {
             </div>
           ))}
         </div>
+        </>
+        )}
       </CardContent>
     </Card>
   );
@@ -238,6 +260,7 @@ const OVERTIME_CONFIG: ChartConfig = {
 
 export function OvertimePlanVsActualChart() {
   const state = useDataState();
+  const loading = useChartLoading(500);
   const data = computeOvertimePlanVsActual(state);
   return (
     <Card className="border-border shadow-soft">
@@ -248,6 +271,7 @@ export function OvertimePlanVsActualChart() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {loading ? <ChartSkeleton /> : (
         <ChartContainer config={OVERTIME_CONFIG} className="h-[220px] w-full">
           <BarChart data={data} margin={{ left: -16, right: 8, top: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
@@ -271,6 +295,7 @@ export function OvertimePlanVsActualChart() {
             <Bar dataKey="actual" fill="var(--color-actual)" radius={[4, 4, 0, 0]} barSize={14} />
           </BarChart>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

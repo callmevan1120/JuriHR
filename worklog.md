@@ -440,3 +440,41 @@ Stage Summary:
 ## Status Akhir
 
 JURI HR v1.0 — 18 modul + enhanced search (7 grup) + notification generator otomatis + polished empty states.
+
+---
+
+## Task ID: FASE-9-EXTRA
+Agent: Z.ai Code (webDevReview cron)
+Task: Print-friendly stylesheet + Skeleton loading charts + polish
+
+Work Log:
+- **QA**: server running, dev.log bersih, lint 0 error, type-check 0 error. Dashboard stabil (4 charts render).
+- **Fitur Baru: Print-Friendly Stylesheet** (`globals.css`):
+  - `@media print` block: hide sidebar, topbar (header.sticky), footer, elemen `.no-print`.
+  - Layout print penuh (max-width 100%, padding 0), background putih, font 11pt.
+  - Card: break-inside avoid, shadow none, border tipis.
+  - Heading: h1 18pt, h2 14pt, h3 12pt (hitam).
+  - Tabel: width 100%, font 9pt, page-break-inside avoid untuk tr, thead repeat.
+  - @page: A4 margin 1.5cm.
+  - Class `no-print` ditambahkan ke PageHeader actions (tombol export/print) agar tersembunyi saat print.
+- **Fitur Baru: Skeleton Loading Charts** (`chart-skeleton.tsx` + `charts.tsx`):
+  - Komponen `ChartSkeleton`: animated pulse bars dengan delay bertahap (sinusoidal height), placeholder title.
+  - Komponen `StatCardSkeleton`: untuk metric cards.
+  - Hook `useChartLoading(delay)` di charts.tsx: simulasi loading awal (200-500ms dengan delay berbeda per chart) untuk efek skeleton sebelum chart render.
+  - Applied ke 4 dashboard charts: AttendanceTrendChart (200ms), OutletDistributionChart (300ms), ContractStatusChart (400ms), OvertimePlanVsActualChart (500ms).
+  - Saat loading: tampilkan ChartSkeleton. Setelah delay: render chart sebenarnya.
+- **Polish**: PageHeader actions wrapper dapat class `no-print`.
+
+Stage Summary:
+- **Verifikasi via Agent Browser**:
+  - Dashboard: 4 charts render ✓.
+  - Print stylesheet: `@media print` ada di globals.css (line 242), akan aktif saat print/PDF.
+  - Skeleton loading: ChartSkeleton component dengan animated pulse.
+  - Tidak ada regresi.
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error.
+- **Runtime**: 0 errors, dev.log bersih.
+
+## Status Akhir
+
+JURI HR v1.0 — 18 modul + enhanced search (7 grup) + notification generator + print-friendly stylesheet + skeleton loading charts.
