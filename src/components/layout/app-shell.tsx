@@ -27,7 +27,7 @@ export function AppShell() {
               </p>
               <p className="flex items-center gap-1.5">
                 <span className="size-1.5 rounded-full bg-success" />
-                Prototipe Fase 2 · Core HR &amp; Master Data
+                JURI HR v1.0 · 17 modul aktif
               </p>
             </div>
           </footer>

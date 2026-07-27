@@ -98,12 +98,15 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="rounded-lg border border-sidebar-border bg-muted/40 p-3 group-data-[collapsible=icon]:hidden">
-          <p className="text-[11px] font-medium text-foreground">
-            Prototipe JURI HR
-          </p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Fase 1 · Fondasi & Design System
+        <div className="rounded-lg border border-sidebar-border bg-gradient-to-br from-primary/5 to-muted/40 p-3 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-2">
+            <span className="flex size-1.5 rounded-full bg-success" />
+            <p className="text-[11px] font-semibold text-foreground">
+              JURI HR v1.0
+            </p>
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            17 modul · 5 fase selesai
           </p>
         </div>
       </SidebarFooter>

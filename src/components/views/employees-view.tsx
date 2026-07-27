@@ -15,6 +15,14 @@ import {
 import { DataTable, selectionColumn } from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmployeeFormDialog } from "@/components/views/employee-form-dialog";
 import { EmployeeDetail } from "@/components/views/employee-detail";
 import { useStore } from "@/hooks/use-store";
@@ -52,6 +60,7 @@ export function EmployeesView() {
   const [formOpen, setFormOpen] = React.useState<{ mode: "create" | "edit"; data?: Employee } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string; action: "deactivate" | "activate" } | null>(null);
   const [selected, setSelected] = React.useState<Employee[]>([]);
+  const [importOpen, setImportOpen] = React.useState(false);
 
   // Detail view jika ada ?id=
   if (selectedId) {
@@ -220,7 +229,20 @@ export function EmployeesView() {
   };
 
   const handleImportSim = () => {
-    toast.info("Simulasi import: data karyawan contoh sudah tersedia di central data service.");
+    setImportOpen(true);
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ["NIK", "Nama Lengkap", "Telepon", "Email", "Kategori", "Posisi", "Divisi", "Outlet", "Tipe Gaji", "Gaji", "Tanggal Mulai"];
+    const csv = headers.join(",") + "\nJBD00001,Contoh Karyawan,081234567890,contoh@juribun.co.id,OUTLET,Barista,Operasional Outlet,JURI Bun — Sudirman,HARIAN,180000,2025-01-01";
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "template-import-karyawan.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Template CSV diunduh");
   };
 
   return (
@@ -339,6 +361,36 @@ export function EmployeesView() {
           }
         }}
       />
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Upload className="size-5 text-primary" /> Import Karyawan (Simulasi)</DialogTitle>
+            <DialogDescription>Unggah file CSV untuk menambah karyawan secara massal.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border border-info/30 bg-info/5 p-3 text-xs text-info">
+              <p className="font-medium">Format CSV:</p>
+              <p className="mt-1 font-mono text-[10px]">NIK, Nama, Telepon, Email, Kategori, Posisi, Divisi, Outlet, Tipe Gaji, Gaji, Tanggal Mulai</p>
+            </div>
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border py-8 text-center">
+              <div>
+                <Upload className="mx-auto size-8 text-muted-foreground/50" />
+                <p className="mt-2 text-sm text-muted-foreground">Seret file CSV ke sini atau</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={handleDownloadTemplate}>
+                  <Download className="size-4" /> Unduh Template
+                </Button>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Prototipe: import aktual memerlukan backend. Template CSV dapat diunduh untuk referensi format.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

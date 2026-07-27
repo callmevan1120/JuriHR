@@ -7,8 +7,9 @@
 **Fase 3 — Shift, Jadwal, dan Hari Libur: SELESAI** ✅
 **Fase 4 — Absensi, Cuti, dan Lembur: SELESAI** ✅
 **Fase 5 — Payroll, Notification, dan Laporan: SELESAI** ✅
+**Fase 6 — Finalisasi & QA: SELESAI** ✅
 
-Aplikasi JURI HR berhasil dibangun hingga Fase 5. Modul payroll & pelaporan lengkap (Payroll Preview dengan generate + adjustment + status flow Draft/Reviewed/Finalized + export CSV/Excel/PDF, Notification Center dengan filter kategori + mark read + archive + deep link, Laporan multi-modul dengan 9 tipe laporan + grafik + summary + export, Audit Log dengan timeline + before/after) berfungsi penuh. Seluruh 5 fase aplikasi telah selesai. Aplikasi berjalan tanpa error TypeScript/build/runtime.
+Aplikasi JURI HR telah selesai seluruh 6 fase. 17 modul fungsional penuh dengan CRUD reaktif, konsistensi data antar-modul, audit log, dan dokumentasi README lengkap. Aplikasi berjalan tanpa error TypeScript/build/runtime.
 
 ---
 
@@ -313,3 +314,43 @@ Semua modul terintegrasi via central data service (single source of truth). CRUD
 - `src/lib/data/store.ts` = central data service (in-memory). `src/lib/services/*` = dummy API (pure functions).
 - Untuk integrasi backend: ganti isi service layer dengan `fetch()` ke API nyata; hook `useStore` diganti dengan TanStack Query hooks. Signature service tetap sama → UI tidak perlu berubah.
 - Prisma + SQLite tersedia (`src/lib/db.ts`) bila ingin persistensi, namun prototype Fase 1 memakai in-memory store sesuai prinsip "central data service, bukan localStorage".
+
+---
+
+## Task ID: FASE-6
+Agent: Z.ai Code (webDevReview cron)
+Task: Finalisasi & QA — polish, perbaiki bug, buat README
+
+Work Log:
+- **QA komprehensif**: cek server (running), dev.log (no errors), lint (0 error, 1 warning known), type-check (0 error). Test semua 17 modul via agent-browser — semua load dengan judul halaman benar. Install console.error hook, navigasi through detail views (employee detail, outlet detail, domicile map, schedule, lembur, payroll, laporan) — 0 console errors.
+- **VLM audit dashboard**: identifikasi issue — sidebar footer outdated ("Fase 1"), text truncation, spacing. 
+- **Perbaikan**:
+  - Update sidebar footer: "Fase 1 · Fondasi & Design System" → "JURI HR v1.0 · 17 modul · 5 fase selesai" dengan gradient bg & status dot.
+  - Update app-shell footer: "Prototipe Fase 2" → "JURI HR v1.0 · 17 modul aktif".
+  - Upgrade tombol Import di Data Karyawan: dari toast info → dialog import simulasi lengkap dengan format CSV, drop zone, dan tombol unduh template CSV.
+  - Perbaiki React Hooks rules-of-hooks error (useState setelah conditional return) — pindahkan `importOpen` state ke atas.
+- **Audit placeholder**: ComingSoon masih dipakai sebagai safety net untuk modul unavailable (tidak ada lagi — semua 17 modul available). Tidak ada tombol non-fungsional tersisa.
+- **README dokumentasi** (`/home/z/my-project/README.md`): lengkap dengan cara menjalankan, identitas brand, struktur folder, daftar 17 fitur per fase, central data service, mock data, endpoint backend yang dibutuhkan, batasan prototipe, rekomendasi integrasi backend, teknologi.
+
+Stage Summary:
+- **Verifikasi via Agent Browser**:
+  - Sidebar footer: "JURI HR v1.0 · 17 modul · 5 fase selesai" ✓
+  - App footer: "JURI HR v1.0 · 17 modul aktif" ✓
+  - Import dialog: format CSV + drop zone + unduh template ✓
+  - Semua 17 modul tetap load dengan benar (no regression).
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error.
+- **Runtime**: 0 console errors, dev.log bersih.
+- **Dokumentasi**: README.md lengkap (cara menjalankan, brand, struktur, fitur, arsitektur, endpoint backend, batasan, integrasi).
+
+## PROYEK JURI HR SELESAI
+
+Seluruh 6 fase aplikasi JURI HR telah diselesaikan:
+- **Fase 1**: Fondasi, design system, dashboard.
+- **Fase 2**: Core HR & master data (Karyawan, Outlet, Posisi, Domisili & Peta, Kontrak).
+- **Fase 3**: Shift, Jadwal, Holiday Group.
+- **Fase 4**: Absensi, Cuti, Lembur.
+- **Fase 5**: Payroll, Notification, Laporan, Audit Log.
+- **Fase 6**: Finalisasi, polish, README.
+
+17 modul fungsional penuh, CRUD reaktif, konsistensi data antar-modul, audit log, dokumentasi lengkap. Siap untuk demo end-to-end dan integrasi backend nyata.
