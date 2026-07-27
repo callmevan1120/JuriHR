@@ -1,0 +1,204 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================================
+   JURI HR — Design System
+   Brand: Bakery & Coffee Bun multi-outlet HR
+   Primary: #FCBA0C (golden), Dark brown: #3A2518,
+   Cream: #FFF8E7, Surface: #FFFDF8, Muted: #74665D, Border: #EADFCB
+   ============================================================ */
+:root {
+  --radius: 0.75rem; /* 12px — soft but professional */
+
+  /* Surfaces */
+  --background: #FFFDF8;
+  --foreground: #3A2518;
+  --card: #FFFFFF;
+  --card-foreground: #3A2518;
+  --popover: #FFFFFF;
+  --popover-foreground: #3A2518;
+
+  /* Primary = golden yellow accent */
+  --primary: #FCBA0C;
+  --primary-foreground: #3A2518;
+
+  /* Secondary = cream */
+  --secondary: #FFF8E7;
+  --secondary-foreground: #3A2518;
+
+  /* Muted */
+  --muted: #FBF3E3;
+  --muted-foreground: #74665D;
+
+  /* Accent = soft yellow tint */
+  --accent: #FFF1CC;
+  --accent-foreground: #3A2518;
+
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --success: #2F855A;
+  --success-foreground: #FFFFFF;
+  --warning: #C2780C;
+  --warning-foreground: #FFFFFF;
+  --info: #2B6CB0;
+  --info-foreground: #FFFFFF;
+
+  --border: #EADFCB;
+  --input: #EADFCB;
+  --ring: #FCBA0C;
+
+  /* Chart palette — warm bakery tones */
+  --chart-1: #FCBA0C; /* primary gold */
+  --chart-2: #3A2518; /* dark brown */
+  --chart-3: #74665D; /* muted */
+  --chart-4: #E8A604; /* deep gold */
+  --chart-5: #C2780C; /* amber */
+
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #3A2518;
+  --sidebar-primary: #FCBA0C;
+  --sidebar-primary-foreground: #3A2518;
+  --sidebar-accent: #FFF1CC;
+  --sidebar-accent-foreground: #3A2518;
+  --sidebar-border: #EADFCB;
+  --sidebar-ring: #FCBA0C;
+}
+
+.dark {
+  /* Warm dark — dark brown base */
+  --background: #1F1610;
+  --foreground: #FFF8E7;
+  --card: #2A1E15;
+  --card-foreground: #FFF8E7;
+  --popover: #2A1E15;
+  --popover-foreground: #FFF8E7;
+
+  --primary: #FCBA0C;
+  --primary-foreground: #3A2518;
+
+  --secondary: #3A2A1E;
+  --secondary-foreground: #FFF8E7;
+
+  --muted: #3A2A1E;
+  --muted-foreground: #C4B5A5;
+
+  --accent: #4A3528;
+  --accent-foreground: #FFF8E7;
+
+  --destructive: #F87171;
+  --destructive-foreground: #1F1610;
+
+  --success: #68D391;
+  --success-foreground: #1F1610;
+  --warning: #F6AD55;
+  --warning-foreground: #1F1610;
+  --info: #63B3ED;
+  --info-foreground: #1F1610;
+
+  --border: #4A3528;
+  --input: #4A3528;
+  --ring: #FCBA0C;
+
+  --chart-1: #FCBA0C;
+  --chart-2: #FFF8E7;
+  --chart-3: #C4B5A5;
+  --chart-4: #E8A604;
+  --chart-5: #F6AD55;
+
+  --sidebar: #2A1E15;
+  --sidebar-foreground: #FFF8E7;
+  --sidebar-primary: #FCBA0C;
+  --sidebar-primary-foreground: #3A2518;
+  --sidebar-accent: #4A3528;
+  --sidebar-accent-foreground: #FFF8E7;
+  --sidebar-border: #4A3528;
+  --sidebar-ring: #FCBA0C;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  /* Pleasant scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+}
+
+@layer utilities {
+  /* Tabular numbers for tables & metrics */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Subtle card shadow used across the app */
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px 0 rgb(58 37 24 / 0.04),
+      0 1px 3px 0 rgb(58 37 24 / 0.06);
+  }
+  .shadow-soft-md {
+    box-shadow:
+      0 2px 4px -1px rgb(58 37 24 / 0.06),
+      0 4px 6px -1px rgb(58 37 24 / 0.08);
+  }
+}
