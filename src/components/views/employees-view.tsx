@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { DataTable, selectionColumn } from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
+import { EmployeeQuickView } from "@/components/common/employee-quick-view";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   Dialog,
@@ -44,6 +45,7 @@ import {
   UserCheck,
   UserX,
   UserMinus,
+  Eye,
 } from "lucide-react";
 
 export function EmployeesView() {
@@ -165,6 +167,16 @@ export function EmployeesView() {
         const active = e.status === "AKTIF";
         return (
           <div className="flex items-center justify-end gap-1">
+            <EmployeeQuickView employee={e}>
+              <button
+                type="button"
+                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                onClick={(ev) => ev.stopPropagation()}
+                title="Preview cepat"
+              >
+                <Eye className="size-3.5" />
+              </button>
+            </EmployeeQuickView>
             <Button
               variant="ghost"
               size="icon"

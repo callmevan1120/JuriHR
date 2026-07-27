@@ -478,3 +478,38 @@ Stage Summary:
 ## Status Akhir
 
 JURI HR v1.0 — 18 modul + enhanced search (7 grup) + notification generator + print-friendly stylesheet + skeleton loading charts.
+
+---
+
+## Task ID: FASE-10-EXTRA
+Agent: Z.ai Code (webDevReview cron)
+Task: Employee Quick-View Popover + Tab transitions + focus visible polish
+
+Work Log:
+- **QA**: server running, dev.log bersih, lint 0 error, type-check 0 error. Dashboard stabil.
+- **Fitur Baru: Employee Quick-View Popover** (`employee-quick-view.tsx`):
+  - Komponen reusable untuk preview cepat karyawan dari tabel tanpa buka detail.
+  - Header: avatar (initials), nama, NIK, status badge (AKTIF/NONAKTIF), kategori badge (Outlet/Non-Outlet), gradient background.
+  - Body (6 rows): Posisi, Divisi/Outlet, Gaji (format Rupiah + /bulan atau /hari), Saldo Cuti (dengan pending count), Kontrak Berakhir, Absensi Hari Ini (status badge).
+  - Kontak: telepon & email (jika ada).
+  - Action: tombol "Lihat Detail Lengkap" → navigasi ke `#/karyawan?id=`.
+  - Integrasi: tombol Eye di kolom actions tabel karyawan, bungkus dengan EmployeeQuickView.
+  - Fix: PopoverTrigger asChild dengan button native (bukan Button component) agar event handling benar.
+- **Polish: Tab & Popover Transitions** (`globals.css`):
+  - `[data-state="active"][role="tabpanel"]`: animation `tab-fade-in` (translateY 6px → 0, opacity) 0.25s.
+  - `:focus-visible`: outline-2 outline-offset-2 outline-primary untuk keyboard navigation.
+  - `[data-state="open"][role="dialog/menu/tooltip"]`: animation `popover-in` (scale 0.96 → 1, opacity) 0.15s untuk smooth enter.
+
+Stage Summary:
+- **Verifikasi via Agent Browser + VLM**:
+  - Quick-view popover: klik Eye → popover muncul dengan header (avatar AP, Andi Pratama, NIK JBD01000, badge Aktif/Outlet), body (Posisi Kepala Outlet, Divisi/Outlet, Gaji Rp 6.500.000/bulan, Saldo Cuti 3 hari, Kontrak Berakhir 25 Okt 2026), tombol Lihat Detail Lengkap — VLM verified.
+  - Tab transitions: smooth fade-in pada tabpanel.
+  - Focus visible: outline primary untuk keyboard nav.
+  - Tidak ada regresi.
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error.
+- **Runtime**: 0 errors, dev.log bersih.
+
+## Status Akhir
+
+JURI HR v1.0 — 18 modul + enhanced search + notification generator + print stylesheet + skeleton charts + employee quick-view popover + smooth transitions.
