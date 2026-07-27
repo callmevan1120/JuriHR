@@ -63,7 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Data Karyawan",
         icon: Users,
         phase: 2,
-        available: false,
+        available: true,
         description:
           "Kelola data karyawan lengkap: NIK, posisi, divisi, outlet, gaji, kontrak, saldo cuti, dan histori perubahan.",
       },
@@ -72,24 +72,24 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Outlet",
         icon: Building2,
         phase: 2,
-        available: false,
+        available: true,
         description:
           "Master outlet dengan geofence, kepala outlet, jumlah karyawan, dan rata-rata jarak domisili.",
       },
       {
         path: "#/posisi",
-        label: "Posisi",
+        label: "Posisi & Divisi",
         icon: Briefcase,
         phase: 2,
-        available: false,
-        description: "Master posisi/jabatan beserta kategori OUTLET atau NON_OUTLET.",
+        available: true,
+        description: "Master posisi/jabatan & divisi beserta kategori OUTLET atau NON_OUTLET.",
       },
       {
         path: "#/domisili",
         label: "Domisili & Peta",
         icon: MapPin,
         phase: 2,
-        available: false,
+        available: true,
         description:
           "Peta domisili karyawan dengan Leaflet & OpenStreetMap, address search, map picker, dan estimasi jarak ke outlet.",
       },
@@ -98,7 +98,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Kontrak",
         icon: FileText,
         phase: 2,
-        available: false,
+        available: true,
         description:
           "Manajemen kontrak & monitoring jatuh tempo (90/60/30/14/7/3 hari) dengan histori perpanjangan.",
       },
