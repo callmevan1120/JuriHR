@@ -14,6 +14,9 @@ import { ShiftTemplatesView } from "@/components/views/shift-templates-view";
 import { ShiftGroupsView } from "@/components/views/shift-groups-view";
 import { ScheduleView } from "@/components/views/schedule-view";
 import { HolidayView } from "@/components/views/holiday-view";
+import { AttendanceView } from "@/components/views/attendance-view";
+import { LeaveView } from "@/components/views/leave-view";
+import { OvertimeView } from "@/components/views/overtime-view";
 
 // DomicileView memakai Leaflet (akses `window` saat import) → client-only.
 const DomicileView = dynamic(
@@ -32,6 +35,9 @@ const VIEWS: Record<string, React.ComponentType> = {
   "#/shift-group": ShiftGroupsView,
   "#/jadwal": ScheduleView,
   "#/libur": HolidayView,
+  "#/absensi": AttendanceView,
+  "#/cuti": LeaveView,
+  "#/lembur": OvertimeView,
 };
 
 export function RouteView() {

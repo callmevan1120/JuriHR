@@ -5,8 +5,9 @@
 **Fase 1 — Fondasi & Design System: SELESAI** ✅
 **Fase 2 — Core HR & Master Data: SELESAI** ✅
 **Fase 3 — Shift, Jadwal, dan Hari Libur: SELESAI** ✅
+**Fase 4 — Absensi, Cuti, dan Lembur: SELESAI** ✅
 
-Aplikasi JURI HR berhasil dibangun hingga Fase 3. Modul penjadwalan lengkap (Shift Template, Shift Group, Kalender Jadwal harian/mingguan/bulanan, Pengajuan & Tukar Shift, Holiday Group dengan override) berfungsi penuh dengan deteksi konflik, generate dari shift group, copy minggu, lock periode, dan preview dampak. Aplikasi berjalan tanpa error TypeScript/build/runtime. Menunggu persetujuan user sebelum melanjutkan ke Fase 4.
+Aplikasi JURI HR berhasil dibangun hingga Fase 4. Modul kehadiran & lembur lengkap (Absensi dengan input individual/massal + rekap harian/bulanan + potongan Rp7000, Cuti/Izin/Sakit dengan saldo otomatis + anti-tabrakan + approval, Lembur dengan Planning + Actual + verifikasi + deteksi anomali) berfungsi penuh. Aplikasi berjalan tanpa error TypeScript/build/runtime. Menunggu persetujuan user sebelum melanjutkan ke Fase 5.
 
 ---
 
@@ -187,6 +188,57 @@ Stage Summary:
 - Service layer siap di-extend: tambah `attendanceService.ts`, `leaveService.ts`, `overtimeService.ts` dengan deteksi anomali.
 - `scheduleService.detectConflicts` sudah ada — dapat dipakai ulang di modul absensi/lembur Fase 4.
 - `holidayService.isHolidayForEmployee` sudah ada — siap dipakai untuk menandai absensi LIBUR/PH di Fase 4.
+
+## Catatan Arsitektur (untuk integrasi backend nyata)
+
+- `src/lib/data/store.ts` = central data service (in-memory). `src/lib/services/*` = dummy API (pure functions).
+- Untuk integrasi backend: ganti isi service layer dengan `fetch()` ke API nyata; hook `useStore` diganti dengan TanStack Query hooks. Signature service tetap sama → UI tidak perlu berubah.
+- Prisma + SQLite tersedia (`src/lib/db.ts`) bila ingin persistensi, namun prototype Fase 1 memakai in-memory store sesuai prinsip "central data service, bukan localStorage".
+
+---
+
+## Task ID: FASE-4
+Agent: Z.ai Code (webDevReview cron)
+Task: QA Fase 3 + Membangun Fase 4 — Absensi, Cuti, dan Lembur
+
+Work Log:
+- **QA Fase 3**: verifikasi schedule view stabil, dev.log bersih, lint 0 error. Fase 3 dinilai stabil → lanjut Fase 4.
+- **Service layer** `src/lib/services/workforce.ts`: 
+  - `attendanceService`: upsert (dengan computeDeduction Rp7000 untuk >5 menit), bulkUpsert, remove, dailyRecap, monthlyRecap, byPeriod. Ekspor konstanta `LATE_TOLERANCE_MINUTES=5` & `LATE_DEDUCTION_RUPIAH=7000`.
+  - `leaveService`: create, update, approve (kurangi saldo cuti otomatis untuk tipe CUTI), reject, cancelApproved (kembalikan saldo), checkConflict (anti-tabrakan dengan PENDING/APPROVED), leaveDays.
+  - `overtimeService`: createPlanning/update/approve/reject, upsertActual (hitung planningDiff & estimatedNominal otomatis), verifyActual, anomalies (6 jenis: TANPA_PLANNING, MELEBIHI_PLANNING, BELUM_DIISI, BELUM_DIVERIFIKASI, KONFLIK_CUTI, KONFLIK_LIBUR), verifiedOvertimeAmount (untuk payroll).
+- **Router** `routes.ts`: modul Fase 4 (Absensi, Cuti, Lembur) ditandai `available: true`. `route-view.tsx` registrasi 3 view baru.
+- **Modul Absensi** (`attendance-view.tsx`): 3 tab.
+  - **Harian**: 8 recap card (Hadir/Terlambat/Tidak Hadir/Cuti/Izin/Sakit/Libur/PH), navigasi tanggal + date picker, filter outlet/status, list karyawan dengan status badge + late minutes + potongan, edit dialog (status, check-in/out, menit terlambat dengan info potongan real-time, catatan), hapus, input massal (multi-select karyawan + status + menit terlambat), export CSV. Info aturan demo (≤5m tidak dipotong, >5m Rp7000).
+  - **Bulanan**: period selector (month), summary badges (Hadir/Telat/TH/Potongan total), DataTable per karyawan (Hadir/Terlat/TH/Cuti/Izin/Sakit/Libur/PH/Total Telat/Potongan).
+  - **Rekap & Laporan**: range tanggal + filter outlet, tabel rekap per karyawan dengan total, export CSV.
+- **Modul Cuti/Izin/Sakit** (`leave-view.tsx`): filter status (Semua/Pending/Approved/Rejected/Cancelled), card per pengajuan dengan tipe badge (Cuti/Izin/Sakit), durasi hari, alasan, lampiran, deteksi konflik real-time, saldo info. Create dialog dengan: karyawan, tipe, range tanggal, alasan, lampiran, info saldo (cukup/tidak cukup), deteksi konflik. Review dialog dengan info saldo sebelum/sesudah, approve (kurangi saldo) / reject. Cancel approved (kembalikan saldo). Info aturan (saldo otomatis, anti-tabrakan). Export CSV.
+- **Modul Lembur** (`overtime-view.tsx`): 3 tab.
+  - **Planning**: filter status, card per planning (requestNo, kategori, tanggal, jam, durasi, karyawan count, outlet/divisi, PJ, actual summary), create dialog (kategori outlet/non-outlet, outlet/divisi, shift/tim, multi-select karyawan, tanggal, jam, durasi otomatis, alasan, pekerjaan, PJ), review dialog (approve/reject).
+  - **Actual & Verifikasi**: filter (Semua/Terverifikasi/Belum Diverifikasi/Belum Diisi), total terverifikasi badge, card per actual (karyawan, tanggal, actual start/end, durasi, planning ref, nominal, selisih planning, hasil pekerjaan), tombol Verifikasi/Tolak untuk status DIISI, edit/isi actual dialog (actual start/end, durasi & nominal otomatis, hasil, bukti, rate, alasan selisih).
+  - **Anomali**: 3 severity card (High/Medium/Low), type filter (6 jenis), list anomali dengan karyawan + deskripsi + tanggal + link ke modul. Deteksi otomatis: tanpa planning, melebihi planning (>20%), belum diisi (planning approved lewat tanggal), belum diverifikasi, konflik cuti, konflik libur.
+
+Stage Summary:
+- **Verifikasi end-to-end via Agent Browser + VLM**:
+  - Semua 3 modul Fase 4 + dashboard dapat diakses (judul halaman benar).
+  - Absensi Harian: 8 recap card, navigasi tanggal, list karyawan dengan status — VLM verified clean.
+  - Edit absensi: dialog dengan info potongan "Rp7.000 (≤5m tidak dipotong)".
+  - Absensi Bulanan: summary badges (Hadir 166, Telat 54, Potongan Rp 378.000), DataTable per karyawan — VLM verified.
+  - Cuti: 3 pending → approve → Disetujui naik ke 3 (saldo otomatis berkurang, review dialog tampilkan "sisa X hari").
+  - Lembur Anomali: severity cards (High 1, Medium 3, Low/Info 1), type filter, anomaly list — VLM verified.
+  - Lembur Actual: verifikasi actual → Terverifikasi naik 2→3. Total terverifikasi badge.
+  - Dashboard tidak ada regresi (Fase 1-3 tetap stabil).
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error pada kode JURI HR.
+- **Runtime**: tidak ada error di dev.log.
+
+## Isu / Risiko & Rekomendasi Fase Berikutnya
+
+- **Prioritas Fase 5**: Payroll Preview (gaji dasar + PH + lembur terverifikasi + adjustment + potongan keterlambatan/ketidakhadiran, status Draft/Reviewed/Finalized, export CSV/Excel/PDF), Notification Center (kategori, badge, filter, mark read, deep link), Laporan (multi-modul dengan filter periode/outlet/divisi, summary card, grafik, tabel, print/export), Audit Log (aktor, waktu, modul, aksi, before/after).
+- Data Fase 5 sudah tersedia di seed (payrolls, notifications, auditLogs) — siap dipakai.
+- Service layer siap di-extend: `payrollService` (generate preview baca dari attendance + overtime verified), `notificationService`, `reportService`.
+- `attendanceService.dailyRecap/monthlyRecap` + `overtimeService.verifiedOvertimeAmount` + `leaveService` sudah siap dipakai payroll Fase 5.
+- `overtimeService.anomalies()` terhubung ke dashboard "Lembur Menunggu Review" — konsistensi terjaga.
 
 ## Catatan Arsitektur (untuk integrasi backend nyata)
 

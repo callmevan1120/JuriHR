@@ -150,7 +150,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Absensi",
         icon: ClipboardCheck,
         phase: 4,
-        available: false,
+        available: true,
         description: "Rekap absensi harian/bulanan dengan potongan keterlambatan otomatis.",
       },
       {
@@ -158,7 +158,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Cuti / Izin / Sakit",
         icon: Palmtree,
         phase: 4,
-        available: false,
+        available: true,
         description: "Pengajuan cuti, izin, dan sakit dengan pengurangan saldo otomatis.",
       },
       {
@@ -166,7 +166,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Lembur",
         icon: Clock,
         phase: 4,
-        available: false,
+        available: true,
         description: "Planning & actual lembur dengan deteksi anomali dan verifikasi.",
       },
     ],
