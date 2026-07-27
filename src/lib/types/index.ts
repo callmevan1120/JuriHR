@@ -258,6 +258,75 @@ export interface HolidayGroup {
 }
 
 // ------------------------------------------------------------
+// Pengajuan & Tukar Shift
+// ------------------------------------------------------------
+
+export type ShiftSwapType =
+  | "TUKAR_DUA_KARYAWAN" // dua karyawan bertukar shift
+  | "PINDAH_SATU_KARYAWAN" // pemindahan satu karyawan ke shift lain
+  | "PERTUKARAN_HARI_KERJA" // pertukaran hari kerja
+  | "ANTAR_OUTLET"; // pertukaran antar outlet
+
+export type ShiftSwapStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
+
+export interface ShiftSwapRequest {
+  id: string;
+  requestNo: string;
+  type: ShiftSwapType;
+  /** Karyawan pengaju. */
+  requesterId: string;
+  /** Untuk TUKAR_DUA_KARYAWAN: karyawan lawan tukar. */
+  counterpartId?: string;
+  /** Tanggal sumber (milik requester). */
+  sourceDate: ISODate;
+  sourceShiftTemplateId?: string;
+  sourceOutletId?: string;
+  /** Tanggal target (milik counterpart atau target baru). */
+  targetDate: ISODate;
+  targetShiftTemplateId?: string;
+  targetOutletId?: string;
+  reason: string;
+  status: ShiftSwapStatus;
+  approverId?: string;
+  approvalNote?: string;
+  originalSubmitterId: string;
+  /** Preview dampak (computed, bukan persisten). */
+  createdAt: ISODate;
+  updatedAt: ISODate;
+}
+
+// ------------------------------------------------------------
+// Holiday Override (Tukar Libur / Workday Override)
+// ------------------------------------------------------------
+
+export type HolidayOverrideType =
+  | "HOLIDAY_SWAP" // karyawan bekerja di hari libur & mengganti ke hari lain
+  | "WORKDAY_OVERRIDE" // hari kerja di-override menjadi libur untuk karyawan tertentu
+  | "ADDITIONAL_HOLIDAY" // libur tambahan khusus karyawan
+  | "CANCELLED_HOLIDAY" // libur dibatalkan untuk karyawan tertentu
+  | "EMPLOYEE_SPECIFIC"; // override khusus per karyawan
+
+export interface HolidayOverride {
+  id: string;
+  holidayGroupId: string;
+  type: HolidayOverrideType;
+  /** Karyawan yang terdampak (kosong = seluruh anggota grup). */
+  employeeIds: string[];
+  /** Tanggal libur asli (untuk HOLIDAY_SWAP / CANCELLED_HOLIDAY). */
+  originalHolidayDate?: ISODate;
+  /** Tanggal pengganti (untuk HOLIDAY_SWAP / WORKDAY_OVERRIDE / ADDITIONAL_HOLIDAY). */
+  replacementDate?: ISODate;
+  reason: string;
+  status: RecordStatus;
+  createdAt: ISODate;
+  updatedAt: ISODate;
+}
+
+// ------------------------------------------------------------
 // Absensi
 // ------------------------------------------------------------
 

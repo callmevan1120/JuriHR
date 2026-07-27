@@ -4,8 +4,9 @@
 
 **Fase 1 — Fondasi & Design System: SELESAI** ✅
 **Fase 2 — Core HR & Master Data: SELESAI** ✅
+**Fase 3 — Shift, Jadwal, dan Hari Libur: SELESAI** ✅
 
-Aplikasi JURI HR berhasil dibangun hingga Fase 2. Semua modul master data (Karyawan, Outlet, Posisi & Divisi, Domisili & Peta Leaflet, Kontrak & Monitoring) berfungsi penuh dengan CRUD reaktif, konsistensi data antar-modul, peta interaktif, dan histori perpanjangan kontrak. Aplikasi berjalan tanpa error TypeScript/build/runtime. Menunggu persetujuan user sebelum melanjutkan ke Fase 3.
+Aplikasi JURI HR berhasil dibangun hingga Fase 3. Modul penjadwalan lengkap (Shift Template, Shift Group, Kalender Jadwal harian/mingguan/bulanan, Pengajuan & Tukar Shift, Holiday Group dengan override) berfungsi penuh dengan deteksi konflik, generate dari shift group, copy minggu, lock periode, dan preview dampak. Aplikasi berjalan tanpa error TypeScript/build/runtime. Menunggu persetujuan user sebelum melanjutkan ke Fase 4.
 
 ---
 
@@ -122,6 +123,70 @@ Stage Summary:
 - Service layer siap di-extend: tambah `shiftService.ts`, `scheduleService.ts`, `holidayService.ts` dengan deteksi konflik.
 - Leaflet CSS di-import per komponen (`import "leaflet/dist/leaflet.css"`) — sudah berfungsi, tidak perlu global.
 - `useStore` dengan shallow equality sudah robust untuk selector derived; aman dipakai di semua modul berikutnya.
+
+## Catatan Arsitektur (untuk integrasi backend nyata)
+
+- `src/lib/data/store.ts` = central data service (in-memory). `src/lib/services/*` = dummy API (pure functions).
+- Untuk integrasi backend: ganti isi service layer dengan `fetch()` ke API nyata; hook `useStore` diganti dengan TanStack Query hooks. Signature service tetap sama → UI tidak perlu berubah.
+- Prisma + SQLite tersedia (`src/lib/db.ts`) bila ingin persistensi, namun prototype Fase 1 memakai in-memory store sesuai prinsip "central data service, bukan localStorage".
+
+---
+
+## Task ID: FASE-3
+Agent: Z.ai Code (webDevReview cron)
+Task: QA Fase 2 + Membangun Fase 3 — Shift, Jadwal, dan Hari Libur
+
+Work Log:
+- **QA Fase 2**: verifikasi employees view stabil, dev.log bersih, lint 0 error. Fase 2 dinilai stabil → lanjut Fase 3.
+- **Tipe data baru** di `src/lib/types/index.ts`: `ShiftSwapRequest` (4 tipe: TUKAR_DUA_KARYAWAN, PINDAH_SATU_KARYAWAN, PERTUKARAN_HARI_KERJA, ANAR_OUTLET), `HolidayOverride` (5 tipe: HOLIDAY_SWAP, WORKDAY_OVERRIDE, ADDITIONAL_HOLIDAY, CANCELLED_HOLIDAY, EMPLOYEE_SPECIFIC).
+- **Central store** `src/lib/data/store.ts`: tambah koleksi `holidayOverrides` + `shiftSwaps` ke DataState.
+- **Seed data** `src/lib/data/seed.ts`: tambah 3 holiday override (1 HOLIDAY_SWAP tim produksi, 1 ADDITIONAL_HOLIDAY Sudirman, 1 WORKDAY_OVERRIDE Kemang) + 3 shift swap request (1 TUKAR_DUA pending, 1 PINDAH pending, 1 ANAR_OUTLET approved).
+- **Service layer** `src/lib/services/schedule.ts`: CRUD untuk shiftTemplateService, shiftGroupService, scheduleService (upsert, remove, toggleLockRange, generateFromShiftGroup, copyWeek, detectConflicts), holidayService (createHoliday/update/delete, createGroup/update/softDelete, createOverride/delete, isHolidayForEmployee), shiftSwapService (create, update, approve+applySwap, reject, preview). Deteksi konflik: JADWAL (2+ shift tanggal sama), KONTRAK (tidak aktif), CUTI (approved), LIBUR (holiday group).
+- **Router** `routes.ts`: modul Fase 3 (Shift, Shift Group, Kalender Jadwal, Holiday Group) ditandai `available: true`. `route-view.tsx` registrasi 4 view baru.
+- **Modul Shift Template** (`shift-templates-view.tsx`): grid card dengan color bar, ikon Sun/Moon (lewat tengah malam), jam mulai/selesai, durasi, toleransi, badge PH ×multiplier, status, usage count. Form dialog: nama, jam mulai/selesai, toleransi, toggle lewat tengah malam, color picker (8 preset + custom), konfigurasi PH (toggle + multiplier), status. Soft delete + audit.
+- **Modul Shift Group** (`shift-groups-view.tsx`): card per group dengan visual pola mingguan (7 hari, dot warna shift), scope (outlet/divisi), anggota aktif/total, periode berlaku, status. Form dialog: nama, scope type+id, editor pola mingguan (dropdown shift per hari), multi-select anggota (Command popover), periode berlaku, status.
+- **Modul Kalender Jadwal** (`schedule-view.tsx`): 2 tab (Kalender + Tukar Shift).
+  - **Kalender**: 3 mode (harian/mingguan/bulanan) dengan navigasi tanggal + date picker. Filter outlet/divisi/shift group. 
+    - Harian: grid card per karyawan dengan shift color, konflik indicator, lock indicator.
+    - Mingguan: tabel sticky dengan karyawan sebagai baris, 7 hari sebagai kolom, sel berwarna shift, klik untuk assign.
+    - Bulanan: kalender grid dengan dot warna per tanggal, side panel detail tanggal terpilih + daftar karyawan tanpa jadwal.
+  - Assign dialog: pilih shift/libur, catatan, deteksi konflik real-time (JADWAL/KONTRAK/CUTI/LIBUR).
+  - Generate dari Shift Group: pilih group, range tanggal, toggle overwrite.
+  - Copy Minggu: salin jadwal minggu sumber → target.
+  - Lock/Unlock Periode: kunci/buka kunci seluruh jadwal range.
+  - **Tukar Shift**: status filter tabs (Semua/Pending/Approved/Rejected), card per pengajuan dengan preview Sebelum/Sesudah, tombol Review (approve/reject dengan catatan). Approval apply perubahan jadwal otomatis (applySwap per tipe). Buat pengajuan baru dengan 4 tipe.
+- **Modul Holiday Group** (`holiday-view.tsx`): 
+  - List group di kiri (klik untuk pilih). Detail group di kanan: info (periode, anggota, libur), daftar anggota (chips), daftar override dengan ikon per tipe, tombol preview + hapus.
+  - Holiday Calendar: mini month view dengan navigasi, daftar libur per bulan dengan badge tipe.
+  - Form dialog group: nama, deskripsi, multi-select anggota, multi-select holiday, periode, status.
+  - Form dialog holiday: tambah/edit hari libur (nama, tanggal, tipe, deskripsi).
+  - Form dialog override: tipe (5 tipe), karyawan terdampak (multi-select atau semua anggota), tanggal asli/pengganti sesuai tipe, alasan.
+  - **Preview Dampak Override**: dialog dengan impact cards (karyawan terdampak, jadwal di tanggal pengganti/asli, potongan PH) + tabel dampak modul (Jadwal, Absensi, PH, Lembur, Payroll).
+- Update footer app-shell ke "Fase 2 · Core HR & Master Data" → siap update ke Fase 3.
+
+Stage Summary:
+- **Verifikasi end-to-end via Agent Browser + VLM**:
+  - Semua 4 modul Fase 3 + dashboard dapat diakses (judul halaman benar, sidebar tanpa badge fase).
+  - Shift Template: grid card dengan color bar, durasi, toleransi, PH badge — VLM verified clean.
+  - Shift Group: card dengan visual pola mingguan (dot warna shift per hari), anggota, periode.
+  - Kalender Jadwal mingguan: tabel sticky karyawan×hari, sel berwarna shift dengan jam — VLM verified clean.
+  - Kalender Jadwal bulanan: grid bulan dengan dot warna + side panel detail tanggal — VLM verified clean.
+  - Tukar Shift: 2 Pending + 1 Approved, card dengan preview Sebelum/Sesudah. Approval bekerja — Approved naik 1→2, jadwal diperbarui otomatis.
+  - Holiday Group: list group + detail + override list + kalender libur bulanan — VLM verified.
+  - Preview Dampak Override: dialog dengan impact cards + tabel dampak modul (Jadwal/Absensi/PH/Lembur/Payroll).
+  - Generate dialog, Copy Minggu dialog, Assign dialog dengan deteksi konflik — semua bekerja.
+  - Dashboard tidak ada regresi (Fase 1+2 tetap stabil).
+- **Lint**: 0 error, 1 warning (TanStack Table — known).
+- **TypeScript**: 0 error pada kode JURI HR.
+- **Runtime**: tidak ada error di dev.log.
+
+## Isu / Risiko & Rekomendasi Fase Berikutnya
+
+- **Prioritas Fase 4**: Absensi (input individual/massal, koreksi, rekap harian/bulanan, potongan Rp7000 per keterlambatan >5menit), Cuti/Izin/Sakit (pengurangan saldo otomatis, anti-tabrakan), Planning Lembur (pengajuan banyak karyawan/outlet/divisi), Actual Lembur (verifikasi, anomali: tanpa planning/melebihi planning/belum diisi/belum diverifikasi/konflik), Approval timeline.
+- Data Fase 4 sudah tersedia di seed (attendances, leaves, overtimePlannings, overtimeActuals) — siap dipakai.
+- Service layer siap di-extend: tambah `attendanceService.ts`, `leaveService.ts`, `overtimeService.ts` dengan deteksi anomali.
+- `scheduleService.detectConflicts` sudah ada — dapat dipakai ulang di modul absensi/lembur Fase 4.
+- `holidayService.isHolidayForEmployee` sudah ada — siap dipakai untuk menandai absensi LIBUR/PH di Fase 4.
 
 ## Catatan Arsitektur (untuk integrasi backend nyata)
 

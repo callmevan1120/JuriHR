@@ -112,7 +112,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Shift Template",
         icon: CalendarClock,
         phase: 3,
-        available: false,
+        available: true,
         description: "Template shift dengan toleransi keterlambatan dan konfigurasi PH.",
       },
       {
@@ -120,7 +120,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Shift Group",
         icon: CalendarDays,
         phase: 3,
-        available: false,
+        available: true,
         description: "Pola shift mingguan per outlet/divisi beserta anggota.",
       },
       {
@@ -128,7 +128,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Kalender Jadwal",
         icon: CalendarRange,
         phase: 3,
-        available: false,
+        available: true,
         description:
           "Kalender jadwal harian/mingguan/bulanan dengan jadwal massal, copy minggu, dan deteksi konflik.",
       },
@@ -137,7 +137,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Holiday Group",
         icon: PartyPopper,
         phase: 3,
-        available: false,
+        available: true,
         description: "Kelola hari libur, holiday swap, dan workday override.",
       },
     ],

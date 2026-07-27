@@ -15,6 +15,7 @@ import type {
   Employee,
   Holiday,
   HolidayGroup,
+  HolidayOverride,
   Leave,
   OvertimeActual,
   OvertimePlanning,
@@ -23,6 +24,7 @@ import type {
   Position,
   Schedule,
   ShiftGroup,
+  ShiftSwapRequest,
   ShiftTemplate,
 } from "@/lib/types";
 
@@ -38,6 +40,8 @@ export interface DataState {
   schedules: Schedule[];
   holidays: Holiday[];
   holidayGroups: HolidayGroup[];
+  holidayOverrides: HolidayOverride[];
+  shiftSwaps: ShiftSwapRequest[];
   attendances: Attendance[];
   leaves: Leave[];
   overtimePlannings: OvertimePlanning[];
@@ -64,6 +68,8 @@ function createInitialState(): DataState {
     schedules: seed.schedules,
     holidays: seed.holidays,
     holidayGroups: seed.holidayGroups,
+    holidayOverrides: seed.holidayOverrides,
+    shiftSwaps: seed.shiftSwaps,
     attendances: seed.attendances,
     leaves: seed.leaves,
     overtimePlannings: seed.overtimePlannings,

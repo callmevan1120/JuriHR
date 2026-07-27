@@ -16,6 +16,7 @@ import type {
   Employee,
   Holiday,
   HolidayGroup,
+  HolidayOverride,
   Leave,
   OvertimeActual,
   OvertimePlanning,
@@ -24,6 +25,7 @@ import type {
   Position,
   Schedule,
   ShiftGroup,
+  ShiftSwapRequest,
   ShiftTemplate,
 } from "@/lib/types";
 import {
@@ -1338,3 +1340,108 @@ export const auditLogs: AuditLog[] = [
     createdAt: TODAY,
   },
 ];
+
+// ------------------------------------------------------------
+// Holiday Overrides (Tukar Libur / Workday Override)
+// ------------------------------------------------------------
+export const holidayOverrides: HolidayOverride[] = [
+  {
+    id: "hov-1",
+    holidayGroupId: "hg-produksi",
+    type: "HOLIDAY_SWAP",
+    employeeIds: [], // seluruh anggota grup produksi
+    originalHolidayDate: holidays.find((h) => h.id === "hol-isra-miraj")?.date ?? addDaysISO(TODAY, -8),
+    replacementDate: addDaysISO(TODAY, 14),
+    reason: "Tim produksi bekerja pada Isra Mikraj & mengganti libur ke Sabtu berikutnya.",
+    status: "active",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "hov-2",
+    holidayGroupId: "hg-all",
+    type: "ADDITIONAL_HOLIDAY",
+    employeeIds: employees.filter((e) => e.primaryOutletId === "out-sudirman").slice(0, 2).map((e) => e.id),
+    replacementDate: addDaysISO(TODAY, 10),
+    reason: "Libur tambahan untuk karyawan Sudirman setelah event besar.",
+    status: "active",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "hov-3",
+    holidayGroupId: "hg-all",
+    type: "WORKDAY_OVERRIDE",
+    employeeIds: employees.filter((e) => e.primaryOutletId === "out-kemang").slice(0, 1).map((e) => e.id),
+    replacementDate: addDaysISO(TODAY, 5),
+    reason: "Override hari kerja menjadi libur untuk keperluan pribadi disetujui.",
+    status: "active",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+];
+
+// ------------------------------------------------------------
+// Shift Swap Requests (Pengajuan & Tukar Shift)
+// ------------------------------------------------------------
+const outletEmpFirst = (outletId: string) =>
+  employees.find((e) => e.primaryOutletId === outletId && e.status === "AKTIF");
+
+const _shiftSwaps: ShiftSwapRequest[] = [
+  {
+    id: "swap-1",
+    requestNo: `SWP/${TODAY.slice(0, 4)}/001`,
+    type: "TUKAR_DUA_KARYAWAN",
+    requesterId: outletEmpFirst("out-sudirman")?.id ?? "",
+    counterpartId: outletEmpFirst("out-sudirman")?.id ? employees.filter((e) => e.primaryOutletId === "out-sudirman" && e.status === "AKTIF")[1]?.id : undefined,
+    sourceDate: addDaysISO(TODAY, 2),
+    sourceShiftTemplateId: "shift-pagi",
+    sourceOutletId: "out-sudirman",
+    targetDate: addDaysISO(TODAY, 3),
+    targetShiftTemplateId: "shift-siang",
+    targetOutletId: "out-sudirman",
+    reason: "Keperluan keluarga — bertukar shift pagi/siang.",
+    status: "PENDING",
+    originalSubmitterId: hrdStaff?.id ?? "",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "swap-2",
+    requestNo: `SWP/${TODAY.slice(0, 4)}/002`,
+    type: "PINDAH_SATU_KARYAWAN",
+    requesterId: outletEmpFirst("out-kemang")?.id ?? "",
+    sourceDate: addDaysISO(TODAY, 4),
+    sourceShiftTemplateId: "shift-pagi",
+    sourceOutletId: "out-kemang",
+    targetDate: addDaysISO(TODAY, 4),
+    targetShiftTemplateId: "shift-siang",
+    targetOutletId: "out-kemang",
+    reason: "Pindah shift siang karena ada urusan pagi.",
+    status: "PENDING",
+    originalSubmitterId: hrdStaff?.id ?? "",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "swap-3",
+    requestNo: `SWP/${TODAY.slice(0, 4)}/003`,
+    type: "ANTAR_OUTLET",
+    requesterId: outletEmpFirst("out-pondok-indah")?.id ?? "",
+    counterpartId: outletEmpFirst("out-bekasi")?.id ?? "",
+    sourceDate: addDaysISO(TODAY, 5),
+    sourceShiftTemplateId: "shift-pagi",
+    sourceOutletId: "out-pondok-indah",
+    targetDate: addDaysISO(TODAY, 5),
+    targetShiftTemplateId: "shift-pagi",
+    targetOutletId: "out-bekasi",
+    reason: "Pertukaran antar outlet untuk rotasi.",
+    status: "APPROVED",
+    approverId: hrdStaff?.id,
+    approvalNote: "Disetujui — rotasi antar outlet.",
+    originalSubmitterId: hrdStaff?.id ?? "",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+];
+export const shiftSwaps: ShiftSwapRequest[] = _shiftSwaps.filter((s) => s.requesterId !== "");
