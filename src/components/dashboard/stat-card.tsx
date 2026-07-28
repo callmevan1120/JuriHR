@@ -43,7 +43,7 @@ export function StatCard({
   return (
     <Card
       className={cn(
-        "group relative gap-0 overflow-hidden border-border bg-card p-4 shadow-soft transition-all",
+        "group relative gap-0 overflow-hidden border-border bg-card p-4 shadow-soft transition-all h-full flex flex-col justify-between",
         clickable &&
           "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-soft-md",
       )}
