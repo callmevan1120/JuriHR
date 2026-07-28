@@ -38,6 +38,7 @@ import {
   Calendar,
   KeyRound,
   PlusCircle,
+  Navigation,
 } from "lucide-react";
 
 interface Props {
@@ -80,11 +81,13 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [accountNumber, setAccountNumber] = React.useState(data?.accountNumber ?? "");
   const [accountHolderName, setAccountHolderName] = React.useState(data?.accountHolderName ?? "");
   
-  // Kontrak & Domisili
+  // Kontrak & Domisili + Koordinat LU/LT (Lintang & Bujur)
   const [contractType, setContractType] = React.useState(data?.contractType ?? "PKWT");
   const [contractDurationMonths, setContractDurationMonths] = React.useState(String(data?.contractDurationMonths ?? 12));
   const [homeAddress, setHomeAddress] = React.useState(data?.homeAddress ?? "");
   const [mapsUrl, setMapsUrl] = React.useState(data?.mapsUrl ?? "");
+  const [latitude, setLatitude] = React.useState(String(data?.latitude ?? -6.2088));
+  const [longitude, setLongitude] = React.useState(String(data?.longitude ?? 106.8456));
 
   const [error, setError] = React.useState<string>();
 
@@ -127,8 +130,21 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setContractDurationMonths(String(data?.contractDurationMonths ?? 12));
     setHomeAddress(data?.homeAddress ?? "");
     setMapsUrl(data?.mapsUrl ?? "");
+    setLatitude(String(data?.latitude ?? -6.2088));
+    setLongitude(String(data?.longitude ?? 106.8456));
     setError(undefined);
   }, [open, data]);
+
+  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput
+  const handleMapsUrlChange = (url: string) => {
+    setMapsUrl(url);
+    const match = url.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if (match) {
+      setLatitude(match[1]);
+      setLongitude(match[2]);
+      toast.info(`Koordinat terdeteksi dari Link: Lat ${match[1]}, Lon ${match[2]}`);
+    }
+  };
 
   const filteredPositions = positions.filter((p) => p.status === "active");
   const filteredDivisions = divisions.filter((d) => d.status === "active");
@@ -167,6 +183,15 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       return;
     }
 
+    const latNum = Number(latitude) || -6.2088;
+    const lonNum = Number(longitude) || 106.8456;
+
+    // Generasi link maps otomatis bila link kosong tapi lat/lon diisi
+    let finalMapsUrl = mapsUrl.trim();
+    if (!finalMapsUrl && (latitude || longitude)) {
+      finalMapsUrl = `https://maps.google.com/?q=${latNum},${lonNum}`;
+    }
+
     const payload: Partial<Employee> = {
       nik: nik.trim(),
       fullName: fullName.trim(),
@@ -192,7 +217,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       contractType,
       contractDurationMonths: Number(contractDurationMonths) || 12,
       homeAddress: homeAddress.trim() || undefined,
-      mapsUrl: mapsUrl.trim() || undefined,
+      mapsUrl: finalMapsUrl || undefined,
+      latitude: latNum,
+      longitude: lonNum,
     };
 
     if (mode === "edit" && data) {
@@ -214,7 +241,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             {mode === "edit" ? "Edit Data Karyawan" : "Tambah Karyawan Baru"}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Lengkapi data diri, kategori penempatan, tanggal lahir (login v2), rekening bank, serta detail kontrak kerja.
+            Lengkapi data diri, kategori penempatan, tanggal lahir (login v2), rekening bank, serta detail koordinat domisili.
           </DialogDescription>
         </DialogHeader>
 
@@ -270,7 +297,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
               </Field>
             </FormRow>
 
-            {/* Dropdown Penempatan Outlet HANYA MUNCUL jika Kategori = OUTLET */}
             {category === "OUTLET" ? (
               <Field label="Penempatan Outlet" required hint="Pilih lokasi cabang outlet JURI Bun">
                 <Select value={primaryOutletId} onValueChange={setPrimaryOutletId}>
@@ -402,7 +428,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </Select>
               </Field>
 
-              {/* Input Bank Custom jika HR memilih Custom Bank */}
               {selectedBank === "CUSTOM" ? (
                 <Field label="Tulis Nama Bank Baru" required hint="Nama bank kustom yang akan disimpan">
                   <Input
@@ -496,11 +521,12 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 5: Domisili & Peta Lokasi */}
-          <section className="space-y-3">
+          {/* Section 5: Domisili & Peta Lokasi + Koordinat LU / LT (Seperti Data Outlet) */}
+          <section className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Peta Rumah
+              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Koordinat (LU / LT)
             </h3>
+
             <Field label="Alamat Rumah Lengkap">
               <Textarea
                 value={homeAddress}
@@ -509,13 +535,44 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 placeholder="Jl. Raya Kemerdekaan No. 12, RT 01/RW 02..."
               />
             </Field>
-            <Field label="Link Google Maps / Koordinat Peta">
+
+            <Field label="Link Google Maps" hint="Tempel link Maps untuk mengekstrak koordinat otomatis">
               <Input
                 value={mapsUrl}
-                onChange={(e) => setMapsUrl(e.target.value)}
-                placeholder="https://maps.google.com/?q=-6.195,106.823"
+                onChange={(e) => handleMapsUrlChange(e.target.value)}
+                placeholder="https://maps.google.com/?q=-6.1953,106.8231"
               />
             </Field>
+
+            <FormRow>
+              <Field label="Latitude (LU / Lintang)" hint="Derajat Lintang Selatan (-6.xxxx)">
+                <div className="relative">
+                  <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    step="any"
+                    value={latitude}
+                    onChange={(e) => setLatitude(e.target.value)}
+                    placeholder="-6.2088"
+                    className="pl-8 font-mono tabular-nums text-xs"
+                  />
+                </div>
+              </Field>
+
+              <Field label="Longitude (LT / Bujur)" hint="Derajat Bujur Timur (106.xxxx)">
+                <div className="relative">
+                  <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    step="any"
+                    value={longitude}
+                    onChange={(e) => setLongitude(e.target.value)}
+                    placeholder="106.8456"
+                    className="pl-8 font-mono tabular-nums text-xs"
+                  />
+                </div>
+              </Field>
+            </FormRow>
           </section>
 
           {/* Section 6: Shift & Libur & Catatan */}

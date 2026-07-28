@@ -349,6 +349,18 @@ function ProfilTab({ employee }: { employee: Employee }) {
             <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
             <InfoRow label="Alamat Rumah Lengkap" value={employee.homeAddress || "—"} block />
             <InfoRow
+              label="Koordinat Lokasi (LU / LT)"
+              value={
+                employee.latitude && employee.longitude ? (
+                  <span className="font-mono text-xs font-semibold text-foreground">
+                    Lat: {employee.latitude.toFixed(5)}, Lon: {employee.longitude.toFixed(5)}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <InfoRow
               label="Lokasi Google Maps"
               value={
                 employee.mapsUrl ? (

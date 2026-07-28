@@ -15,9 +15,9 @@ export function AppShell() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="min-w-0 flex-1 flex flex-col overflow-x-hidden">
+      <SidebarInset className="min-w-0 flex-1 flex flex-col">
         <AppTopbar />
-        <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
           <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6 sm:py-6 min-w-0">
             <div key={typeof window !== "undefined" ? window.location.hash : "init"} className="animate-fade-in min-w-0">
               <RouteView />
