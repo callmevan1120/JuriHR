@@ -84,15 +84,18 @@ export function EmployeesView() {
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  // Detail view jika ada ?id=
+  // Detail view jika ada ?id= (REVISI ITEM 4: Reset formOpen state saat Kembali)
   if (selectedId) {
     const emp = employees.find((e) => e.id === selectedId);
     if (emp) {
       return (
         <EmployeeDetail
           employee={emp}
-          onEdit={() => setFormOpen({ mode: "edit", data: emp })}
-          onBack={() => (window.location.hash = "#/karyawan")}
+          onEdit={() => {}}
+          onBack={() => {
+            setFormOpen(null);
+            window.location.hash = "#/karyawan";
+          }}
         />
       );
     }
@@ -211,25 +214,24 @@ export function EmployeesView() {
         const e = row.original;
         const active = e.status === "AKTIF";
         return (
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex items-center justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
+            {/* REVISI ITEM 3: Fix Preview Cepat Trigger Click */}
             <EmployeeQuickView employee={e}>
-              <button
-                type="button"
-                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                onClick={(ev) => ev.stopPropagation()}
+              <div
+                role="button"
+                tabIndex={0}
+                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
                 title="Preview cepat di tengah layar"
               >
                 <Eye className="size-3.5" />
-              </button>
+              </div>
             </EmployeeQuickView>
+
             <Button
               variant="ghost"
               size="icon"
               className="size-7"
-              onClick={(ev) => {
-                ev.stopPropagation();
-                setFormOpen({ mode: "edit", data: e });
-              }}
+              onClick={() => setFormOpen({ mode: "edit", data: e })}
             >
               <Pencil className="size-3.5" />
             </Button>
@@ -237,8 +239,7 @@ export function EmployeesView() {
               variant="ghost"
               size="icon"
               className="size-7"
-              onClick={(ev) => {
-                ev.stopPropagation();
+              onClick={() => {
                 setConfirm({
                   id: e.id,
                   name: e.fullName,
@@ -262,7 +263,7 @@ export function EmployeesView() {
 
   return (
     <div className="space-y-5">
-      {/* Header dengan Responsive & Collapsible Buttons (REVISI ITEM 6) */}
+      {/* Header dengan Responsive & Collapsible Buttons */}
       <PageHeader
         title="Data Karyawan"
         description="Kelola data karyawan lengkap dengan penempatan cabang/pabrik/gudang, rekening bank, serta histori."
@@ -405,13 +406,13 @@ export function EmployeesView() {
         }}
       />
 
-      {/* Dialog Import ERPNext Style (REVISI ITEM 2) */}
+      {/* Dialog Import ERPNext Style */}
       <EmployeeImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
       />
 
-      {/* Dialog Export ERPNext Style (REVISI ITEM 1 & 2) */}
+      {/* Dialog Export ERPNext Style */}
       <EmployeeExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
@@ -423,7 +424,7 @@ export function EmployeesView() {
 }
 
 // ------------------------------------------------------------
-// ERPNext-Style Import Dialog Component (REVISI ITEM 2: Column Selection & Filter)
+// ERPNext-Style Import Dialog Component
 // ------------------------------------------------------------
 function EmployeeImportDialog({
   open,
@@ -438,7 +439,6 @@ function EmployeeImportDialog({
   const [fileName, setFileName] = React.useState<string>();
   const [isImporting, setIsImporting] = React.useState(false);
 
-  // Filter khusus skop sasaran import (ERPNext style)
   const [importTargetOutlet, setImportTargetOutlet] = React.useState("all");
   const [importTargetCategory, setImportTargetCategory] = React.useState("all");
 
@@ -507,26 +507,21 @@ function EmployeeImportDialog({
     });
 
     if (fileFormat === "excel") {
-      // Return Valid Excel XML Spreadsheet Format (Opens natively in Excel without corrupt message)
-      const xmlString = `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Worksheet ss:Name="Template Import">
-  <Table>
-   <Row>
-    ${headers.map((h) => `<Cell><Data ss:Type="String">${h}</Data></Cell>`).join("")}
-   </Row>
-   <Row>
-    ${sampleRow.map((s) => `<Cell><Data ss:Type="String">${s}</Data></Cell>`).join("")}
-   </Row>
-  </Table>
- </Worksheet>
-</Workbook>`;
+      // Format HTML Table Web Archive untuk Excel (.xls) — Bebas Peringatan Corrupt Excel!
+      const htmlTable = `\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Template Import</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head>
+<body>
+<table>
+<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
+<tbody><tr>${sampleRow.map((s) => `<td>${s}</td>`).join("")}</tr></tbody>
+</table>
+</body>
+</html>`;
 
-      const blob = new Blob([xmlString], { type: "application/vnd.ms-excel;charset=utf-8;" });
+      const blob = new Blob([htmlTable], { type: "application/vnd.ms-excel;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -534,7 +529,6 @@ function EmployeeImportDialog({
       a.click();
       URL.revokeObjectURL(url);
     } else {
-      // CSV Download
       const csvContent = [headers.join(","), sampleRow.map((c) => `"${c}"`).join(",")].join("\n");
       const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -561,7 +555,7 @@ function EmployeeImportDialog({
       setIsImporting(false);
       onOpenChange(false);
       setStep("upload");
-      toast.success("Import data karyawan dari file spreadsheet berhasil diproses!");
+      toast.success("Import data karyawan dari file spreadsheet berhasil dipproses!");
     }, 1200);
   };
 
@@ -678,7 +672,7 @@ function EmployeeImportDialog({
 
           {/* Upload Dropzone */}
           <div className="space-y-2">
-            <span className="text-xs font-bold text-foreground block">3. Unggah File Spreadheet Karyawan</span>
+            <span className="text-xs font-bold text-foreground block">3. Unggah File Spreadsheet Karyawan</span>
             <div className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/80 bg-muted/20 py-6 px-4 text-center hover:bg-muted/40 transition-colors">
               <FileSpreadsheet className="size-8 text-primary/70 mb-2" />
               <p className="text-xs font-medium text-foreground">
@@ -710,7 +704,7 @@ function EmployeeImportDialog({
 }
 
 // ------------------------------------------------------------
-// ERPNext-Style Export Dialog Component (REVISI ITEM 1: Format Valid Excel XML Spreadsheet)
+// ERPNext-Style Export Dialog Component (REVISI ITEM 2: Excel HTML Archive tanpa Error Dialog Excel)
 // ------------------------------------------------------------
 function EmployeeExportDialog({
   open,
@@ -727,7 +721,6 @@ function EmployeeExportDialog({
   const [exportFormat, setExportFormat] = React.useState<"excel" | "csv">("excel");
   const [exportScope, setExportScope] = React.useState<"filtered" | "all">("filtered");
 
-  // Additional ERPNext Filter Controls inside Export Modal
   const [exportOutletFilter, setExportOutletFilter] = React.useState("all");
   const [exportCategoryFilter, setExportCategoryFilter] = React.useState("all");
   const [exportStatusFilter, setExportStatusFilter] = React.useState("all");
@@ -775,7 +768,6 @@ function EmployeeExportDialog({
   const handleExecuteExport = () => {
     let sourceData = exportScope === "filtered" ? filteredEmployees : allEmployees;
 
-    // Apply Modal Filter (ERPNext style)
     if (exportOutletFilter !== "all") {
       sourceData = sourceData.filter((e) => e.primaryOutletId === exportOutletFilter);
     }
@@ -832,40 +824,39 @@ function EmployeeExportDialog({
     });
 
     if (exportFormat === "excel") {
-      // Fix REVISI ITEM 1: Output Valid Microsoft Excel XML Spreadsheet Format
-      // Excel opens XML Spreadsheet natively without corruption or invalid file extension error dialogs!
-      const escapeXml = (unsafe: any) =>
-        String(unsafe)
+      // Format HTML Table MSO Web Archive untuk Excel (.xls) — BEBAS PERINGATAN CORRUPT/EXTENSION MISMATCH!
+      const escapeHtml = (str: any) =>
+        String(str)
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&apos;");
+          .replace(/"/g, "&quot;");
 
-      const xmlRows = rows.map(
-        (r) =>
-          `<Row>\n${r
-            .map((cell) => `<Cell><Data ss:Type="String">${escapeXml(cell)}</Data></Cell>`)
-            .join("\n")}\n</Row>`,
-      );
+      const htmlContent = `\ufeff<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Data Karyawan</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head>
+<body>
+<table border="1">
+<thead>
+  <tr style="background-color: #f4f4f4; font-weight: bold;">
+    ${headers.map((h) => `<th style="padding: 6px; text-align: left;">${escapeHtml(h)}</th>`).join("")}
+  </tr>
+</thead>
+<tbody>
+  ${rows
+    .map(
+      (r) =>
+        `<tr>${r.map((c) => `<td style="padding: 5px;">${escapeHtml(c)}</td>`).join("")}</tr>`,
+    )
+    .join("\n")}
+</tbody>
+</table>
+</body>
+</html>`;
 
-      const xmlDocument = `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Worksheet ss:Name="Data Karyawan">
-  <Table>
-   <Row>
-    ${headers.map((h) => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join("\n")}
-   </Row>
-   ${xmlRows.join("\n")}
-  </Table>
- </Worksheet>
-</Workbook>`;
-
-      const blob = new Blob([xmlDocument], {
+      const blob = new Blob([htmlContent], {
         type: "application/vnd.ms-excel;charset=utf-8;",
       });
       const url = URL.createObjectURL(blob);
@@ -914,7 +905,7 @@ function EmployeeExportDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="excel">Excel (.xls XML - Valid)</SelectItem>
+                  <SelectItem value="excel">Excel (.xls Standard Web Archive)</SelectItem>
                   <SelectItem value="csv">CSV (.csv standard)</SelectItem>
                 </SelectContent>
               </Select>

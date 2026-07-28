@@ -16,11 +16,6 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { NAV_GROUPS } from "@/lib/router/routes";
 import { useRoute } from "@/lib/router/use-route";
 import { Wheat } from "lucide-react";
@@ -60,34 +55,26 @@ export function AppSidebar() {
                   const isActive = currentPath === item.path;
                   return (
                     <SidebarMenuItem key={item.path}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={isActive}
-                            tooltip={item.label}
-                          >
-                            <Link href={item.path}>
-                              <Icon className="size-4" />
-                              <span>{item.label}</span>
-                              {!item.available ? (
-                                <span className="ml-auto flex items-center">
-                                  <Badge
-                                    variant="outline"
-                                    className="h-4 px-1 text-[9px] font-medium text-muted-foreground"
-                                  >
-                                    F{item.phase}
-                                  </Badge>
-                                </span>
-                              ) : null}
-                            </Link>
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          {item.label}
-                          {!item.available ? ` — Fase ${item.phase}` : ""}
-                        </TooltipContent>
-                      </Tooltip>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.label + (!item.available ? ` (Fase ${item.phase})` : "")}
+                      >
+                        <Link href={item.path}>
+                          <Icon className="size-4" />
+                          <span>{item.label}</span>
+                          {!item.available ? (
+                            <span className="ml-auto flex items-center group-data-[collapsible=icon]:hidden">
+                              <Badge
+                                variant="outline"
+                                className="h-4 px-1 text-[9px] font-medium text-muted-foreground"
+                              >
+                                F{item.phase}
+                              </Badge>
+                            </span>
+                          ) : null}
+                        </Link>
+                      </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
                 })}
