@@ -17,6 +17,7 @@ import { InfoRow } from "@/components/common/info-row";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EmptyState } from "@/components/common/states";
 import { DomicileEditor } from "./domicile-editor";
+import { EmployeeFormDialog } from "@/components/views/employee-form-dialog";
 import { useStore } from "@/hooks/use-store";
 import {
   lookupService,
@@ -54,6 +55,8 @@ import {
   CreditCard,
   User,
   ExternalLink,
+  KeyRound,
+  Cake,
 } from "lucide-react";
 
 interface Props {
@@ -64,12 +67,18 @@ interface Props {
 
 export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
   const [tab, setTab] = React.useState("profil");
+  const [editOpen, setEditOpen] = React.useState(false);
 
   const categoryLabels: Record<string, string> = {
     OUTLET: "Karyawan Outlet",
     PH_KLATEN: "Karyawan PH Klaten",
     GUDANG_JAKARTA: "Karyawan Gudang Jakarta",
     NON_OUTLET: "Karyawan HQ",
+  };
+
+  const handleOpenEdit = () => {
+    setEditOpen(true);
+    if (onEdit) onEdit();
   };
 
   return (
@@ -87,7 +96,7 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         <CardContent className="p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-xl font-bold text-primary-foreground">
+              <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-xl font-bold shadow-sm">
                 {initials(employee.fullName)}
               </div>
               <div className="space-y-1.5">
@@ -107,10 +116,10 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="font-mono font-bold text-foreground">{employee.nik}</span>
                   <span className="inline-flex items-center gap-1">
-                    <Briefcase className="size-3" /> {lookupService.positionName(employee.positionId)}
+                    <Briefcase className="size-3 text-primary" /> {lookupService.positionName(employee.positionId)}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <Building2 className="size-3" />{" "}
+                    <Building2 className="size-3 text-primary" />{" "}
                     {employee.category === "OUTLET"
                       ? lookupService.outletName(employee.primaryOutletId)
                       : employee.category === "PH_KLATEN"
@@ -122,8 +131,10 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
                 </div>
               </div>
             </div>
-            <Button variant="outline" onClick={onEdit} className="gap-1.5">
-              <Pencil className="size-4" /> Edit Data
+            
+            {/* Fix Edit Data Trigger Button */}
+            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
+              <Pencil className="size-4 text-primary" /> Edit Data Karyawan
             </Button>
           </div>
         </CardContent>
@@ -154,6 +165,14 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         <TabsContent value="payroll"><PayrollTab employee={employee} /></TabsContent>
         <TabsContent value="histori"><HistoriTab employee={employee} /></TabsContent>
       </Tabs>
+
+      {/* Edit Form Dialog */}
+      <EmployeeFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        data={employee}
+      />
     </div>
   );
 }
@@ -176,13 +195,13 @@ function TabTrigger({
 }
 
 // ------------------------------------------------------------
-// Tab Profil (REVISI: Konsolidasi dalam 1 Single Card Rapi)
+// Tab Profil (REVISI ITEM 5: Flow Vertikal Turun ke Bawah 1 Kolom)
 // ------------------------------------------------------------
 function ProfilTab({ employee }: { employee: Employee }) {
   const categoryLabels: Record<string, string> = {
-    OUTLET: "Karyawan Outlet",
-    PH_KLATEN: "Karyawan PH Klaten",
-    GUDANG_JAKARTA: "Karyawan Gudang Logistik Jakarta",
+    OUTLET: "Karyawan Outlet (Jabodetabek)",
+    PH_KLATEN: "Karyawan PH Klaten (Pabrik Produksi)",
+    GUDANG_JAKARTA: "Karyawan Gudang Logistik & QC Jakarta",
     NON_OUTLET: "Karyawan HQ / Head Office",
   };
 
@@ -195,7 +214,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
               <User className="size-4 text-primary" /> Profil Karyawan Terintegrasi
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              Rangkuman identitas, penempatan kerja, rekening payroll, kontrak, dan domisili dalam satu tampilan.
+              Rangkuman identitas diri, penempatan kerja, rekening payroll, serta kontrak dalam alur vertikal yang rapi.
             </CardDescription>
           </div>
           <Badge variant="outline" className="font-mono text-xs">
@@ -205,150 +224,157 @@ function ProfilTab({ employee }: { employee: Employee }) {
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
-        {/* Grid Sub-bagian 1: Identitas & Penempatan */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sub-bagian 1A: Identitas Diri */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
-              <User className="size-3.5" /> Identitas Diri &amp; Kontak
-            </h4>
-            <div className="divide-y divide-border/60 text-xs">
-              <InfoRow label="NIK" value={<span className="font-mono font-bold text-foreground">{employee.nik}</span>} />
-              <InfoRow label="Nama Lengkap" value={employee.fullName} />
-              <InfoRow
-                label="Telepon / WA"
-                value={
-                  employee.phone ? (
-                    <span className="inline-flex items-center gap-1 text-foreground font-mono">
-                      <Phone className="size-3 text-muted-foreground" /> {employee.phone}
-                    </span>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <InfoRow
-                label="Email"
-                value={
-                  employee.email ? (
-                    <span className="inline-flex items-center gap-1 text-foreground font-mono">
-                      <Mail className="size-3 text-muted-foreground" /> {employee.email}
-                    </span>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <InfoRow
-                label="Tanggal Bergabung"
-                value={
-                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                    <CalendarDays className="size-3 text-muted-foreground" /> {formatDateLong(employee.startDate)}
-                  </span>
-                }
-              />
-            </div>
-          </div>
+        {/* Callout Info Kredensial Login v2 */}
+        <div className="flex items-center gap-3 rounded-xl border border-info/30 bg-info/5 p-3.5 text-xs text-info dark:text-info-foreground">
+          <KeyRound className="size-4 shrink-0 text-info" />
+          <span>
+            <b>Kredensial Login (Persiapan v2):</b> Email (<code>{employee.email || "—"}</code>) dan Tanggal Lahir (<code>{employee.birthDate ? formatDateLong(employee.birthDate) : "20 Mei 1998"}</code>) akan berfungsi untuk login akun <i>Employee App</i>.
+          </span>
+        </div>
 
-          {/* Sub-bagian 1B: Penempatan & Organisasi */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
-              <Building2 className="size-3.5" /> Penempatan &amp; Struktur Organisasi
-            </h4>
-            <div className="divide-y divide-border/60 text-xs">
-              <InfoRow
-                label="Kategori Karyawan"
-                value={
-                  <Badge variant="outline" className="font-medium">
-                    {categoryLabels[employee.category] || employee.category}
-                  </Badge>
-                }
-              />
-              <InfoRow label="Posisi / Jabatan" value={lookupService.positionName(employee.positionId)} />
-              <InfoRow label="Divisi" value={lookupService.divisionName(employee.divisionId)} />
-              <InfoRow
-                label="Penempatan Lokasi"
-                value={
-                  employee.category === "OUTLET"
-                    ? lookupService.outletName(employee.primaryOutletId)
-                    : employee.category === "PH_KLATEN"
-                    ? "Pabrik Produksi PH Klaten"
-                    : employee.category === "GUDANG_JAKARTA"
-                    ? "Gudang Logistik & QC Jakarta"
-                    : "Head Office (HQ Jakarta)"
-                }
-              />
-              <InfoRow label="Atasan Langsung" value={lookupService.employeeName(employee.supervisorId) || "—"} />
-              <InfoRow label="Status Kepegawaian" value={<StatusBadge status={employee.status} />} />
-            </div>
+        {/* Section Vertikal 1: Identitas Diri & Kredensial Login */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
+            <User className="size-3.5" /> 1. Identitas Diri &amp; Kontak Karyawan
+          </h4>
+          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+            <InfoRow label="NIK (Nomor Induk)" value={<span className="font-mono font-bold text-foreground">{employee.nik}</span>} />
+            <InfoRow label="Nama Lengkap" value={employee.fullName} />
+            <InfoRow
+              label="Tanggal Lahir (Kredensial Login v2)"
+              value={
+                <span className="inline-flex items-center gap-1 text-foreground font-medium">
+                  <Cake className="size-3.5 text-primary" /> {employee.birthDate ? formatDateLong(employee.birthDate) : "20 Mei 1998"}
+                </span>
+              }
+            />
+            <InfoRow
+              label="Email Perusahaan (Kredensial Login v2)"
+              value={
+                employee.email ? (
+                  <span className="inline-flex items-center gap-1 text-foreground font-mono">
+                    <Mail className="size-3.5 text-muted-foreground" /> {employee.email}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <InfoRow
+              label="Telepon / WA"
+              value={
+                employee.phone ? (
+                  <span className="inline-flex items-center gap-1 text-foreground font-mono">
+                    <Phone className="size-3.5 text-muted-foreground" /> {employee.phone}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+            <InfoRow
+              label="Tanggal Bergabung / Mulai Bekerja"
+              value={
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <CalendarDays className="size-3.5 text-muted-foreground" /> {formatDateLong(employee.startDate)}
+                </span>
+              }
+            />
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-border" />
-
-        {/* Grid Sub-bagian 2: Gaji, Rekening Bank, Kontrak, Domisili */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sub-bagian 2A: Gaji & Rekening Bank Payroll */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
-              <CreditCard className="size-3.5 text-primary" /> Rekening Payroll &amp; Kompensasi
-            </h4>
-            <div className="divide-y divide-border/60 text-xs">
-              <InfoRow label="Nama Bank" value={<span className="font-semibold text-foreground">{employee.bankName || "Bank BCA"}</span>} />
-              <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "1234567890"}</span>} />
-              <InfoRow label="Atas Nama Rekening" value={employee.accountHolderName || employee.fullName} />
-              <InfoRow label="Tipe Skema Gaji" value={employee.salaryType === "BULANAN" ? "Bulanan" : "Harian"} />
-              <InfoRow label="Nominal Gaji" value={<span className="font-bold tabular-nums text-foreground">{formatRupiah(employee.salaryAmount)}</span>} />
-              <InfoRow
-                label="Saldo Cuti Tahunan"
-                value={
-                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
-                    <Plane className="size-3 text-muted-foreground" /> {employee.leaveBalanceDays} hari
-                  </span>
-                }
-              />
-            </div>
-          </div>
-
-          {/* Sub-bagian 2B: Detail Kontrak & Domisili Rumah */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
-              <ScrollText className="size-3.5 text-primary" /> Kontrak Kerja &amp; Lokasi Rumah
-            </h4>
-            <div className="divide-y divide-border/60 text-xs">
-              <InfoRow label="Jenis / Tipe Kontrak" value={<Badge variant="outline">{employee.contractType || "PKWT"}</Badge>} />
-              <InfoRow label="Durasi Kontrak" value={`${employee.contractDurationMonths || 12} Bulan`} />
-              <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
-              <InfoRow label="Alamat Rumah" value={employee.homeAddress || "—"} block />
-              <InfoRow
-                label="Lokasi Google Maps"
-                value={
-                  employee.mapsUrl ? (
-                    <a
-                      href={employee.mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-                    >
-                      <MapPin className="size-3" /> Buka Peta Maps <ExternalLink className="size-3" />
-                    </a>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-            </div>
+        {/* Section Vertikal 2: Penempatan & Struktur Organisasi */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
+            <Building2 className="size-3.5" /> 2. Penempatan &amp; Struktur Organisasi
+          </h4>
+          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+            <InfoRow
+              label="Kategori Karyawan"
+              value={
+                <Badge variant="outline" className="font-semibold text-primary border-primary/30">
+                  {categoryLabels[employee.category] || employee.category}
+                </Badge>
+              }
+            />
+            <InfoRow label="Posisi / Jabatan" value={lookupService.positionName(employee.positionId)} />
+            <InfoRow label="Divisi" value={lookupService.divisionName(employee.divisionId)} />
+            <InfoRow
+              label="Penempatan Lokasi Kerja"
+              value={
+                employee.category === "OUTLET"
+                  ? lookupService.outletName(employee.primaryOutletId)
+                  : employee.category === "PH_KLATEN"
+                  ? "Pabrik Produksi PH Klaten"
+                  : employee.category === "GUDANG_JAKARTA"
+                  ? "Gudang Logistik & QC Jakarta"
+                  : "Head Office (HQ Jakarta)"
+              }
+            />
+            <InfoRow label="Atasan Langsung" value={lookupService.employeeName(employee.supervisorId) || "—"} />
+            <InfoRow label="Status Kepegawaian" value={<StatusBadge status={employee.status} />} />
           </div>
         </div>
 
-        {/* Section 3: Catatan & Metadata */}
+        {/* Section Vertikal 3: Rekening Bank Payroll */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
+            <CreditCard className="size-3.5 text-primary" /> 3. Data Rekening Bank (Payroll)
+          </h4>
+          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+            <InfoRow label="Nama Bank Payroll" value={<span className="font-semibold text-foreground">{employee.bankName || "BCA"}</span>} />
+            <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "1234567890"}</span>} />
+            <InfoRow label="Atas Nama Rekening" value={employee.accountHolderName || employee.fullName} />
+            <InfoRow label="Tipe Skema Gaji" value={employee.salaryType === "BULANAN" ? "Bulanan" : "Harian"} />
+            <InfoRow label="Nominal Gaji" value={<span className="font-bold tabular-nums text-foreground">{formatRupiah(employee.salaryAmount)}</span>} />
+            <InfoRow
+              label="Saldo Cuti Tahunan"
+              value={
+                <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                  <Plane className="size-3.5 text-muted-foreground" /> {employee.leaveBalanceDays} hari
+                </span>
+              }
+            />
+          </div>
+        </div>
+
+        {/* Section Vertikal 4: Kontrak Kerja & Domisili Rumah */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
+            <ScrollText className="size-3.5 text-primary" /> 4. Detail Kontrak Kerja &amp; Lokasi Rumah
+          </h4>
+          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+            <InfoRow label="Jenis / Tipe Kontrak" value={<Badge variant="outline">{employee.contractType || "PKWT"}</Badge>} />
+            <InfoRow label="Durasi Kontrak" value={`${employee.contractDurationMonths || 12} Bulan`} />
+            <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
+            <InfoRow label="Alamat Rumah Lengkap" value={employee.homeAddress || "—"} block />
+            <InfoRow
+              label="Lokasi Google Maps"
+              value={
+                employee.mapsUrl ? (
+                  <a
+                    href={employee.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                  >
+                    <MapPin className="size-3.5" /> Buka Peta Google Maps <ExternalLink className="size-3.5" />
+                  </a>
+                ) : (
+                  "—"
+                )
+              }
+            />
+          </div>
+        </div>
+
+        {/* Section Vertikal 5: Catatan Internal HRD & Metadata */}
         <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2">
           <h4 className="text-xs font-semibold text-foreground">Catatan Internal HRD:</h4>
           <p className="text-xs text-muted-foreground">
             {employee.note ? employee.note : "Tidak ada catatan khusus untuk karyawan ini."}
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-4 border-t border-border/60 pt-2.5 text-[11px] text-muted-foreground">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border/60 pt-2.5 text-[11px] text-muted-foreground">
             <div>
               <span>Dibuat pada: </span>
               <span className="font-medium text-foreground">{formatDateMed(employee.createdAt)}</span>
@@ -365,7 +391,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
 }
 
 // ------------------------------------------------------------
-// Tab Domisili (REVISI: Teks Digeser ke Kanan dengan Padding px-6)
+// Tab Domisili
 // ------------------------------------------------------------
 function DomicileTab({ employee }: { employee: Employee }) {
   const [editing, setEditing] = React.useState(false);

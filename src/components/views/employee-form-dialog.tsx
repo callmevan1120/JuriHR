@@ -36,6 +36,8 @@ import {
   FileText,
   MapPin,
   Calendar,
+  KeyRound,
+  PlusCircle,
 } from "lucide-react";
 
 interface Props {
@@ -57,6 +59,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [fullName, setFullName] = React.useState(data?.fullName ?? "");
   const [phone, setPhone] = React.useState(data?.phone ?? "");
   const [email, setEmail] = React.useState(data?.email ?? "");
+  const [birthDate, setBirthDate] = React.useState(data?.birthDate ?? "1998-05-20");
   const [startDate, setStartDate] = React.useState(data?.startDate ?? todayISODate());
   const [category, setCategory] = React.useState<EmployeeCategory>(data?.category ?? "OUTLET");
   const [positionId, setPositionId] = React.useState(data?.positionId ?? "");
@@ -71,8 +74,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [supervisorId, setSupervisorId] = React.useState(data?.supervisorId ?? "");
   const [note, setNote] = React.useState(data?.note ?? "");
   
-  // Data Bank & Rekening
-  const [bankName, setBankName] = React.useState(data?.bankName ?? "BCA");
+  // Data Bank & Rekening + Custom Bank Support
+  const [selectedBank, setSelectedBank] = React.useState(data?.bankName ?? "BCA");
+  const [customBankName, setCustomBankName] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState(data?.accountNumber ?? "");
   const [accountHolderName, setAccountHolderName] = React.useState(data?.accountHolderName ?? "");
   
@@ -84,12 +88,15 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
 
   const [error, setError] = React.useState<string>();
 
+  const standardBanks = ["BCA", "Bank Mandiri", "BNI", "BRI", "CIMB Niaga", "Bank Syariah Indonesia", "Permata Bank", "Bank Danamon"];
+
   React.useEffect(() => {
     if (!open) return;
     setNik(data?.nik ?? "");
     setFullName(data?.fullName ?? "");
     setPhone(data?.phone ?? "");
     setEmail(data?.email ?? "");
+    setBirthDate(data?.birthDate ?? "1998-05-20");
     setStartDate(data?.startDate ?? todayISODate());
     setCategory(data?.category ?? "OUTLET");
     setPositionId(data?.positionId ?? "");
@@ -103,7 +110,17 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setLeaveBalance(String(data?.leaveBalanceDays ?? 12));
     setSupervisorId(data?.supervisorId ?? "");
     setNote(data?.note ?? "");
-    setBankName(data?.bankName ?? "BCA");
+
+    // Cek apakah bank terdaftar atau custom bank
+    const b = data?.bankName ?? "BCA";
+    if (standardBanks.includes(b)) {
+      setSelectedBank(b);
+      setCustomBankName("");
+    } else {
+      setSelectedBank("CUSTOM");
+      setCustomBankName(b);
+    }
+
     setAccountNumber(data?.accountNumber ?? "");
     setAccountHolderName(data?.accountHolderName ?? data?.fullName ?? "");
     setContractType(data?.contractType ?? "PKWT");
@@ -113,7 +130,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setError(undefined);
   }, [open, data]);
 
-  // Kategori filter posisi & divisi
   const filteredPositions = positions.filter((p) => p.status === "active");
   const filteredDivisions = divisions.filter((d) => d.status === "active");
   const filteredOutlets = outlets.filter((o) => o.status === "active");
@@ -133,7 +149,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       setError("Divisi wajib dipilih.");
       return;
     }
-    // Jika Karyawan Outlet, wajib memilih outlet
     if (category === "OUTLET" && !primaryOutletId) {
       setError("Penempatan outlet wajib dipilih untuk Karyawan Outlet.");
       return;
@@ -146,16 +161,22 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       return;
     }
 
+    const finalBankName = selectedBank === "CUSTOM" ? customBankName.trim() : selectedBank;
+    if (!finalBankName) {
+      setError("Nama bank wajib diisi.");
+      return;
+    }
+
     const payload: Partial<Employee> = {
       nik: nik.trim(),
       fullName: fullName.trim(),
       phone: phone.trim(),
       email: email.trim(),
+      birthDate,
       startDate,
       category,
       positionId,
       divisionId,
-      // Sembunyikan/kosongkan outlet bila bukan karyawan outlet
       primaryOutletId: category === "OUTLET" ? primaryOutletId : undefined,
       status,
       salaryType,
@@ -165,7 +186,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       leaveBalanceDays: Number(leaveBalance) || 0,
       supervisorId: supervisorId || undefined,
       note: note.trim() || undefined,
-      bankName: bankName.trim(),
+      bankName: finalBankName,
       accountNumber: accountNumber.trim(),
       accountHolderName: accountHolderName.trim() || fullName.trim(),
       contractType,
@@ -186,32 +207,42 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[680px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <User className="size-5 text-primary" />
             {mode === "edit" ? "Edit Data Karyawan" : "Tambah Karyawan Baru"}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Lengkapi profil, kategori penempatan, rekening bank, serta detail kontrak kerja karyawan.
+            Lengkapi data diri, kategori penempatan, tanggal lahir (login v2), rekening bank, serta detail kontrak kerja.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-2">
+        <div className="space-y-6 py-2">
+          {/* Info Callout Login Credential Versi 2 */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-info/30 bg-info/10 p-3 text-xs text-info dark:text-info-foreground">
+            <KeyRound className="size-4 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">Info Kredensial Akun (Persiapan Versi 2):</span>
+              <p className="mt-0.5 leading-relaxed text-[11px]">
+                Email dan Tanggal Lahir karyawan ini akan digunakan sebagai kredensial utama saat fitur <i>Employee Self-Service App</i> diaktifkan pada Versi 2.
+              </p>
+            </div>
+          </div>
+
           {/* Section 1: Kategori & Penempatan Lokasi */}
-          <section className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+          <section className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
               <Building2 className="size-4" /> Kategori &amp; Lokasi Penempatan
             </h3>
             
             <FormRow>
-              <Field label="Kategori Karyawan" required hint="Tentukan jenis lokasi kerja utama karyawan">
+              <Field label="Kategori Karyawan" required hint="Tentukan jenis lokasi kerja utama">
                 <Select
                   value={category}
                   onValueChange={(v) => {
                     const newCat = v as EmployeeCategory;
                     setCategory(newCat);
-                    // Reset outlet id bila pindah ke non-outlet
                     if (newCat !== "OUTLET") setPrimaryOutletId("");
                   }}
                 >
@@ -256,8 +287,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </Select>
               </Field>
             ) : (
-              <div className="rounded-lg bg-background/80 border border-border/60 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
-                <span>Penempatan Lokasi:</span>
+              <div className="rounded-lg bg-background/90 border border-border/80 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
+                <span>Penempatan Lokasi Kerja:</span>
                 <span className="font-semibold text-foreground">
                   {category === "PH_KLATEN" && "Pabrik Produksi PH Klaten"}
                   {category === "GUDANG_JAKARTA" && "Gudang Logistik & QC Jakarta"}
@@ -267,16 +298,16 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             )}
           </section>
 
-          {/* Section 2: Identitas Diri */}
+          {/* Section 2: Identitas Diri & Kredensial Login v2 */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Identitas &amp; Kontak Diri
+              Identitas Diri &amp; Kontak
             </h3>
             <FormRow>
               <Field label="NIK" required>
                 <div className="relative">
                   <Hash className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={nik} onChange={(e) => setNik(e.target.value)} placeholder="JBD00001" className="pl-8" />
+                  <Input value={nik} onChange={(e) => setNik(e.target.value)} placeholder="JBD00001" className="pl-8 font-mono" />
                 </div>
               </Field>
               <Field label="Nama Lengkap" required>
@@ -288,17 +319,26 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </FormRow>
 
             <FormRow>
-              <Field label="No. Telepon / WA">
-                <div className="relative">
-                  <Phone className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="081234567890" className="pl-8" />
-                </div>
-              </Field>
-              <Field label="Email Perusahaan / Pribadi">
+              <Field label="Email (Login v2)" required hint="Digunakan untuk login akun karyawan">
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="karyawan@juribun.co.id" className="pl-8" />
                 </div>
+              </Field>
+              <Field label="Tanggal Lahir (Login v2)" required hint="Digunakan sebagai verifikasi sandi awal">
+                <Input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+              </Field>
+            </FormRow>
+
+            <FormRow>
+              <Field label="No. Telepon / WA">
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="081234567890" className="pl-8 font-mono" />
+                </div>
+              </Field>
+              <Field label="Tanggal Bergabung / Mulai Kerja">
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </Field>
             </FormRow>
 
@@ -325,7 +365,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
               </Field>
             </FormRow>
 
-            <Field label="Atasan / Supervisor">
+            <Field label="Atasan / Supervisor Direct">
               <Select value={supervisorId} onValueChange={setSupervisorId}>
                 <SelectTrigger><SelectValue placeholder="Tanpa atasan langsung" /></SelectTrigger>
                 <SelectContent>
@@ -337,27 +377,53 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 3: Rekening Bank Payroll */}
+          {/* Section 3: Data Bank Payroll (+ Support Tambah Bank Custom) */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
               <CreditCard className="size-4 text-primary" /> Data Rekening Bank (Payroll)
             </h3>
+            
             <FormRow>
               <Field label="Nama Bank">
-                <Select value={bankName} onValueChange={setBankName}>
+                <Select
+                  value={selectedBank}
+                  onValueChange={(v) => {
+                    setSelectedBank(v);
+                    if (v !== "CUSTOM") setCustomBankName("");
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Pilih bank..." /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BCA">Bank BCA</SelectItem>
-                    <SelectItem value="Bank Mandiri">Bank Mandiri</SelectItem>
-                    <SelectItem value="BNI">Bank BNI</SelectItem>
-                    <SelectItem value="BRI">Bank BRI</SelectItem>
-                    <SelectItem value="CIMB Niaga">CIMB Niaga</SelectItem>
-                    <SelectItem value="Bank Syariah Indonesia">BSI (Bank Syariah Indonesia)</SelectItem>
-                    <SelectItem value="Permata Bank">Permata Bank</SelectItem>
-                    <SelectItem value="Bank Danamon">Bank Danamon</SelectItem>
+                    {standardBanks.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                    <SelectItem value="CUSTOM">+ Tambah Bank Lainnya...</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
+
+              {/* Input Bank Custom jika HR memilih Custom Bank */}
+              {selectedBank === "CUSTOM" ? (
+                <Field label="Tulis Nama Bank Baru" required hint="Nama bank kustom yang akan disimpan">
+                  <Input
+                    value={customBankName}
+                    onChange={(e) => setCustomBankName(e.target.value)}
+                    placeholder="Misal: Bank Jateng, Bank Jabar, dll"
+                  />
+                </Field>
+              ) : (
+                <Field label="Nomor Rekening">
+                  <Input
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    placeholder="Contoh: 8830918239"
+                    className="font-mono tabular-nums"
+                  />
+                </Field>
+              )}
+            </FormRow>
+
+            {selectedBank === "CUSTOM" && (
               <Field label="Nomor Rekening">
                 <Input
                   value={accountNumber}
@@ -366,8 +432,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                   className="font-mono tabular-nums"
                 />
               </Field>
-            </FormRow>
-            <Field label="Atas Nama Rekening">
+            )}
+
+            <Field label="Atas Nama Rekening Tabungan">
               <Input
                 value={accountHolderName}
                 onChange={(e) => setAccountHolderName(e.target.value)}
@@ -376,15 +443,12 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 4: Tanggal Mulai Bekerja & Kontrak */}
+          {/* Section 4: Detail Kontrak Kerja & Gaji */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <FileText className="size-4 text-primary" /> Masa Bekerja &amp; Kontrak
+              <FileText className="size-4 text-primary" /> Kontrak Kerja &amp; Kompensasi
             </h3>
             <FormRow>
-              <Field label="Tanggal Bergabung / Mulai Bekerja">
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              </Field>
               <Field label="Tipe Kontrak">
                 <Select value={contractType} onValueChange={setContractType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -397,22 +461,18 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                   </SelectContent>
                 </Select>
               </Field>
-            </FormRow>
-            <FormRow>
+
               <Field label="Durasi Kontrak (Bulan)">
                 <Select value={contractDurationMonths} onValueChange={setContractDurationMonths}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="3">3 Bulan (Probation / Pendek)</SelectItem>
+                    <SelectItem value="3">3 Bulan (Probation)</SelectItem>
                     <SelectItem value="6">6 Bulan</SelectItem>
                     <SelectItem value="12">12 Bulan (1 Tahun)</SelectItem>
                     <SelectItem value="24">24 Bulan (2 Tahun)</SelectItem>
-                    <SelectItem value="0">Tidak Ada Masa Berakhir (Tetap)</SelectItem>
+                    <SelectItem value="0">Tidak Ada Akhir (Tetap)</SelectItem>
                   </SelectContent>
                 </Select>
-              </Field>
-              <Field label="Saldo Cuti Tahunan (hari)">
-                <Input type="number" value={leaveBalance} onChange={(e) => setLeaveBalance(e.target.value)} className="tabular-nums" />
               </Field>
             </FormRow>
 
@@ -427,15 +487,19 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </Select>
               </Field>
               <Field label="Nominal Gaji" hint="Format Rupiah tanpa desimal.">
-                <Input type="number" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} className="tabular-nums" />
+                <Input type="number" value={salaryAmount} onChange={(e) => setSalaryAmount(e.target.value)} className="tabular-nums font-semibold" />
               </Field>
             </FormRow>
+
+            <Field label="Saldo Cuti Tahunan (hari)">
+              <Input type="number" value={leaveBalance} onChange={(e) => setLeaveBalance(e.target.value)} className="tabular-nums" />
+            </Field>
           </section>
 
           {/* Section 5: Domisili & Peta Lokasi */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <MapPin className="size-4 text-primary" /> Alamat Rumah &amp; Peta Lokasi
+              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Peta Rumah
             </h3>
             <Field label="Alamat Rumah Lengkap">
               <Textarea

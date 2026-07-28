@@ -152,6 +152,7 @@ export interface Employee {
   phone: string;
   email: string;
   startDate: ISODate; // tanggal mulai bekerja / bergabung
+  birthDate?: ISODate; // tanggal lahir karyawan (untuk kredensial login v2)
   category: EmployeeCategory;
   positionId: string;
   divisionId: string;
