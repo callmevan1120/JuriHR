@@ -59,21 +59,63 @@ const ATTENDANCE_CONFIG: ChartConfig = {
 export function AttendanceTrendChart() {
   const state = useDataState();
   const loading = useChartLoading();
-  const data = computeAttendanceTrend(state);
+  const [mode, setMode] = React.useState<"daily" | "weekly" | "monthly">("daily");
+  
+  const data = computeAttendanceTrend(state, mode);
+
   return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Tren Kehadiran</CardTitle>
-        <CardDescription className="text-xs">
-          7 hari terakhir — hadir, terlambat, tidak hadir
-        </CardDescription>
+    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
+      <CardHeader className="pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 bg-muted/10">
+        <div>
+          <CardTitle className="text-base font-semibold text-foreground">Tren Kehadiran Karyawan</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground mt-0.5">
+            {mode === "daily" && "7 hari terakhir — pemantauan tingkat presensi harian"}
+            {mode === "weekly" && "4 minggu terakhir — agregasi mingguan staf"}
+            {mode === "monthly" && "6 bulan terakhir — rekapitulasi bulanan (skala 500+ karyawan)"}
+          </CardDescription>
+        </div>
+
+        {/* Filter Period Switcher: Harian | Mingguan | Bulanan */}
+        <div className="flex items-center gap-1 rounded-lg bg-muted/80 p-1 border border-border/60 shrink-0 self-start sm:self-auto">
+          <button
+            onClick={() => setMode("daily")}
+            className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
+              mode === "daily"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Harian
+          </button>
+          <button
+            onClick={() => setMode("weekly")}
+            className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
+              mode === "weekly"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Mingguan
+          </button>
+          <button
+            onClick={() => setMode("monthly")}
+            className={`px-2.5 py-1 text-xs rounded-md font-medium transition-all ${
+              mode === "monthly"
+                ? "bg-background text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Bulanan
+          </button>
+        </div>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="pt-4 flex-1 flex flex-col justify-center">
         {loading ? (
           <ChartSkeleton />
         ) : (
-          <ChartContainer config={ATTENDANCE_CONFIG} className="h-[220px] w-full">
-            <LineChart data={data} margin={{ left: -16, right: 8, top: 8, bottom: 0 }}>
+          <ChartContainer config={ATTENDANCE_CONFIG} className="h-[240px] w-full">
+            <LineChart data={data} margin={{ left: -12, right: 12, top: 12, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="date"
@@ -122,65 +164,6 @@ export function AttendanceTrendChart() {
   );
 }
 
-const OUTLET_CONFIG: ChartConfig = {
-  employees: { label: "Karyawan", color: "var(--chart-1)" },
-};
-
-export function OutletDistributionChart() {
-  const state = useDataState();
-  const loading = useChartLoading(300);
-  const data = computeOutletDistribution(state);
-  return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Jumlah Karyawan per Outlet</CardTitle>
-        <CardDescription className="text-xs">
-          Peringkat sebaran staf aktif per lokasi outlet
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <ChartSkeleton />
-        ) : (
-          <ChartContainer config={OUTLET_CONFIG} className="h-[220px] w-full">
-            <BarChart
-              data={data}
-              layout="vertical"
-              margin={{ left: 8, right: 16, top: 8, bottom: 0 }}
-            >
-              <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis
-                type="number"
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-                tickMargin={4}
-                className="text-[11px]"
-              />
-              <YAxis
-                type="category"
-                dataKey="outletName"
-                tickLine={false}
-                axisLine={false}
-                width={100}
-                tickMargin={4}
-                className="text-[11px]"
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey="employees"
-                fill="var(--color-employees)"
-                radius={[0, 6, 6, 0]}
-                barSize={16}
-              />
-            </BarChart>
-          </ChartContainer>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 const CONTRACT_COLORS: Record<string, string> = {
   AKTIF: "#22c55e", // Green
   AKAN_BERAKHIR: "#eab308", // Yellow
@@ -207,29 +190,29 @@ export function ContractStatusChart() {
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
-    <Card className="border-border shadow-soft flex flex-col justify-between">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Status Kontrak Kerja</CardTitle>
-        <CardDescription className="text-xs">
+    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
+      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
+        <CardTitle className="text-base font-semibold text-foreground">Status Kontrak Kerja</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground mt-0.5">
           Distribusi status seluruh kontrak aktif & berakhir
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col justify-between">
+      <CardContent className="pt-4 flex-1 flex flex-col justify-between space-y-2">
         {loading ? (
           <ChartSkeleton />
         ) : (
           <>
-            <div className="relative flex items-center justify-center">
-              <ChartContainer config={CONTRACT_CONFIG} className="mx-auto h-[180px] w-full">
+            <div className="relative flex-1 flex items-center justify-center min-h-[160px]">
+              <ChartContainer config={CONTRACT_CONFIG} className="mx-auto h-[160px] w-full">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent nameKey="label" />} />
                   <Pie
                     data={data}
                     dataKey="count"
                     nameKey="label"
-                    innerRadius={54}
-                    outerRadius={78}
+                    innerRadius={48}
+                    outerRadius={72}
                     paddingAngle={3}
                     strokeWidth={2}
                     stroke="var(--background)"
@@ -238,13 +221,12 @@ export function ContractStatusChart() {
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  {/* SVG Text Presisi di Tengah Donut Hole */}
                   <text
                     x="50%"
                     y="45%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="fill-foreground text-2xl font-bold tabular-nums"
+                    className="fill-foreground text-xl font-bold tabular-nums"
                   >
                     {total}
                   </text>
@@ -253,7 +235,7 @@ export function ContractStatusChart() {
                     y="60%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="fill-muted-foreground text-[10px] font-medium uppercase tracking-wider"
+                    className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wider"
                   >
                     Total Kontrak
                   </text>
@@ -261,22 +243,22 @@ export function ContractStatusChart() {
               </ChartContainer>
             </div>
 
-            {/* Legenda Proporsional & Terorganisir */}
-            <div className="mt-2 pt-2 border-t border-border/60 space-y-1.5">
+            {/* Legenda Ringkas & Sejajar */}
+            <div className="pt-2 border-t border-border/60 space-y-1">
               {data.map((d) => {
                 const pct = total > 0 ? Math.round((d.count / total) * 100) : 0;
                 return (
-                  <div key={d.status} className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div key={d.status} className="flex items-center justify-between gap-2 text-xs py-0.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
                         className="size-2.5 shrink-0 rounded-full shadow-xs"
                         style={{ backgroundColor: d.color }}
                       />
-                      <span className="truncate text-muted-foreground">{d.label}</span>
+                      <span className="truncate text-muted-foreground text-[11px]">{d.label}</span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-semibold tabular-nums text-foreground">{d.count}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground w-8 text-right">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="font-semibold tabular-nums text-foreground text-xs">{d.count}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground w-7 text-right">
                         ({pct}%)
                       </span>
                     </div>
@@ -309,28 +291,29 @@ export function PositionDistributionChart() {
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
-    <Card className="border-border shadow-soft flex flex-col justify-between">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Distribusi Posisi Karyawan</CardTitle>
-        <CardDescription className="text-xs">
+    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
+      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
+        <CardTitle className="text-base font-semibold text-foreground">Distribusi Posisi Karyawan</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground mt-0.5">
           Komposisi peran staf aktif per jabatan
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-between">
+
+      <CardContent className="pt-4 flex-1 flex flex-col justify-between space-y-2">
         {loading ? (
           <ChartSkeleton />
         ) : (
           <>
-            <div className="relative flex items-center justify-center">
-              <ChartContainer config={{ count: { label: "Posisi" } }} className="mx-auto h-[180px] w-full">
+            <div className="relative flex-1 flex items-center justify-center min-h-[160px]">
+              <ChartContainer config={{ count: { label: "Posisi" } }} className="mx-auto h-[160px] w-full">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent nameKey="positionName" />} />
                   <Pie
                     data={data}
                     dataKey="count"
                     nameKey="positionName"
-                    innerRadius={54}
-                    outerRadius={78}
+                    innerRadius={48}
+                    outerRadius={72}
                     paddingAngle={3}
                     strokeWidth={2}
                     stroke="var(--background)"
@@ -344,7 +327,7 @@ export function PositionDistributionChart() {
                     y="45%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="fill-foreground text-2xl font-bold tabular-nums"
+                    className="fill-foreground text-xl font-bold tabular-nums"
                   >
                     {total}
                   </text>
@@ -353,7 +336,7 @@ export function PositionDistributionChart() {
                     y="60%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="fill-muted-foreground text-[10px] font-medium uppercase tracking-wider"
+                    className="fill-muted-foreground text-[9px] font-semibold uppercase tracking-wider"
                   >
                     Total Staf
                   </text>
@@ -361,34 +344,31 @@ export function PositionDistributionChart() {
               </ChartContainer>
             </div>
 
-            {/* Legenda Posisi Top 5 */}
-            <div className="mt-2 pt-2 border-t border-border/60 space-y-1.5">
-              {data.slice(0, 5).map((d, i) => {
+            {/* Legenda Posisi Top 4 Ringkas agar Sejajar */}
+            <div className="pt-2 border-t border-border/60 space-y-1">
+              {data.slice(0, 4).map((d, i) => {
                 const pct = total > 0 ? Math.round((d.count / total) * 100) : 0;
                 return (
-                  <div key={d.positionId} className="flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div key={d.positionId} className="flex items-center justify-between gap-2 text-xs py-0.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
                         className="size-2.5 shrink-0 rounded-full shadow-xs"
                         style={{ backgroundColor: POSITION_COLORS[i % POSITION_COLORS.length] }}
                       />
-                      <span className="truncate text-muted-foreground">{d.positionName}</span>
-                      <Badge className="text-[9px] px-1 py-0 h-4 bg-muted text-muted-foreground">
-                        {d.category === "OUTLET" ? "Outlet" : "HQ"}
-                      </Badge>
+                      <span className="truncate text-muted-foreground text-[11px]">{d.positionName}</span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-semibold tabular-nums text-foreground">{d.count}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground w-8 text-right">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="font-semibold tabular-nums text-foreground text-xs">{d.count}</span>
+                      <span className="text-[10px] font-mono text-muted-foreground w-7 text-right">
                         ({pct}%)
                       </span>
                     </div>
                   </div>
                 );
               })}
-              {data.length > 5 && (
-                <div className="text-[11px] text-right text-muted-foreground pt-0.5">
-                  + {data.length - 5} posisi lainnya
+              {data.length > 4 && (
+                <div className="text-[10px] text-right text-muted-foreground pt-0.5 font-medium">
+                  + {data.length - 4} posisi lainnya
                 </div>
               )}
             </div>
@@ -409,19 +389,19 @@ export function OvertimePlanVsActualChart() {
   const loading = useChartLoading(500);
   const data = computeOvertimePlanVsActual(state);
   return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Planning vs Actual Lembur</CardTitle>
-        <CardDescription className="text-xs">
+    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
+      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
+        <CardTitle className="text-base font-semibold text-foreground">Planning vs Actual Lembur</CardTitle>
+        <CardDescription className="text-xs text-muted-foreground mt-0.5">
           Perbandingan jam planning & aktual 7 hari terakhir
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4 flex-1 flex flex-col justify-center">
         {loading ? (
           <ChartSkeleton />
         ) : (
-          <ChartContainer config={OVERTIME_CONFIG} className="h-[220px] w-full">
-            <BarChart data={data} margin={{ left: -16, right: 8, top: 8, bottom: 0 }}>
+          <ChartContainer config={OVERTIME_CONFIG} className="h-[240px] w-full">
+            <BarChart data={data} margin={{ left: -12, right: 12, top: 12, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis
                 dataKey="date"
