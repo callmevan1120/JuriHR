@@ -59,6 +59,8 @@ import {
   Navigation,
   Crown,
   Store,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 
 const CLASSIFICATION_LABEL: Record<OutletClassification, string> = {
@@ -82,7 +84,7 @@ export function OutletView() {
   const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: Outlet } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
 
-  // Detail view jika ada ?id=
+  // Detail view jika ada ?id= (REVISI: Reset state dialog saat Kembali)
   if (selectedId) {
     const outlet = outlets.find((o) => o.id === selectedId);
     if (outlet) {
@@ -90,7 +92,10 @@ export function OutletView() {
         <OutletDetail
           outlet={outlet}
           onEdit={() => setDialog({ mode: "edit", data: outlet })}
-          onBack={() => (window.location.hash = "#/outlet")}
+          onBack={() => {
+            setDialog(null);
+            window.location.hash = "#/outlet";
+          }}
         />
       );
     }
@@ -239,7 +244,7 @@ export function OutletView() {
 }
 
 // ------------------------------------------------------------
-// Outlet Detail
+// Outlet Detail (REVISI: Mandiri mengelola dialog edit lokal)
 // ------------------------------------------------------------
 function OutletDetail({
   outlet,
@@ -250,6 +255,7 @@ function OutletDetail({
   onEdit: () => void;
   onBack: () => void;
 }) {
+  const [editOpen, setEditOpen] = React.useState(false);
   const stats = React.useMemo(() => outletService.stats(outlet.id), [outlet.id]);
   const employees = useStore((s) => s.employees);
   const positions = useStore((s) => s.positions);
@@ -259,6 +265,11 @@ function OutletDetail({
 
   const outletEmps = employees.filter((e) => e.primaryOutletId === outlet.id);
   const todaySched = schedules.filter((s) => s.outletId === outlet.id).length;
+
+  const handleOpenEdit = () => {
+    setEditOpen(true);
+    if (onEdit) onEdit();
+  };
 
   return (
     <div className="space-y-5">
@@ -274,8 +285,8 @@ function OutletDetail({
         title={outlet.name}
         description={outlet.address}
         actions={
-          <Button variant="outline" onClick={onEdit}>
-            <Pencil className="size-4" /> Edit
+          <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
+            <Pencil className="size-4 text-primary" /> Edit Outlet
           </Button>
         }
       />
@@ -296,13 +307,26 @@ function OutletDetail({
               <Building2 className="size-4 text-primary" /> Informasi Outlet
             </CardTitle>
           </CardHeader>
-          <CardContent className="divide-y divide-border">
-            <InfoRow label="Kode" value={<span className="font-mono">{outlet.code}</span>} />
+          <CardContent className="divide-y divide-border text-xs">
+            <InfoRow label="Kode Outlet" value={<span className="font-mono font-bold text-foreground">{outlet.code}</span>} />
             <InfoRow label="Kepala Outlet" value={lookupService.employeeName(outlet.headId)} />
             <InfoRow label="Klasifikasi" value={<Badge variant="outline" className={CLASSIFICATION_STYLE[outlet.classification]}>{CLASSIFICATION_LABEL[outlet.classification]}</Badge>} />
             <InfoRow label="Status" value={<StatusBadge status={outlet.status} />} />
-            <InfoRow label="Latitude" value={outlet.latitude.toFixed(5)} />
-            <InfoRow label="Longitude" value={outlet.longitude.toFixed(5)} />
+            <InfoRow label="Latitude (LU / Lintang)" value={<span className="font-mono font-semibold">{outlet.latitude.toFixed(5)}</span>} />
+            <InfoRow label="Longitude (LT / Bujur)" value={<span className="font-mono font-semibold">{outlet.longitude.toFixed(5)}</span>} />
+            <InfoRow
+              label="Buka Peta Maps"
+              value={
+                <a
+                  href={`https://maps.google.com/?q=${outlet.latitude},${outlet.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                >
+                  <MapPin className="size-3.5" /> Peta Google Maps <ExternalLink className="size-3" />
+                </a>
+              }
+            />
             <InfoRow label="Radius Geofence" value={`${outlet.geofenceRadiusMeters} m`} />
             <InfoRow label="Dibuat" value={formatDateMed(outlet.createdAt)} />
             <InfoRow label="Catatan" value={outlet.note} block />
@@ -315,7 +339,7 @@ function OutletDetail({
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="size-4 text-primary" /> Karyawan per Posisi
             </CardTitle>
-            <CardDescription className="text-xs">Distribusi & jarak domisili terdekat/terjauh</CardDescription>
+            <CardDescription className="text-xs">Distribusi &amp; jarak domisili terdekat/terjauh</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {stats.byPosition.length === 0 ? (
@@ -398,6 +422,14 @@ function OutletDetail({
           ) : null}
         </CardContent>
       </Card>
+
+      {/* Form Edit Dialog Lokal */}
+      <OutletFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        data={outlet}
+      />
     </div>
   );
 }
@@ -435,7 +467,7 @@ function MiniStat({
 }
 
 // ------------------------------------------------------------
-// Form Dialog Outlet
+// Form Dialog Outlet (REVISI: Responsif max-h-[90vh] overflow-y-auto)
 // ------------------------------------------------------------
 function OutletFormDialog({
   open,
@@ -454,6 +486,7 @@ function OutletFormDialog({
   const [address, setAddress] = React.useState(data?.address ?? "");
   const [lat, setLat] = React.useState(String(data?.latitude ?? -6.2));
   const [lon, setLon] = React.useState(String(data?.longitude ?? 106.8));
+  const [mapsLink, setMapsLink] = React.useState("");
   const [radius, setRadius] = React.useState(String(data?.geofenceRadiusMeters ?? 100));
   const [classification, setClassification] = React.useState<OutletClassification>(data?.classification ?? "STANDARD");
   const [headId, setHeadId] = React.useState(data?.headId ?? "");
@@ -467,6 +500,7 @@ function OutletFormDialog({
       setAddress(data?.address ?? "");
       setLat(String(data?.latitude ?? -6.2));
       setLon(String(data?.longitude ?? 106.8));
+      setMapsLink(data?.latitude ? `https://maps.google.com/?q=${data.latitude},${data.longitude}` : "");
       setRadius(String(data?.geofenceRadiusMeters ?? 100));
       setClassification(data?.classification ?? "STANDARD");
       setHeadId(data?.headId ?? "");
@@ -475,17 +509,27 @@ function OutletFormDialog({
     }
   }, [open, data]);
 
+  const handleMapsLinkChange = (url: string) => {
+    setMapsLink(url);
+    const match = url.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if (match) {
+      setLat(match[1]);
+      setLon(match[2]);
+      toast.info(`Koordinat outlet terdeteksi: Lat ${match[1]}, Lon ${match[2]}`);
+    }
+  };
+
   const submit = () => {
     if (!code.trim() || !name.trim()) {
-      setError("Kode dan nama wajib diisi.");
+      setError("Kode dan nama outlet wajib diisi.");
       return;
     }
     const payload = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
       address: address.trim(),
-      latitude: Number(lat),
-      longitude: Number(lon),
+      latitude: Number(lat) || -6.2,
+      longitude: Number(lon) || 106.8,
       geofenceRadiusMeters: Number(radius) || 100,
       classification,
       headId: headId || undefined,
@@ -494,50 +538,73 @@ function OutletFormDialog({
     };
     if (mode === "edit" && data) {
       outletService.update(data.id, payload);
-      toast.success("Outlet diperbarui");
+      toast.success("Outlet berhasil diperbarui");
     } else {
       outletService.create(payload);
-      toast.success("Outlet ditambahkan");
+      toast.success("Outlet baru berhasil ditambahkan");
     }
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[580px]">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit Outlet" : "Tambah Outlet"}</DialogTitle>
-          <DialogDescription>Lengkapi data outlet beserta koordinat & geofence.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <Store className="size-5 text-primary" />
+            {mode === "edit" ? "Edit Data Outlet Cabang" : "Tambah Outlet Cabang Baru"}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Lengkapi profil outlet, lokasi alamat, koordinat (LU / LT), radius geofence, serta penunjukan kepala outlet.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+
+        <div className="space-y-4 py-2">
           <FormRow>
-            <Field label="Kode" required>
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="JBD-SDR" maxLength={12} />
+            <Field label="Kode Outlet" required hint="Contoh: JBD-SDR">
+              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="JBD-SDR" maxLength={12} className="font-mono" />
             </Field>
             <Field label="Nama Outlet" required>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="JURI Bun — Sudirman" />
             </Field>
           </FormRow>
-          <Field label="Alamat">
-            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Jl. ..." />
+
+          <Field label="Alamat Outlet Lengkap">
+            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Jl. Jend. Sudirman No. 1, Jakarta Pusat..." />
           </Field>
+
+          <Field label="Link Google Maps (Opsional)" hint="Tempel link peta untuk mengekstrak koordinat otomatis">
+            <Input
+              value={mapsLink}
+              onChange={(e) => handleMapsLinkChange(e.target.value)}
+              placeholder="https://maps.google.com/?q=-6.214,106.845"
+            />
+          </Field>
+
           <FormRow>
-            <Field label="Latitude">
-              <Input type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="tabular-nums" />
+            <Field label="Latitude (LU / Lintang)" required hint="Derajat Lintang (-6.xxxx)">
+              <div className="relative">
+                <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="pl-8 font-mono tabular-nums text-xs" />
+              </div>
             </Field>
-            <Field label="Longitude">
-              <Input type="number" step="any" value={lon} onChange={(e) => setLon(e.target.value)} className="tabular-nums" />
+            <Field label="Longitude (LT / Bujur)" required hint="Derajat Bujur Timur (106.xxxx)">
+              <div className="relative">
+                <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input type="number" step="any" value={lon} onChange={(e) => setLon(e.target.value)} className="pl-8 font-mono tabular-nums text-xs" />
+              </div>
             </Field>
           </FormRow>
+
           <FormRow>
-            <Field label="Radius Geofence (m)">
+            <Field label="Radius Geofence Presensi (meter)">
               <Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} className="tabular-nums" />
             </Field>
-            <Field label="Klasifikasi">
+            <Field label="Klasifikasi Outlet">
               <Select value={classification} onValueChange={(v) => setClassification(v as OutletClassification)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FLAGSHIP">Flagship</SelectItem>
+                  <SelectItem value="FLAGSHIP">Flagship (Utama)</SelectItem>
                   <SelectItem value="STANDARD">Standard</SelectItem>
                   <SelectItem value="EXPRESS">Express</SelectItem>
                   <SelectItem value="KIOSK">Kiosk</SelectItem>
@@ -545,9 +612,10 @@ function OutletFormDialog({
               </Select>
             </Field>
           </FormRow>
-          <Field label="Kepala Outlet">
+
+          <Field label="Kepala Outlet (Supervisor Direct)">
             <Select value={headId} onValueChange={setHeadId}>
-              <SelectTrigger><SelectValue placeholder="Pilih karyawan..." /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Pilih penanggung jawab..." /></SelectTrigger>
               <SelectContent>
                 {employees.filter((e) => e.category === "OUTLET" && e.status === "AKTIF").map((e) => (
                   <SelectItem key={e.id} value={e.id}>{e.fullName} — {e.nik}</SelectItem>
@@ -555,14 +623,22 @@ function OutletFormDialog({
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Catatan">
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Opsional" />
+
+          <Field label="Catatan Internal Outlet">
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Catatan fasilitas atau operasional outlet..." />
           </Field>
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
+
+          {error ? (
+            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : null}
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>{mode === "edit" ? "Simpan" : "Tambah"}</Button>
+          <Button onClick={submit}>{mode === "edit" ? "Simpan Perubahan" : "Tambah Outlet"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
