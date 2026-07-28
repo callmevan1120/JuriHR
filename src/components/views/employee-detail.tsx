@@ -51,6 +51,9 @@ import {
   Plane,
   Coffee,
   ScrollText,
+  CreditCard,
+  User,
+  ExternalLink,
 } from "lucide-react";
 
 interface Props {
@@ -61,6 +64,13 @@ interface Props {
 
 export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
   const [tab, setTab] = React.useState("profil");
+
+  const categoryLabels: Record<string, string> = {
+    OUTLET: "Karyawan Outlet",
+    PH_KLATEN: "Karyawan PH Klaten",
+    GUDANG_JAKARTA: "Karyawan Gudang Jakarta",
+    NON_OUTLET: "Karyawan HQ",
+  };
 
   return (
     <div className="space-y-5">
@@ -84,29 +94,36 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-xl font-semibold tracking-tight text-foreground">{employee.fullName}</h2>
                   <StatusBadge status={employee.status} />
-                  <StatusBadge
-                    status={employee.category}
-                    label={employee.category === "OUTLET" ? "Outlet" : "Non-Outlet"}
+                  <Badge
                     className={cn(
                       employee.category === "OUTLET"
                         ? "bg-primary/15 text-primary-foreground border-primary/30"
                         : "bg-info/15 text-info border-info/30",
                     )}
-                  />
+                  >
+                    {categoryLabels[employee.category] || employee.category}
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="font-mono">{employee.nik}</span>
+                  <span className="font-mono font-bold text-foreground">{employee.nik}</span>
                   <span className="inline-flex items-center gap-1">
                     <Briefcase className="size-3" /> {lookupService.positionName(employee.positionId)}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <Building2 className="size-3" /> {lookupService.outletName(employee.primaryOutletId)}
+                    <Building2 className="size-3" />{" "}
+                    {employee.category === "OUTLET"
+                      ? lookupService.outletName(employee.primaryOutletId)
+                      : employee.category === "PH_KLATEN"
+                      ? "Pabrik Produksi PH Klaten"
+                      : employee.category === "GUDANG_JAKARTA"
+                      ? "Gudang Logistik Jakarta"
+                      : "Head Office HQ"}
                   </span>
                 </div>
               </div>
             </div>
-            <Button variant="outline" onClick={onEdit}>
-              <Pencil className="size-4" /> Edit
+            <Button variant="outline" onClick={onEdit} className="gap-1.5">
+              <Pencil className="size-4" /> Edit Data
             </Button>
           </div>
         </CardContent>
@@ -115,7 +132,7 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
       <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <ScrollArea className="w-full whitespace-nowrap">
           <TabsList className="flex w-max gap-1 bg-muted/40 p-1">
-            <TabTrigger value="profil" icon={FileText} label="Profil" />
+            <TabTrigger value="profil" icon={FileText} label="Profil Lengkap" />
             <TabTrigger value="domisili" icon={MapPin} label="Domisili" />
             <TabTrigger value="kontrak" icon={ScrollText} label="Kontrak" />
             <TabTrigger value="jadwal" icon={Calendar} label="Jadwal" />
@@ -159,91 +176,211 @@ function TabTrigger({
 }
 
 // ------------------------------------------------------------
-// Tab Profil
+// Tab Profil (REVISI: Konsolidasi dalam 1 Single Card Rapi)
 // ------------------------------------------------------------
 function ProfilTab({ employee }: { employee: Employee }) {
+  const categoryLabels: Record<string, string> = {
+    OUTLET: "Karyawan Outlet",
+    PH_KLATEN: "Karyawan PH Klaten",
+    GUDANG_JAKARTA: "Karyawan Gudang Logistik Jakarta",
+    NON_OUTLET: "Karyawan HQ / Head Office",
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Data Pribadi</CardTitle>
-        </CardHeader>
-        <CardContent className="divide-y divide-border">
-          <InfoRow label="NIK" value={<span className="font-mono">{employee.nik}</span>} />
-          <InfoRow label="Nama Lengkap" value={employee.fullName} />
-          <InfoRow label="Telepon" value={employee.phone ? <span className="inline-flex items-center gap-1"><Phone className="size-3" /> {employee.phone}</span> : undefined} />
-          <InfoRow label="Email" value={employee.email ? <span className="inline-flex items-center gap-1"><Mail className="size-3" /> {employee.email}</span> : undefined} />
-          <InfoRow label="Tanggal Mulai Bekerja" value={<span className="inline-flex items-center gap-1"><CalendarDays className="size-3" /> {formatDateLong(employee.startDate)}</span>} />
-        </CardContent>
-      </Card>
+    <Card className="border-border shadow-soft overflow-hidden">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+              <User className="size-4 text-primary" /> Profil Karyawan Terintegrasi
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
+              Rangkuman identitas, penempatan kerja, rekening payroll, kontrak, dan domisili dalam satu tampilan.
+            </CardDescription>
+          </div>
+          <Badge variant="outline" className="font-mono text-xs">
+            {employee.nik}
+          </Badge>
+        </div>
+      </CardHeader>
 
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Penempatan &amp; Kepegawaian</CardTitle>
-        </CardHeader>
-        <CardContent className="divide-y divide-border">
-          <InfoRow label="Kategori" value={<StatusBadge status={employee.category} label={employee.category === "OUTLET" ? "Outlet" : "Non-Outlet"} />} />
-          <InfoRow label="Posisi" value={lookupService.positionName(employee.positionId)} />
-          <InfoRow label="Divisi" value={lookupService.divisionName(employee.divisionId)} />
-          <InfoRow label="Outlet Utama" value={lookupService.outletName(employee.primaryOutletId)} />
-          <InfoRow label="Atasan" value={lookupService.employeeName(employee.supervisorId)} />
-          <InfoRow label="Status" value={<StatusBadge status={employee.status} />} />
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Gaji &amp; Cuti</CardTitle>
-        </CardHeader>
-        <CardContent className="divide-y divide-border">
-          <InfoRow label="Tipe Gaji" value={employee.salaryType === "BULANAN" ? "Bulanan" : "Harian"} />
-          <InfoRow label="Nominal Gaji" value={<span className="font-semibold tabular-nums">{formatRupiah(employee.salaryAmount)}</span>} />
-          <InfoRow label="Saldo Cuti" value={<span className="inline-flex items-center gap-1.5"><Plane className="size-3" /><span className="font-medium">{employee.leaveBalanceDays} hari</span></span>} />
-          <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId)} />
-        </CardContent>
-      </Card>
-
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Catatan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {employee.note ? (
-            <p className="text-sm text-foreground">{employee.note}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">Tidak ada catatan.</p>
-          )}
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-3">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dibuat</p>
-              <p className="text-xs text-foreground">{formatDateMed(employee.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Diperbarui</p>
-              <p className="text-xs text-foreground">{formatDateMed(employee.updatedAt)}</p>
+      <CardContent className="p-6 space-y-6">
+        {/* Grid Sub-bagian 1: Identitas & Penempatan */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Sub-bagian 1A: Identitas Diri */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
+              <User className="size-3.5" /> Identitas Diri &amp; Kontak
+            </h4>
+            <div className="divide-y divide-border/60 text-xs">
+              <InfoRow label="NIK" value={<span className="font-mono font-bold text-foreground">{employee.nik}</span>} />
+              <InfoRow label="Nama Lengkap" value={employee.fullName} />
+              <InfoRow
+                label="Telepon / WA"
+                value={
+                  employee.phone ? (
+                    <span className="inline-flex items-center gap-1 text-foreground font-mono">
+                      <Phone className="size-3 text-muted-foreground" /> {employee.phone}
+                    </span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <InfoRow
+                label="Email"
+                value={
+                  employee.email ? (
+                    <span className="inline-flex items-center gap-1 text-foreground font-mono">
+                      <Mail className="size-3 text-muted-foreground" /> {employee.email}
+                    </span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <InfoRow
+                label="Tanggal Bergabung"
+                value={
+                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                    <CalendarDays className="size-3 text-muted-foreground" /> {formatDateLong(employee.startDate)}
+                  </span>
+                }
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Sub-bagian 1B: Penempatan & Organisasi */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
+              <Building2 className="size-3.5" /> Penempatan &amp; Struktur Organisasi
+            </h4>
+            <div className="divide-y divide-border/60 text-xs">
+              <InfoRow
+                label="Kategori Karyawan"
+                value={
+                  <Badge variant="outline" className="font-medium">
+                    {categoryLabels[employee.category] || employee.category}
+                  </Badge>
+                }
+              />
+              <InfoRow label="Posisi / Jabatan" value={lookupService.positionName(employee.positionId)} />
+              <InfoRow label="Divisi" value={lookupService.divisionName(employee.divisionId)} />
+              <InfoRow
+                label="Penempatan Lokasi"
+                value={
+                  employee.category === "OUTLET"
+                    ? lookupService.outletName(employee.primaryOutletId)
+                    : employee.category === "PH_KLATEN"
+                    ? "Pabrik Produksi PH Klaten"
+                    : employee.category === "GUDANG_JAKARTA"
+                    ? "Gudang Logistik & QC Jakarta"
+                    : "Head Office (HQ Jakarta)"
+                }
+              />
+              <InfoRow label="Atasan Langsung" value={lookupService.employeeName(employee.supervisorId) || "—"} />
+              <InfoRow label="Status Kepegawaian" value={<StatusBadge status={employee.status} />} />
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-border" />
+
+        {/* Grid Sub-bagian 2: Gaji, Rekening Bank, Kontrak, Domisili */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Sub-bagian 2A: Gaji & Rekening Bank Payroll */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
+              <CreditCard className="size-3.5 text-primary" /> Rekening Payroll &amp; Kompensasi
+            </h4>
+            <div className="divide-y divide-border/60 text-xs">
+              <InfoRow label="Nama Bank" value={<span className="font-semibold text-foreground">{employee.bankName || "Bank BCA"}</span>} />
+              <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "1234567890"}</span>} />
+              <InfoRow label="Atas Nama Rekening" value={employee.accountHolderName || employee.fullName} />
+              <InfoRow label="Tipe Skema Gaji" value={employee.salaryType === "BULANAN" ? "Bulanan" : "Harian"} />
+              <InfoRow label="Nominal Gaji" value={<span className="font-bold tabular-nums text-foreground">{formatRupiah(employee.salaryAmount)}</span>} />
+              <InfoRow
+                label="Saldo Cuti Tahunan"
+                value={
+                  <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                    <Plane className="size-3 text-muted-foreground" /> {employee.leaveBalanceDays} hari
+                  </span>
+                }
+              />
+            </div>
+          </div>
+
+          {/* Sub-bagian 2B: Detail Kontrak & Domisili Rumah */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
+              <ScrollText className="size-3.5 text-primary" /> Kontrak Kerja &amp; Lokasi Rumah
+            </h4>
+            <div className="divide-y divide-border/60 text-xs">
+              <InfoRow label="Jenis / Tipe Kontrak" value={<Badge variant="outline">{employee.contractType || "PKWT"}</Badge>} />
+              <InfoRow label="Durasi Kontrak" value={`${employee.contractDurationMonths || 12} Bulan`} />
+              <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
+              <InfoRow label="Alamat Rumah" value={employee.homeAddress || "—"} block />
+              <InfoRow
+                label="Lokasi Google Maps"
+                value={
+                  employee.mapsUrl ? (
+                    <a
+                      href={employee.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      <MapPin className="size-3" /> Buka Peta Maps <ExternalLink className="size-3" />
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: Catatan & Metadata */}
+        <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2">
+          <h4 className="text-xs font-semibold text-foreground">Catatan Internal HRD:</h4>
+          <p className="text-xs text-muted-foreground">
+            {employee.note ? employee.note : "Tidak ada catatan khusus untuk karyawan ini."}
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-4 border-t border-border/60 pt-2.5 text-[11px] text-muted-foreground">
+            <div>
+              <span>Dibuat pada: </span>
+              <span className="font-medium text-foreground">{formatDateMed(employee.createdAt)}</span>
+            </div>
+            <div>
+              <span>Terakhir diperbarui: </span>
+              <span className="font-medium text-foreground">{formatDateMed(employee.updatedAt)}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
 // ------------------------------------------------------------
-// Tab Domisili
+// Tab Domisili (REVISI: Teks Digeser ke Kanan dengan Padding px-6)
 // ------------------------------------------------------------
 function DomicileTab({ employee }: { employee: Employee }) {
   const [editing, setEditing] = React.useState(false);
   return (
     <div className="space-y-4">
-      <Card className="border-border shadow-soft">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Alamat Domisili</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+      <Card className="border-border shadow-soft overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/15 px-6 py-4">
+          <CardTitle className="text-base font-semibold">Alamat Domisili &amp; Pemetaan Lokasi</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1.5">
             <Pencil className="size-3.5" /> Edit Domisili
           </Button>
         </CardHeader>
-        <DomicileEditor employee={employee} editing={editing} onClose={() => setEditing(false)} />
+        <div className="p-6">
+          <DomicileEditor employee={employee} editing={editing} onClose={() => setEditing(false)} />
+        </div>
       </Card>
     </div>
   );
@@ -317,7 +454,7 @@ function JadwalTab({ employee }: { employee: Employee }) {
     <Card className="border-border shadow-soft">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Jadwal 7 Hari Terakhir</CardTitle>
-        <CardDescription className="text-xs">Sumber: shift group & jadwal manual</CardDescription>
+        <CardDescription className="text-xs">Sumber: shift group &amp; jadwal manual</CardDescription>
       </CardHeader>
       <CardContent className="divide-y divide-border">
         {schedules.map((sc) => {

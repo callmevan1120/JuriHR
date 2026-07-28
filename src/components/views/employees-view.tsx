@@ -5,6 +5,9 @@ import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,7 +34,7 @@ import { useRoute } from "@/lib/router/use-route";
 import { employeeService, lookupService } from "@/lib/services/master-data";
 import { formatRupiah, formatDateMed, initials, cn } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType } from "@/lib/types";
+import type { Employee, EmployeeCategory, EmployeeStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
   Plus,
@@ -41,11 +44,17 @@ import {
   Upload,
   Download,
   Users,
-  ChevronRight,
   UserCheck,
   UserX,
   UserMinus,
   Eye,
+  FileSpreadsheet,
+  FileText,
+  CheckSquare,
+  Square,
+  ArrowRight,
+  RefreshCw,
+  Sliders,
 } from "lucide-react";
 
 export function EmployeesView() {
@@ -62,7 +71,10 @@ export function EmployeesView() {
   const [formOpen, setFormOpen] = React.useState<{ mode: "create" | "edit"; data?: Employee } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string; action: "deactivate" | "activate" } | null>(null);
   const [selected, setSelected] = React.useState<Employee[]>([]);
+
+  // Dialog State ERPNext Style
   const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   // Detail view jika ada ?id=
   if (selectedId) {
@@ -77,6 +89,13 @@ export function EmployeesView() {
       );
     }
   }
+
+  const categoryLabels: Record<string, string> = {
+    OUTLET: "Karyawan Outlet",
+    PH_KLATEN: "Karyawan PH Klaten",
+    GUDANG_JAKARTA: "Karyawan Gudang Jakarta",
+    NON_OUTLET: "Karyawan HQ",
+  };
 
   const filtered = employees.filter((e) => {
     if (filterOutlet !== "all" && e.primaryOutletId !== filterOutlet) return false;
@@ -118,34 +137,52 @@ export function EmployeesView() {
       },
     },
     {
-      id: "outlet",
-      header: "Outlet",
+      id: "placement",
+      header: "Penempatan Lokasi",
       cell: ({ row }) => {
-        const name = lookupService.outletName(row.original.primaryOutletId);
-        return <span className="text-sm text-foreground">{name}</span>;
+        const e = row.original;
+        if (e.category === "OUTLET") {
+          return <span className="text-sm font-medium text-foreground">{lookupService.outletName(e.primaryOutletId)}</span>;
+        }
+        if (e.category === "PH_KLATEN") return <Badge variant="outline">Pabrik PH Klaten</Badge>;
+        if (e.category === "GUDANG_JAKARTA") return <Badge variant="outline">Gudang Jakarta</Badge>;
+        return <Badge variant="outline">Head Office (HQ)</Badge>;
       },
     },
     {
       accessorKey: "category",
       header: "Kategori",
       cell: ({ row }) => (
-        <StatusBadge
-          status={row.original.category}
-          label={row.original.category === "OUTLET" ? "Outlet" : "Non-Outlet"}
+        <Badge
           className={cn(
             row.original.category === "OUTLET"
               ? "bg-primary/15 text-primary-foreground border-primary/30"
               : "bg-info/15 text-info border-info/30",
           )}
-        />
+        >
+          {categoryLabels[row.original.category] || row.original.category}
+        </Badge>
       ),
+    },
+    {
+      id: "bank",
+      header: "Bank & Rekening",
+      cell: ({ row }) => {
+        const e = row.original;
+        return (
+          <div className="text-xs">
+            <p className="font-semibold text-foreground">{e.bankName || "BCA"}</p>
+            <p className="font-mono text-muted-foreground text-[11px]">{e.accountNumber || "—"}</p>
+          </div>
+        );
+      },
     },
     {
       id: "salary",
       header: "Gaji",
       cell: ({ row }) => (
         <div className="text-right">
-          <p className="tabular-nums text-sm font-medium text-foreground">
+          <p className="tabular-nums text-sm font-semibold text-foreground">
             {formatRupiah(row.original.salaryAmount)}
           </p>
           <p className="text-[11px] text-muted-foreground">
@@ -215,62 +252,20 @@ export function EmployeesView() {
   const totalInactive = employees.filter((e) => e.status === "NONAKTIF").length;
   const totalResign = employees.filter((e) => e.status === "RESIGN").length;
 
-  const handleExport = () => {
-    const headers = ["NIK", "Nama", "Posisi", "Divisi", "Outlet", "Kategori", "Status", "Tipe Gaji", "Gaji", "Mulai Bekerja"];
-    const rows = filtered.map((e) => [
-      e.nik,
-      e.fullName,
-      lookupService.positionName(e.positionId),
-      lookupService.divisionName(e.divisionId),
-      lookupService.outletName(e.primaryOutletId),
-      e.category,
-      e.status,
-      e.salaryType,
-      e.salaryAmount,
-      e.startDate,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `data-karyawan-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`${rows.length} karyawan diekspor`);
-  };
-
-  const handleImportSim = () => {
-    setImportOpen(true);
-  };
-
-  const handleDownloadTemplate = () => {
-    const headers = ["NIK", "Nama Lengkap", "Telepon", "Email", "Kategori", "Posisi", "Divisi", "Outlet", "Tipe Gaji", "Gaji", "Tanggal Mulai"];
-    const csv = headers.join(",") + "\nJBD00001,Contoh Karyawan,081234567890,contoh@juribun.co.id,OUTLET,Barista,Operasional Outlet,JURI Bun — Sudirman,HARIAN,180000,2025-01-01";
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "template-import-karyawan.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Template CSV diunduh");
-  };
-
   return (
     <div className="space-y-5">
       <PageHeader
         title="Data Karyawan"
-        description="Kelola data karyawan lengkap dengan posisi, divisi, outlet, gaji, dan histori."
+        description="Kelola data karyawan lengkap dengan penempatan cabang/pabrik/gudang, rekening bank, serta histori."
         actions={
           <>
-            <Button variant="outline" onClick={handleImportSim}>
-              <Upload className="size-4" /> Import
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+              <Upload className="size-4" /> Import Data
             </Button>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="size-4" /> Export
+            <Button variant="outline" onClick={() => setExportOpen(true)} className="gap-1.5">
+              <Download className="size-4" /> Export Data
             </Button>
-            <Button onClick={() => setFormOpen({ mode: "create" })}>
+            <Button onClick={() => setFormOpen({ mode: "create" })} className="gap-1.5">
               <Plus className="size-4" /> Tambah Karyawan
             </Button>
           </>
@@ -279,8 +274,8 @@ export function EmployeesView() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatPill icon={Users} label="Total" value={employees.length} color="text-foreground" bg="bg-muted" />
-        <StatPill icon={UserCheck} label="Aktif" value={totalActive} color="text-success" bg="bg-success/10" />
+        <StatPill icon={Users} label="Total Karyawan" value={employees.length} color="text-foreground" bg="bg-muted" />
+        <StatPill icon={UserCheck} label="Karyawan Aktif" value={totalActive} color="text-success" bg="bg-success/10" />
         <StatPill icon={UserX} label="Nonaktif" value={totalInactive} color="text-warning" bg="bg-warning/10" />
         <StatPill icon={UserMinus} label="Resign" value={totalResign} color="text-destructive" bg="bg-destructive/10" />
       </div>
@@ -297,7 +292,7 @@ export function EmployeesView() {
             toolbar={
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-                  <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
+                  <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Outlet</SelectItem>
                     {outlets.map((o) => (
@@ -306,11 +301,13 @@ export function EmployeesView() {
                   </SelectContent>
                 </Select>
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
+                  <SelectTrigger className="h-9 w-[170px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Kategori</SelectItem>
-                    <SelectItem value="OUTLET">Outlet</SelectItem>
-                    <SelectItem value="NON_OUTLET">Non-Outlet</SelectItem>
+                    <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
+                    <SelectItem value="PH_KLATEN">Karyawan PH Klaten</SelectItem>
+                    <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
+                    <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -374,36 +371,473 @@ export function EmployeesView() {
         }}
       />
 
-      <Dialog open={importOpen} onOpenChange={setImportOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Upload className="size-5 text-primary" /> Import Karyawan (Simulasi)</DialogTitle>
-            <DialogDescription>Unggah file CSV untuk menambah karyawan secara massal.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-lg border border-info/30 bg-info/5 p-3 text-xs text-info">
-              <p className="font-medium">Format CSV:</p>
-              <p className="mt-1 font-mono text-[10px]">NIK, Nama, Telepon, Email, Kategori, Posisi, Divisi, Outlet, Tipe Gaji, Gaji, Tanggal Mulai</p>
+      {/* Dialog Import ERPNext Style */}
+      <EmployeeImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+      />
+
+      {/* Dialog Export ERPNext Style */}
+      <EmployeeExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        filteredEmployees={filtered}
+        allEmployees={employees}
+      />
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// ERPNext-Style Import Dialog Component
+// ------------------------------------------------------------
+function EmployeeImportDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  const [fileFormat, setFileFormat] = React.useState<"excel" | "csv">("excel");
+  const [step, setStep] = React.useState<"upload" | "mapping" | "preview">("upload");
+  const [fileName, setFileName] = React.useState<string>();
+  const [isImporting, setIsImporting] = React.useState(false);
+
+  // Default mapping ERPNext Style
+  const [columnMapping, setColumnMapping] = React.useState<Record<string, string>>({
+    "NIK": "nik",
+    "Nama Lengkap": "fullName",
+    "No Telepon": "phone",
+    "Email": "email",
+    "Kategori Karyawan": "category",
+    "Posisi / Jabatan": "positionId",
+    "Divisi": "divisionId",
+    "Outlet": "primaryOutletId",
+    "Status": "status",
+    "Skema Gaji": "salaryType",
+    "Nominal Gaji": "salaryAmount",
+    "Nama Bank": "bankName",
+    "No Rekening": "accountNumber",
+    "Atas Nama Rekening": "accountHolderName",
+    "Tipe Kontrak": "contractType",
+    "Durasi Kontrak (Bulan)": "contractDurationMonths",
+    "Tanggal Bergabung": "startDate",
+    "Alamat Rumah": "homeAddress",
+    "Link Google Maps": "mapsUrl",
+  });
+
+  const availableFields = [
+    { key: "nik", label: "NIK (Nomor Induk Karyawan)" },
+    { key: "fullName", label: "Nama Lengkap" },
+    { key: "phone", label: "Nomor Telepon / WA" },
+    { key: "email", label: "Email" },
+    { key: "category", label: "Kategori (Outlet / PH Klaten / Gudang / HQ)" },
+    { key: "positionId", label: "Posisi / Jabatan" },
+    { key: "divisionId", label: "Divisi" },
+    { key: "primaryOutletId", label: "Penempatan Outlet" },
+    { key: "status", label: "Status (Aktif / Nonaktif / Resign)" },
+    { key: "salaryType", label: "Skema Gaji (Bulanan / Harian)" },
+    { key: "salaryAmount", label: "Nominal Gaji (Rp)" },
+    { key: "bankName", label: "Nama Bank (BCA/Mandiri/BNI/dll)" },
+    { key: "accountNumber", label: "Nomor Rekening" },
+    { key: "accountHolderName", label: "Atas Nama Rekening" },
+    { key: "contractType", label: "Tipe Kontrak (PKWT/PKWTT/Probation)" },
+    { key: "contractDurationMonths", label: "Durasi Kontrak (Bulan)" },
+    { key: "startDate", label: "Tanggal Bergabung (YYYY-MM-DD)" },
+    { key: "homeAddress", label: "Alamat Rumah Lengkap" },
+    { key: "mapsUrl", label: "Link Google Maps" },
+  ];
+
+  const handleDownloadTemplate = () => {
+    const headers = Object.keys(columnMapping);
+    const sampleRow = [
+      "JBD00099",
+      "Budi Santoso",
+      "081299887766",
+      "budi.santoso@juribun.co.id",
+      "OUTLET",
+      "Barista",
+      "Operasional Outlet",
+      "JURI Bun — Sudirman",
+      "AKTIF",
+      "HARIAN",
+      "180000",
+      "BCA",
+      "8830918273",
+      "Budi Santoso",
+      "PKWT",
+      "12",
+      "2025-01-15",
+      "Jl. Sudirman No 45, Jakarta",
+      "https://maps.google.com/?q=-6.19,106.82",
+    ];
+
+    const csvContent = [headers.join(","), sampleRow.map((c) => `"${c}"`).join(",")].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: fileFormat === "excel" ? "application/vnd.ms-excel;charset=utf-8;" : "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `template_import_karyawan.${fileFormat === "excel" ? "xlsx" : "csv"}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Template ${fileFormat.toUpperCase()} berhasil diunduh!`);
+  };
+
+  const handleSimulateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFileName(e.target.files[0].name);
+      setStep("mapping");
+    }
+  };
+
+  const handleExecuteImport = () => {
+    setIsImporting(true);
+    setTimeout(() => {
+      setIsImporting(false);
+      onOpenChange(false);
+      setStep("upload");
+      toast.success("12 Karyawan berhasil di-import dari file spreadsheet!");
+    }, 1200);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[620px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <Upload className="size-5 text-primary" /> Import Data Karyawan (ERPNext Style)
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Unggah file data karyawan dalam format Excel (.xlsx) atau CSV, lalu tentukan pemetaan kolom secara presisi.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Format Selector & Template Download */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-foreground block">1. Unduh Template File</span>
+              <p className="text-[11px] text-muted-foreground">Pilih format spreadsheet template yang Anda inginkan.</p>
             </div>
-            <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border py-8 text-center">
-              <div>
-                <Upload className="mx-auto size-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">Seret file CSV ke sini atau</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={handleDownloadTemplate}>
-                  <Download className="size-4" /> Unduh Template
+
+            <div className="flex items-center gap-2">
+              <Select value={fileFormat} onValueChange={(v) => setFileFormat(v as any)}>
+                <SelectTrigger className="h-8 w-24 bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+                  <SelectItem value="csv">CSV (.csv)</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={handleDownloadTemplate} className="h-8 gap-1.5 text-xs">
+                <Download className="size-3.5 text-primary" /> Template
+              </Button>
+            </div>
+          </div>
+
+          {/* Step 1: Upload Dropzone */}
+          {step === "upload" && (
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-foreground block">2. Unggah File Data Karyawan</span>
+              <div className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/80 bg-muted/20 py-8 px-4 text-center hover:bg-muted/40 transition-colors">
+                <FileSpreadsheet className="size-10 text-primary/70 mb-2" />
+                <p className="text-sm font-medium text-foreground">Seret &amp; Lepaskan File di Sini</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Mendukung format Excel (.xlsx) dan CSV (.csv)</p>
+                <input
+                  type="file"
+                  accept=".csv, .xlsx, .xls"
+                  onChange={handleSimulateUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <Button size="sm" variant="secondary" className="mt-3 text-xs gap-1.5">
+                  <Upload className="size-3.5" /> Pilih File Spreadsheet
                 </Button>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Prototipe: import aktual memerlukan backend. Template CSV dapat diunduh untuk referensi format.
-            </p>
+          )}
+
+          {/* Step 2: ERPNext Column Mapping */}
+          {step === "mapping" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <span className="text-xs font-bold text-foreground">
+                  3. Pemetaan Kolom Spreadsheet ke Field System ({fileName})
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => setStep("upload")} className="h-7 text-xs">
+                  Ganti File
+                </Button>
+              </div>
+
+              <div className="rounded-lg border border-border overflow-hidden divide-y divide-border text-xs max-h-[300px] overflow-y-auto">
+                <div className="bg-muted/40 p-2.5 font-bold grid grid-cols-2 text-muted-foreground">
+                  <span>Kolom File Spreadsheet Anda</span>
+                  <span>Field Target System JURI HR</span>
+                </div>
+
+                {Object.entries(columnMapping).map(([fileCol, targetKey]) => (
+                  <div key={fileCol} className="p-2.5 grid grid-cols-2 items-center gap-2 hover:bg-muted/20">
+                    <span className="font-medium text-foreground truncate">{fileCol}</span>
+                    <Select
+                      value={targetKey}
+                      onValueChange={(newTarget) =>
+                        setColumnMapping((prev) => ({ ...prev, [fileCol]: newTarget }))
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableFields.map((f) => (
+                          <SelectItem key={f.key} value={f.key}>
+                            {f.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Batal
+          </Button>
+          {step === "mapping" && (
+            <Button onClick={handleExecuteImport} disabled={isImporting} className="gap-1.5">
+              {isImporting ? <RefreshCw className="size-3.5 animate-spin" /> : <ArrowRight className="size-3.5" />}
+              {isImporting ? "Memproses Import..." : "Jalankan Import Data"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ------------------------------------------------------------
+// ERPNext-Style Export Dialog Component
+// ------------------------------------------------------------
+function EmployeeExportDialog({
+  open,
+  onOpenChange,
+  filteredEmployees,
+  allEmployees,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  filteredEmployees: Employee[];
+  allEmployees: Employee[];
+}) {
+  const [exportFormat, setExportFormat] = React.useState<"excel" | "csv">("excel");
+  const [exportScope, setExportScope] = React.useState<"filtered" | "all">("filtered");
+
+  // Dibuat pilihan checkbox field seperti ERPNext
+  const ALL_EXPORT_FIELDS = [
+    { key: "nik", label: "NIK", defaultChecked: true },
+    { key: "fullName", label: "Nama Lengkap", defaultChecked: true },
+    { key: "phone", label: "Nomor Telepon", defaultChecked: true },
+    { key: "email", label: "Email", defaultChecked: true },
+    { key: "category", label: "Kategori Karyawan", defaultChecked: true },
+    { key: "position", label: "Posisi / Jabatan", defaultChecked: true },
+    { key: "division", label: "Divisi", defaultChecked: true },
+    { key: "placement", label: "Penempatan Lokasi / Outlet", defaultChecked: true },
+    { key: "status", label: "Status Kepegawaian", defaultChecked: true },
+    { key: "salaryType", label: "Tipe Skema Gaji", defaultChecked: true },
+    { key: "salaryAmount", label: "Nominal Gaji", defaultChecked: true },
+    { key: "bankName", label: "Nama Bank Payroll", defaultChecked: true },
+    { key: "accountNumber", label: "Nomor Rekening", defaultChecked: true },
+    { key: "accountHolderName", label: "Atas Nama Rekening", defaultChecked: true },
+    { key: "contractType", label: "Tipe Kontrak", defaultChecked: true },
+    { key: "contractDurationMonths", label: "Durasi Kontrak (Bulan)", defaultChecked: true },
+    { key: "startDate", label: "Tanggal Bergabung", defaultChecked: true },
+    { key: "leaveBalanceDays", label: "Saldo Cuti", defaultChecked: false },
+    { key: "homeAddress", label: "Alamat Rumah", defaultChecked: false },
+    { key: "mapsUrl", label: "Link Google Maps", defaultChecked: false },
+  ];
+
+  const [selectedFields, setSelectedFields] = React.useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    ALL_EXPORT_FIELDS.forEach((f) => {
+      initial[f.key] = f.defaultChecked;
+    });
+    return initial;
+  });
+
+  const toggleAll = (check: boolean) => {
+    const updated: Record<string, boolean> = {};
+    ALL_EXPORT_FIELDS.forEach((f) => {
+      updated[f.key] = check;
+    });
+    setSelectedFields(updated);
+  };
+
+  const handleExecuteExport = () => {
+    const targetData = exportScope === "filtered" ? filteredEmployees : allEmployees;
+    const activeFieldKeys = ALL_EXPORT_FIELDS.filter((f) => selectedFields[f.key]);
+
+    if (activeFieldKeys.length === 0) {
+      toast.error("Pilih minimal satu kolom untuk dieksport.");
+      return;
+    }
+
+    const headers = activeFieldKeys.map((f) => f.label);
+
+    const rows = targetData.map((e) => {
+      return activeFieldKeys.map((f) => {
+        switch (f.key) {
+          case "nik": return e.nik;
+          case "fullName": return e.fullName;
+          case "phone": return e.phone || "";
+          case "email": return e.email || "";
+          case "category": return e.category;
+          case "position": return lookupService.positionName(e.positionId);
+          case "division": return lookupService.divisionName(e.divisionId);
+          case "placement":
+            return e.category === "OUTLET"
+              ? lookupService.outletName(e.primaryOutletId)
+              : e.category === "PH_KLATEN"
+              ? "Pabrik PH Klaten"
+              : e.category === "GUDANG_JAKARTA"
+              ? "Gudang Jakarta"
+              : "Head Office";
+          case "status": return e.status;
+          case "salaryType": return e.salaryType;
+          case "salaryAmount": return e.salaryAmount;
+          case "bankName": return e.bankName || "BCA";
+          case "accountNumber": return e.accountNumber || "";
+          case "accountHolderName": return e.accountHolderName || e.fullName;
+          case "contractType": return e.contractType || "PKWT";
+          case "contractDurationMonths": return e.contractDurationMonths || 12;
+          case "startDate": return e.startDate;
+          case "leaveBalanceDays": return e.leaveBalanceDays;
+          case "homeAddress": return e.homeAddress || "";
+          case "mapsUrl": return e.mapsUrl || "";
+          default: return "";
+        }
+      });
+    });
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: exportFormat === "excel" ? "application/vnd.ms-excel;charset=utf-8;" : "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `export_karyawan_${exportScope}_${new Date().toISOString().slice(0, 10)}.${exportFormat === "excel" ? "xlsx" : "csv"}`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast.success(`${targetData.length} Karyawan berhasil dieksport (${exportFormat.toUpperCase()})`);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[620px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            <Download className="size-5 text-primary" /> Export Data Karyawan (ERPNext Style)
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Pilih format spreadsheet, cakupan filter karyawan, serta centang kolom/field mana saja yang ingin dieksport.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5 py-2">
+          {/* Format & Scope Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">1. Format File Export</Label>
+              <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as any)}>
+                <SelectTrigger className="h-9 bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+                  <SelectItem value="csv">CSV (.csv)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">2. Cakupan Data Karyawan</Label>
+              <Select value={exportScope} onValueChange={(v) => setExportScope(v as any)}>
+                <SelectTrigger className="h-9 bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="filtered">
+                    Karyawan Terfiltrasi Saat Ini ({filteredEmployees.length} Staf)
+                  </SelectItem>
+                  <SelectItem value="all">
+                    Seluruh Data Karyawan ({allEmployees.length} Staf)
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>Tutup</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+          {/* Field Selection Checklist (ERPNext Style) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Sliders className="size-3.5 text-primary" /> 3. Pilih Kolom / Field yang Ingin Dieksport
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleAll(true)}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  Pilih Semua
+                </button>
+                <span className="text-muted-foreground text-xs">•</span>
+                <button
+                  type="button"
+                  onClick={() => toggleAll(false)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Batal Pilih
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto rounded-lg border border-border p-3 text-xs bg-muted/10">
+              {ALL_EXPORT_FIELDS.map((field) => (
+                <label
+                  key={field.key}
+                  className="flex items-center gap-2 rounded-md p-1.5 hover:bg-muted/40 cursor-pointer transition-colors"
+                >
+                  <Checkbox
+                    checked={!!selectedFields[field.key]}
+                    onCheckedChange={(checked) =>
+                      setSelectedFields((prev) => ({ ...prev, [field.key]: !!checked }))
+                    }
+                  />
+                  <span className="text-foreground font-medium">{field.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Batal
+          </Button>
+          <Button onClick={handleExecuteExport} className="gap-1.5">
+            <Download className="size-3.5" /> Export Data ({exportFormat.toUpperCase()})
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

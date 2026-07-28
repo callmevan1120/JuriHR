@@ -141,7 +141,7 @@ export interface Contract {
 // Karyawan
 // ------------------------------------------------------------
 
-export type EmployeeCategory = "OUTLET" | "NON_OUTLET";
+export type EmployeeCategory = "OUTLET" | "PH_KLATEN" | "GUDANG_JAKARTA" | "NON_OUTLET";
 export type EmployeeStatus = "AKTIF" | "NONAKTIF" | "RESIGN";
 export type SalaryType = "HARIAN" | "BULANAN";
 
@@ -151,11 +151,11 @@ export interface Employee {
   fullName: string;
   phone: string;
   email: string;
-  startDate: ISODate; // tanggal mulai bekerja
+  startDate: ISODate; // tanggal mulai bekerja / bergabung
   category: EmployeeCategory;
   positionId: string;
   divisionId: string;
-  primaryOutletId?: string;
+  primaryOutletId?: string; // Khusus kategori OUTLET
   status: EmployeeStatus;
   salaryType: SalaryType;
   salaryAmount: number; // nominal gaji
@@ -165,6 +165,18 @@ export interface Employee {
   supervisorId?: string; // atasan
   photoUrl?: string;
   note?: string;
+  // Detail Rekening & Payroll
+  bankName?: string; // Bank (BCA, Mandiri, BNI, BRI, CIMB Niaga, dll)
+  accountNumber?: string; // Nomor Rekening
+  accountHolderName?: string; // Atas Nama Karyawan
+  // Detail Kontrak
+  contractType?: string; // PKWT, PKWTT, PROBATION, HARIAN, MAGANG
+  contractDurationMonths?: number; // Durasi kontrak dalam bulan (misal 3, 6, 12)
+  // Domisili & Peta Lokasi Rumah
+  homeAddress?: string; // Alamat Rumah Lengkap
+  mapsUrl?: string; // Link Google Maps
+  latitude?: number;
+  longitude?: number;
   createdAt: ISODate;
   updatedAt: ISODate;
 }
