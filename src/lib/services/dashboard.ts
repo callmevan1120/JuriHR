@@ -145,6 +145,30 @@ export function computeContractStatus(
     .map((s) => ({ status: s, count: counts.get(s) ?? 0 }));
 }
 
+export interface PositionDistributionPoint {
+  positionId: string;
+  positionName: string;
+  category: "OUTLET" | "NON_OUTLET";
+  count: number;
+}
+
+export function computePositionDistribution(state: DataState): PositionDistributionPoint[] {
+  const activeEmps = state.employees.filter((e) => e.status === "AKTIF");
+  const counts = new Map<string, number>();
+  activeEmps.forEach((e) => {
+    counts.set(e.positionId, (counts.get(e.positionId) ?? 0) + 1);
+  });
+  return state.positions
+    .map((p) => ({
+      positionId: p.id,
+      positionName: p.name,
+      category: p.category,
+      count: counts.get(p.id) ?? 0,
+    }))
+    .filter((p) => p.count > 0)
+    .sort((a, b) => b.count - a.count);
+}
+
 export function computeOvertimePlanVsActual(
   state: DataState,
 ): OvertimePlanVsActualPoint[] {
