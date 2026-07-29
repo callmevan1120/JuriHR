@@ -219,6 +219,44 @@ export function obfuscateCoord(value: number, decimals = 3): number {
   return Number(value.toFixed(decimals));
 }
 
+/** Ekstrak koordinat Latitude & Longitude dari berbagai format URL / link Google Maps & teks koordinat. */
+export function parseGoogleMapsCoordinates(urlOrText: string): { lat: number; lon: number } | null {
+  if (!urlOrText || !urlOrText.trim()) return null;
+  const input = urlOrText.trim();
+
+  // 1. Ekstrak dari URL berformat: @-6.1953,106.8231 atau /@-6.1953,106.8231,17z
+  const atMatch = input.match(/@(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+  if (atMatch) {
+    const lat = Number(atMatch[1]);
+    const lon = Number(atMatch[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  // 2. Ekstrak dari query parameter: ?q=-6.1953,106.8231 atau ?q=-6.1953%2C106.8231 atau ll=-6.1953,106.8231
+  const queryMatch = input.match(/(?:q|ll|place|search|center)=(-?\d+\.\d+)(?:%2C|,|\s+)(-?\d+\.\d+)/i);
+  if (queryMatch) {
+    const lat = Number(queryMatch[1]);
+    const lon = Number(queryMatch[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  // 3. Ekstrak dari angka lat, lon mentah atau path URL: -6.1953, 106.8231
+  const rawMatch = input.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+  if (rawMatch) {
+    const lat = Number(rawMatch[1]);
+    const lon = Number(rawMatch[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  return null;
+}
+
 // ============================================================
 // Lain-lain
 // ============================================================

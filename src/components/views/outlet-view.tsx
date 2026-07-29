@@ -36,6 +36,7 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { useStore } from "@/hooks/use-store";
 import { useRoute } from "@/lib/router/use-route";
 import { outletService, lookupService } from "@/lib/services/master-data";
+import dynamic from "next/dynamic";
 import {
   formatDistance,
   formatRupiah,
@@ -43,7 +44,20 @@ import {
   initials,
   haversineKm,
   cn,
+  parseGoogleMapsCoordinates,
 } from "@/lib/utils";
+
+const EmployeeMiniMap = dynamic(
+  () => import("./employee-mini-map").then((m) => m.EmployeeMiniMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[200px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
+        Memuat peta interaktif outlet...
+      </div>
+    ),
+  },
+);
 import type { Outlet, OutletClassification } from "@/lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -511,11 +525,11 @@ function OutletFormDialog({
 
   const handleMapsLinkChange = (url: string) => {
     setMapsLink(url);
-    const match = url.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-    if (match) {
-      setLat(match[1]);
-      setLon(match[2]);
-      toast.info(`Koordinat outlet terdeteksi: Lat ${match[1]}, Lon ${match[2]}`);
+    const coords = parseGoogleMapsCoordinates(url);
+    if (coords) {
+      setLat(coords.lat.toFixed(6));
+      setLon(coords.lon.toFixed(6));
+      toast.info(`Koordinat outlet terdeteksi: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`);
     }
   };
 
@@ -595,6 +609,31 @@ function OutletFormDialog({
               </div>
             </Field>
           </FormRow>
+
+          {/* Pratinjau Peta Lokasi Outlet Langsung */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
+              <span>Pratinjau Peta Lokasi Outlet (Real-time):</span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                Lat: {Number(lat).toFixed(5)}, Lon: {Number(lon).toFixed(5)}
+              </span>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+              <EmployeeMiniMap
+                lat={Number(lat) || -6.2}
+                lon={Number(lon) || 106.8}
+                employeeName={name || "Lokasi Outlet Cabang"}
+                editable={true}
+                height={220}
+                onPick={(newLat, newLon) => {
+                  setLat(newLat.toFixed(6));
+                  setLon(newLon.toFixed(6));
+                  setMapsLink(`https://maps.google.com/?q=${newLat.toFixed(6)},${newLon.toFixed(6)}`);
+                  toast.success(`Koordinat outlet disesuaikan dari peta: Lat ${newLat.toFixed(5)}, Lon ${newLon.toFixed(5)}`);
+                }}
+              />
+            </div>
+          </div>
 
           <FormRow>
             <Field label="Radius Geofence Presensi (meter)">

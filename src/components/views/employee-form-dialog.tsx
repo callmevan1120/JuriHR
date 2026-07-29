@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,7 @@ import {
 import { Field, FormRow } from "@/components/common/field";
 import { useStore } from "@/hooks/use-store";
 import { employeeService } from "@/lib/services/master-data";
-import { todayISODate } from "@/lib/utils";
+import { todayISODate, parseGoogleMapsCoordinates } from "@/lib/utils";
 import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType } from "@/lib/types";
 import { toast } from "sonner";
 import {
@@ -40,6 +41,18 @@ import {
   PlusCircle,
   Navigation,
 } from "lucide-react";
+
+const EmployeeMiniMap = dynamic(
+  () => import("./employee-mini-map").then((m) => m.EmployeeMiniMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[200px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
+        Memuat peta interaktif...
+      </div>
+    ),
+  },
+);
 
 interface Props {
   open: boolean;
@@ -135,14 +148,14 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setError(undefined);
   }, [open, data]);
 
-  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput
+  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput (Mendukung semua format link & koordinat Google Maps)
   const handleMapsUrlChange = (url: string) => {
     setMapsUrl(url);
-    const match = url.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-    if (match) {
-      setLatitude(match[1]);
-      setLongitude(match[2]);
-      toast.info(`Koordinat terdeteksi dari Link: Lat ${match[1]}, Lon ${match[2]}`);
+    const coords = parseGoogleMapsCoordinates(url);
+    if (coords) {
+      setLatitude(coords.lat.toFixed(6));
+      setLongitude(coords.lon.toFixed(6));
+      toast.info(`Koordinat peta terdeteksi: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`);
     }
   };
 
@@ -521,10 +534,10 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 5: Domisili & Peta Lokasi + Koordinat LU / LT (Seperti Data Outlet) */}
+          {/* Section 5: Domisili & Peta Lokasi + Pratinjau Peta Interaktif Langsung */}
           <section className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Koordinat (LU / LT)
+              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Peta Lokasi
             </h3>
 
             <Field label="Alamat Rumah Lengkap">
@@ -536,16 +549,16 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
               />
             </Field>
 
-            <Field label="Link Google Maps" hint="Tempel link Maps untuk mengekstrak koordinat otomatis">
+            <Field label="Link Google Maps" hint="Tempel link Google Maps (semua format link & titik koordinat otomatis terhubung ke peta)">
               <Input
                 value={mapsUrl}
                 onChange={(e) => handleMapsUrlChange(e.target.value)}
-                placeholder="https://maps.google.com/?q=-6.1953,106.8231"
+                placeholder="https://maps.google.com/?q=-6.1953,106.8231 atau -6.1953, 106.8231"
               />
             </Field>
 
             <FormRow>
-              <Field label="Latitude (LU / Lintang)" hint="Derajat Lintang Selatan (-6.xxxx)">
+              <Field label="Latitude (LU / Lintang)" hint="Derajat Lintang (-6.xxxx)">
                 <div className="relative">
                   <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -573,6 +586,32 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </div>
               </Field>
             </FormRow>
+
+            {/* Pratinjau Peta Interaktif Langsung */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
+                <span>Pratinjau Peta Domisili Karyawan (Real-time):</span>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  Lat: {Number(latitude).toFixed(5)}, Lon: {Number(longitude).toFixed(5)}
+                </span>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+                <EmployeeMiniMap
+                  lat={Number(latitude) || -6.2088}
+                  lon={Number(longitude) || 106.8456}
+                  outlet={outlets.find((o) => o.id === primaryOutletId)}
+                  employeeName={fullName || "Calon Karyawan"}
+                  editable={true}
+                  height={220}
+                  onPick={(newLat, newLon) => {
+                    setLatitude(newLat.toFixed(6));
+                    setLongitude(newLon.toFixed(6));
+                    setMapsUrl(`https://maps.google.com/?q=${newLat.toFixed(6)},${newLon.toFixed(6)}`);
+                    toast.success(`Lokasi disesuaikan dari peta: Lat ${newLat.toFixed(5)}, Lon ${newLon.toFixed(5)}`);
+                  }}
+                />
+              </div>
+            </div>
           </section>
 
           {/* Section 6: Shift & Libur & Catatan */}
