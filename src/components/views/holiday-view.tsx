@@ -416,8 +416,13 @@ function GroupFormDialog({
 }) {
   const employees = useStore((s) => s.employees);
   const holidays = useStore((s) => s.holidays);
+  const outlets = useStore((s) => s.outlets);
+  const divisions = useStore((s) => s.divisions);
+
   const [name, setName] = React.useState(data?.name ?? "");
   const [description, setDescription] = React.useState(data?.description ?? "");
+  const [outletIds, setOutletIds] = React.useState<string[]>(data?.outletIds ?? []);
+  const [divisionIds, setDivisionIds] = React.useState<string[]>(data?.divisionIds ?? []);
   const [memberIds, setMemberIds] = React.useState<string[]>(data?.memberIds ?? []);
   const [holidayIds, setHolidayIds] = React.useState<string[]>(data?.holidayIds ?? []);
   const [effectiveFrom, setEffectiveFrom] = React.useState(data?.effectiveFrom ?? todayISODate());
@@ -430,6 +435,8 @@ function GroupFormDialog({
     if (!open) return;
     setName(data?.name ?? "");
     setDescription(data?.description ?? "");
+    setOutletIds(data?.outletIds ?? []);
+    setDivisionIds(data?.divisionIds ?? []);
     setMemberIds(data?.memberIds ?? []);
     setHolidayIds(data?.holidayIds ?? []);
     setEffectiveFrom(data?.effectiveFrom ?? todayISODate());
@@ -443,6 +450,8 @@ function GroupFormDialog({
     const payload = {
       name: name.trim(),
       description: description.trim() || undefined,
+      outletIds,
+      divisionIds,
       memberIds,
       holidayIds,
       effectiveFrom,
@@ -476,6 +485,41 @@ function GroupFormDialog({
             </Field>
           </FormRow>
           <Field label="Deskripsi"><Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Opsional" /></Field>
+
+          {/* Scope Multi-Select Outlets & Divisions */}
+          <Field label="Pilih Scope Outlet / Divisi (Bisa Pilih Beberapa)" hint="Tentukan outlet &amp; divisi yang menggunakan kelompok hari libur ini">
+            <div className="space-y-2">
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1">Cabang Outlet ({outletIds.length} dipilih):</p>
+                <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/20 p-2 max-h-[100px] overflow-y-auto">
+                  {outlets.filter((o) => o.status === "active").map((o) => {
+                    const checked = outletIds.includes(o.id);
+                    return (
+                      <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                        <Checkbox checked={checked} onCheckedChange={() => setOutletIds((prev) => prev.includes(o.id) ? prev.filter((x) => x !== o.id) : [...prev, o.id])} className="size-3.5" />
+                        <span>{o.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-1">Divisi ({divisionIds.length} dipilih):</p>
+                <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/20 p-2 max-h-[100px] overflow-y-auto">
+                  {divisions.filter((d) => d.status === "active").map((d) => {
+                    const checked = divisionIds.includes(d.id);
+                    return (
+                      <label key={d.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                        <Checkbox checked={checked} onCheckedChange={() => setDivisionIds((prev) => prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id])} className="size-3.5" />
+                        <span>{d.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </Field>
+
           <FormRow>
             <Field label="Berlaku Dari"><Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} /></Field>
             <Field label="Berlaku Sampai" hint="Kosongkan untuk tanpa batas"><Input type="date" value={effectiveUntil} onChange={(e) => setEffectiveUntil(e.target.value)} /></Field>

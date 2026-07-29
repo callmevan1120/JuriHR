@@ -199,13 +199,15 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
   const handleOutletChange = (outletId: string) => {
     setPrimaryOutletId(outletId);
-    const matchSg = shiftGroups.find((sg) => sg.scopeType === "OUTLET" && sg.scopeId === outletId)
+    const matchSg = shiftGroups.find((sg) => sg.outletIds?.includes(outletId) || sg.scopeIds?.includes(outletId) || (sg.scopeType === "OUTLET" && sg.scopeId === outletId))
       || shiftGroups.find((sg) => sg.id === "sg-outlet-5day");
     if (matchSg) {
       setShiftGroupId(matchSg.id);
-      toast.info(`Shift Group otomatis terhubung ke outlet terpilih (${matchSg.name})`);
+      toast.info(`Shift Group terhubung ke outlet terpilih (${matchSg.name})`);
     }
-    const matchHg = holidayGroups.find((hg) => hg.id === "hg-nasional") || holidayGroups[0];
+    const matchHg = holidayGroups.find((hg) => hg.outletIds?.includes(outletId))
+      || holidayGroups.find((hg) => hg.id === "hg-nasional")
+      || holidayGroups[0];
     if (matchHg) {
       setHolidayGroupId(matchHg.id);
     }

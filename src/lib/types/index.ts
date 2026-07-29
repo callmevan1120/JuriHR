@@ -219,8 +219,11 @@ export type WeeklyPatternDay = {
 export interface ShiftGroup {
   id: string;
   name: string;
-  scopeType: "OUTLET" | "DIVISI";
+  scopeType: "OUTLET" | "DIVISI" | "MULTI_OUTLET" | "MULTI_DIVISI";
   scopeId?: string;
+  scopeIds?: string[]; // Multi-select array ID outlet / divisi
+  outletIds?: string[]; // Multi-select array ID outlet
+  divisionIds?: string[]; // Multi-select array ID divisi
   weeklyPattern: WeeklyPatternDay[];
   memberIds: string[]; // employee ids
   effectiveFrom: ISODate;
@@ -267,6 +270,9 @@ export interface HolidayGroup {
   id: string;
   name: string;
   description?: string;
+  scopeType?: "ALL" | "OUTLET" | "DIVISI";
+  outletIds?: string[]; // Multi-select array ID outlet
+  divisionIds?: string[]; // Multi-select array ID divisi
   memberIds: string[]; // employee ids
   holidayIds: string[];
   effectiveFrom: ISODate;

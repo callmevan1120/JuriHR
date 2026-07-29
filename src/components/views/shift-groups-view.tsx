@@ -239,8 +239,10 @@ function ShiftGroupFormDialog({
   const divisions = useStore((s) => s.divisions);
 
   const [name, setName] = React.useState(data?.name ?? "");
-  const [scopeType, setScopeType] = React.useState<"OUTLET" | "DIVISI">(data?.scopeType ?? "OUTLET");
+  const [scopeType, setScopeType] = React.useState<"OUTLET" | "DIVISI">(data?.scopeType === "DIVISI" ? "DIVISI" : "OUTLET");
   const [scopeId, setScopeId] = React.useState(data?.scopeId ?? "");
+  const [outletIds, setOutletIds] = React.useState<string[]>(data?.outletIds ?? (data?.scopeId ? [data.scopeId] : []));
+  const [divisionIds, setDivisionIds] = React.useState<string[]>(data?.divisionIds ?? (data?.scopeId ? [data.scopeId] : []));
   const [pattern, setPattern] = React.useState<Record<number, string | undefined>>(
     () => {
       const m: Record<number, string | undefined> = {};
@@ -261,8 +263,10 @@ function ShiftGroupFormDialog({
   React.useEffect(() => {
     if (!open) return;
     setName(data?.name ?? "");
-    setScopeType(data?.scopeType ?? "OUTLET");
+    setScopeType(data?.scopeType === "DIVISI" ? "DIVISI" : "OUTLET");
     setScopeId(data?.scopeId ?? "");
+    setOutletIds(data?.outletIds ?? (data?.scopeId ? [data.scopeId] : []));
+    setDivisionIds(data?.divisionIds ?? (data?.scopeId ? [data.scopeId] : []));
     const m: Record<number, string | undefined> = {};
     DAYS.forEach((d) => {
       const p = data?.weeklyPattern.find((wp) => wp.day === d.day);
@@ -280,6 +284,14 @@ function ShiftGroupFormDialog({
     setMemberIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
+  const toggleOutlet = (id: string) => {
+    setOutletIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const toggleDivision = (id: string) => {
+    setDivisionIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
   const submit = () => {
     if (!name.trim()) {
       setError("Nama group wajib diisi.");
@@ -291,8 +303,10 @@ function ShiftGroupFormDialog({
     }));
     const payload = {
       name: name.trim(),
-      scopeType,
-      scopeId: scopeId || undefined,
+      scopeType: scopeType === "OUTLET" && outletIds.length > 1 ? ("MULTI_OUTLET" as const) : scopeType,
+      scopeId: scopeType === "OUTLET" ? outletIds[0] : divisionIds[0],
+      outletIds,
+      divisionIds,
       weeklyPattern,
       memberIds,
       effectiveFrom,
@@ -337,15 +351,47 @@ function ShiftGroupFormDialog({
               </Select>
             </Field>
           </FormRow>
-          <Field label={scopeType === "OUTLET" ? "Outlet" : "Divisi"} hint="Opsional — untuk referensi scope">
-            <Select value={scopeId} onValueChange={setScopeId}>
-              <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-              <SelectContent>
-                {scopeOptions.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>{o.name ?? o.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field
+            label={scopeType === "OUTLET" ? "Pilih Outlet (Bisa Lebih Dari 1)" : "Pilih Divisi (Bisa Lebih Dari 1)"}
+            hint={
+              scopeType === "OUTLET"
+                ? `${outletIds.length} outlet dipilih`
+                : `${divisionIds.length} divisi dipilih`
+            }
+          >
+            <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/20 p-2.5 max-h-[140px] overflow-y-auto">
+              {scopeType === "OUTLET"
+                ? outlets.filter((o) => o.status === "active").map((o) => {
+                    const checked = outletIds.includes(o.id);
+                    return (
+                      <label
+                        key={o.id}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors",
+                          checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40"
+                        )}
+                      >
+                        <Checkbox checked={checked} onCheckedChange={() => toggleOutlet(o.id)} className="size-3.5" />
+                        <span>{o.name}</span>
+                      </label>
+                    );
+                  })
+                : divisions.filter((d) => d.status === "active").map((d) => {
+                    const checked = divisionIds.includes(d.id);
+                    return (
+                      <label
+                        key={d.id}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors",
+                          checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40"
+                        )}
+                      >
+                        <Checkbox checked={checked} onCheckedChange={() => toggleDivision(d.id)} className="size-3.5" />
+                        <span>{d.name}</span>
+                      </label>
+                    );
+                  })}
+            </div>
           </Field>
 
           {/* Weekly pattern editor */}
