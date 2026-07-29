@@ -131,6 +131,19 @@ export function EmployeesView() {
 
   const columns: ColumnDef<Employee>[] = [
     {
+      id: "employee_id",
+      header: "ID Karyawan",
+      cell: ({ row }) => {
+        const e = row.original;
+        return (
+          <div className="font-mono text-xs font-semibold text-foreground">
+            <span className="text-primary font-bold">{e.id}</span>
+            <p className="text-[11px] text-muted-foreground font-normal">{e.nik}</p>
+          </div>
+        );
+      },
+    },
+    {
       id: "name",
       header: "Karyawan",
       cell: ({ row }) => {

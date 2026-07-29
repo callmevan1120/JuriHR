@@ -130,7 +130,7 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="font-mono font-bold text-foreground">{employee.nik}</span>
+                  <span className="font-mono text-xs text-foreground font-semibold">ID: <span className="text-primary font-bold">{employee.id}</span> | NIK: {employee.nik}</span>
                   <span className="inline-flex items-center gap-1">
                     <Briefcase className="size-3 text-primary" /> {lookupService.positionName(employee.positionId)}
                   </span>
@@ -335,7 +335,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
               }
             />
             <InfoRow
-              label="Tanggal Berakhir Bekerja (ERPNext Relieving Date)"
+              label="Tanggal Berakhir Bekerja / Kontrak"
               value={
                 employee.endOfEmploymentDate ? (
                   <span className="inline-flex items-center gap-1 font-medium text-warning">

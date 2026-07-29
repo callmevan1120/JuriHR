@@ -362,7 +362,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               {mode === "edit" ? `Edit Data Karyawan — ${data?.fullName}` : "Tambah Karyawan Baru"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              Formulir terpadu manajemen data karyawan ERPNext Style JURI HR.
+              Formulir terpadu manajemen data karyawan JURI HR.
             </p>
           </div>
         </div>
@@ -517,29 +517,26 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
           <Card id="section-identitas" className="border-border shadow-soft">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-                <User className="size-4" /> 2. Identitas Diri, Kontak &amp; Tanggal Masa Kerja (ERPNext Style)
+                <User className="size-4" /> 2. Identitas Diri, Kontak &amp; Masa Kerja
               </CardTitle>
               <CardDescription className="text-xs">
-                Lengkapi NIK, Nama Lengkap, Jenis Kelamin, Tanggal Bergabung, dan Tanggal Berakhir Bekerja.
+                Lengkapi ID Karyawan, NIK, Nama Lengkap, Jenis Kelamin, Tanggal Bergabung, dan Tanggal Berakhir Masa Kerja.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
             <FormRow>
-              <Field label="NIK (Nomor Induk Karyawan)" required hint="Nomor unik registrasi karyawan">
-                <div className="relative">
-                  <Hash className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={nik} onChange={(e) => setNik(e.target.value)} placeholder="JBD00001" className="pl-8 font-mono font-bold" />
-                </div>
+              <Field label="ID Karyawan (System ID)">
+                <Input value={data?.id ?? "Otomatis dibuat oleh sistem"} disabled className="font-mono text-xs text-muted-foreground bg-muted/30" />
               </Field>
-              <Field label="Nama Lengkap Karyawan" required>
-                <div className="relative">
-                  <User className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nama lengkap karyawan" className="pl-8 font-semibold" />
-                </div>
+              <Field label="NIK (Nomor Induk Karyawan)" required hint="Nomor unik registrasi karyawan">
+                <Input value={nik} onChange={(e) => setNik(e.target.value)} placeholder="JBD00001" className="font-mono font-bold" />
               </Field>
             </FormRow>
 
             <FormRow>
+              <Field label="Nama Lengkap Karyawan" required>
+                <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nama lengkap karyawan" className="font-semibold" />
+              </Field>
               <Field label="Jenis Kelamin">
                 <Select value={gender} onValueChange={(v) => setGender(v as Gender)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -549,7 +546,9 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                   </SelectContent>
                 </Select>
               </Field>
+            </FormRow>
 
+            <FormRow>
               <Field label="Status Pernikahan">
                 <Select value={maritalStatus} onValueChange={(v) => setMaritalStatus(v as MaritalStatus)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -560,10 +559,16 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                   </SelectContent>
                 </Select>
               </Field>
+              <Field label="No. Telepon / WA">
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="081234567890" className="pl-8 font-mono" />
+                </div>
+              </Field>
             </FormRow>
 
             <FormRow>
-              <Field label="Email Perusahaan (Kredensial Login v2)" required hint="Digunakan untuk login akun Employee App">
+              <Field label="Email Perusahaan (Login v2)" required hint="Digunakan untuk login akun Employee App">
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="karyawan@juribun.co.id" className="pl-8 font-mono" />
@@ -575,11 +580,19 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </FormRow>
 
             <FormRow>
-              <Field label="Tanggal Bergabung / Mulai Kerja (Date of Joining)" required hint="Tanggal pertama kali resmi bekerja">
+              <Field label="Tanggal Bergabung / Mulai Kerja" required hint="Tanggal pertama kali resmi bekerja">
                 <Input type="date" value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
               </Field>
-              <Field label="Tanggal Berakhir Bekerja (ERPNext Relieving Date)" hint="Opsional. Diisi jika tanggal akhir hubungan kerja sudah ditentukan">
-                <Input type="date" value={endOfEmploymentDate} onChange={(e) => setEndOfEmploymentDate(e.target.value)} />
+              <Field label="Tanggal Berakhir Bekerja / Kontrak" hint="Terhitung otomatis dari durasi kontrak atau dapat diisi jika ada tanggal berakhir">
+                <Input
+                  type="date"
+                  value={contractEndDate || endOfEmploymentDate}
+                  onChange={(e) => {
+                    setContractEndDate(e.target.value);
+                    setEndOfEmploymentDate(e.target.value);
+                  }}
+                  disabled={contractDurationMonths === "0" || contractType === "PKWTT"}
+                />
               </Field>
             </FormRow>
 
@@ -642,10 +655,10 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
         <Card id="section-kontrak" className="border-border shadow-soft">
           <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-              <FileText className="size-4" /> 3. Detail Kontrak Kerja &amp; Kompensasi Gaji (ERPNext Auto-Calculate)
+              <FileText className="size-4" /> 3. Detail Kontrak Kerja &amp; Kompensasi Gaji
             </CardTitle>
             <CardDescription className="text-xs">
-              Atur tipe kontrak, durasi bulan, tanggal berakhir kontrak (terhitung otomatis), skema gaji &amp; saldo cuti.
+              Atur tipe kontrak, durasi bulan, skema gaji &amp; saldo cuti.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
@@ -663,7 +676,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                 </Select>
               </Field>
 
-              <Field label="Durasi Kontrak (Bulan)" hint="Otomatis menghitung tanggal berakhir kontrak">
+              <Field label="Durasi Kontrak (Bulan)" hint="Otomatis menghitung tanggal berakhir pada Seksi 2">
                 <Select value={contractDurationMonths} onValueChange={handleDurationChange}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -674,28 +687,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                     <SelectItem value="0">Tidak Ada Akhir (Tetap)</SelectItem>
                   </SelectContent>
                 </Select>
-              </Field>
-            </FormRow>
-
-            <FormRow>
-              <Field label="Tanggal Berakhir Kontrak (ERPNext Style)" hint="Dapat diisi manual atau terhitung otomatis">
-                <Input
-                  type="date"
-                  value={contractEndDate}
-                  onChange={(e) => setContractEndDate(e.target.value)}
-                  disabled={contractDurationMonths === "0" || contractType === "PKWTT"}
-                />
-              </Field>
-              <Field label="Status Jatuh Tempo Kontrak">
-                <div className="flex h-9 items-center rounded-md border border-border bg-muted/40 px-3 text-xs font-medium text-foreground">
-                  {contractEndDate ? (
-                    <span className="text-primary font-semibold">
-                      Berakhir: {formatDateLong(contractEndDate)}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Tanpa Batas Akhir (Tetap)</span>
-                  )}
-                </div>
               </Field>
             </FormRow>
 
