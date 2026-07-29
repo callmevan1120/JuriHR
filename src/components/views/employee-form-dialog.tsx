@@ -23,7 +23,7 @@ import {
 import { Field, FormRow } from "@/components/common/field";
 import { useStore } from "@/hooks/use-store";
 import { employeeService } from "@/lib/services/master-data";
-import { todayISODate, parseGoogleMapsCoordinates } from "@/lib/utils";
+import { todayISODate, parseGoogleMapsCoordinates, addMonthsISO, formatDateLong } from "@/lib/utils";
 import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType, Gender, MaritalStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
@@ -99,6 +99,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   // Kontrak & Domisili + Koordinat LU/LT (Lintang & Bujur)
   const [contractType, setContractType] = React.useState(data?.contractType ?? "PKWT");
   const [contractDurationMonths, setContractDurationMonths] = React.useState(String(data?.contractDurationMonths ?? 12));
+  const [contractEndDate, setContractEndDate] = React.useState(
+    data?.contractEndDate ?? addMonthsISO(data?.startDate ?? todayISODate(), 12)
+  );
   const [homeAddress, setHomeAddress] = React.useState(data?.homeAddress ?? "");
   const [mapsUrl, setMapsUrl] = React.useState(data?.mapsUrl ?? "");
   const [rawCoords, setRawCoords] = React.useState("");
@@ -118,7 +121,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setPhone(data?.phone ?? "");
     setEmail(data?.email ?? "");
     setBirthDate(data?.birthDate ?? "1998-05-20");
-    setStartDate(data?.startDate ?? todayISODate());
+    const stDate = data?.startDate ?? todayISODate();
+    setStartDate(stDate);
     setCategory(data?.category ?? "OUTLET");
     setPositionId(data?.positionId ?? "");
     setDivisionId(data?.divisionId ?? "");
@@ -145,7 +149,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setAccountNumber(data?.accountNumber ?? "");
     setAccountHolderName(data?.accountHolderName ?? data?.fullName ?? "");
     setContractType(data?.contractType ?? "PKWT");
-    setContractDurationMonths(String(data?.contractDurationMonths ?? 12));
+    const dur = data?.contractDurationMonths ?? 12;
+    setContractDurationMonths(String(dur));
+    setContractEndDate(data?.contractEndDate ?? (dur > 0 ? addMonthsISO(stDate, dur) : ""));
     setHomeAddress(data?.homeAddress ?? "");
     setMapsUrl(data?.mapsUrl ?? "");
     setRawCoords(data?.latitude && data?.longitude ? `${data.latitude}, ${data.longitude}` : "");
@@ -153,6 +159,25 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setLongitude(String(data?.longitude ?? 106.8456));
     setError(undefined);
   }, [open, data]);
+
+  // Otomatis hitung tanggal berakhir kontrak jika durasi / tanggal mulai berubah
+  const handleDurationChange = (durStr: string) => {
+    setContractDurationMonths(durStr);
+    const months = Number(durStr);
+    if (months > 0 && startDate) {
+      setContractEndDate(addMonthsISO(startDate, months));
+    } else if (months === 0) {
+      setContractEndDate("");
+    }
+  };
+
+  const handleStartDateChange = (stDate: string) => {
+    setStartDate(stDate);
+    const months = Number(contractDurationMonths);
+    if (months > 0 && stDate) {
+      setContractEndDate(addMonthsISO(stDate, months));
+    }
+  };
 
   // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput
   const handleMapsUrlChange = (url: string) => {
@@ -252,6 +277,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       accountHolderName: accountHolderName.trim() || fullName.trim(),
       contractType,
       contractDurationMonths: Number(contractDurationMonths) || 12,
+      contractEndDate: contractEndDate || undefined,
       homeAddress: homeAddress.trim() || undefined,
       mapsUrl: finalMapsUrl || undefined,
       latitude: latNum,
@@ -423,7 +449,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </div>
               </Field>
               <Field label="Tanggal Bergabung / Mulai Kerja">
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Input type="date" value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
               </Field>
             </FormRow>
 
@@ -546,8 +572,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </Select>
               </Field>
 
-              <Field label="Durasi Kontrak (Bulan)">
-                <Select value={contractDurationMonths} onValueChange={setContractDurationMonths}>
+              <Field label="Durasi Kontrak (Bulan)" hint="Otomatis menghitung tanggal berakhir">
+                <Select value={contractDurationMonths} onValueChange={handleDurationChange}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="3">3 Bulan (Probation)</SelectItem>
@@ -557,6 +583,28 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                     <SelectItem value="0">Tidak Ada Akhir (Tetap)</SelectItem>
                   </SelectContent>
                 </Select>
+              </Field>
+            </FormRow>
+
+            <FormRow>
+              <Field label="Tanggal Berakhir Kontrak (ERPNext Style)" hint="Dapat diisi manual atau terhitung otomatis">
+                <Input
+                  type="date"
+                  value={contractEndDate}
+                  onChange={(e) => setContractEndDate(e.target.value)}
+                  disabled={contractDurationMonths === "0" || contractType === "PKWTT"}
+                />
+              </Field>
+              <Field label="Status Jatuh Tempo Kontrak">
+                <div className="flex h-9 items-center rounded-md border border-border bg-muted/40 px-3 text-xs font-medium text-foreground">
+                  {contractEndDate ? (
+                    <span className="text-primary font-semibold">
+                      Berakhir: {formatDateLong(contractEndDate)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Tanpa Batas Akhir (Tetap)</span>
+                  )}
+                </div>
               </Field>
             </FormRow>
 

@@ -389,6 +389,20 @@ function ProfilTab({ employee }: { employee: Employee }) {
           <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
             <InfoRow label="Jenis / Tipe Kontrak" value={<Badge variant="outline">{employee.contractType || "PKWT"}</Badge>} />
             <InfoRow label="Durasi Kontrak" value={`${employee.contractDurationMonths || 12} Bulan`} />
+            <InfoRow
+              label="Tanggal Berakhir Kontrak"
+              value={
+                employee.contractEndDate ? (
+                  <span className="font-semibold text-primary">
+                    {formatDateLong(employee.contractEndDate)}
+                  </span>
+                ) : employee.contractDurationMonths === 0 || employee.contractType === "PKWTT" ? (
+                  "Karyawan Tetap (Tanpa Batas Akhir)"
+                ) : (
+                  "—"
+                )
+              }
+            />
             <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
             <InfoRow label="Alamat Rumah Lengkap" value={employee.homeAddress || "—"} block />
             <InfoRow

@@ -177,6 +177,7 @@ export interface Employee {
   // Detail Kontrak
   contractType?: string; // PKWT, PKWTT, PROBATION, HARIAN, MAGANG
   contractDurationMonths?: number; // Durasi kontrak dalam bulan (misal 3, 6, 12)
+  contractEndDate?: ISODate; // Tanggal Berakhir Kontrak (ERPNext Style)
   // Domisili & Peta Lokasi Rumah
   homeAddress?: string; // Alamat Rumah Lengkap
   mapsUrl?: string; // Link Google Maps

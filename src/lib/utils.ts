@@ -91,6 +91,14 @@ export function addDaysISO(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Tambah bulan ke ISO date string (YYYY-MM-DD). */
+export function addMonthsISO(iso: string, months: number): string {
+  if (!iso || !Number.isFinite(months)) return iso;
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Selisih hari antara dua ISO date (b - a). */
 export function daysBetween(a: string, b: string): number {
   const da = new Date(`${a}T00:00:00Z`).getTime();
