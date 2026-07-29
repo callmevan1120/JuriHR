@@ -722,6 +722,8 @@ seedConfigs.forEach((cfg, idx) => {
     id: empId,
     nik: cfg.nik,
     fullName: cfg.fullName,
+    gender: idx % 3 === 0 ? "PEREMPUAN" : "LAKILAKI",
+    maritalStatus: idx % 2 === 0 ? "MENIKAH" : "SINGLE",
     phone: `08${randInt(11, 89)}${String(randInt(10000000, 99999999))}`,
     email: `${cfg.fullName.toLowerCase().replace(/\s+/g, ".")}@juribun.co.id`,
     startDate: cfg.startDate,

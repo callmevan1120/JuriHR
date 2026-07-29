@@ -24,7 +24,7 @@ import { Field, FormRow } from "@/components/common/field";
 import { useStore } from "@/hooks/use-store";
 import { employeeService } from "@/lib/services/master-data";
 import { todayISODate, parseGoogleMapsCoordinates } from "@/lib/utils";
-import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType } from "@/lib/types";
+import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType, Gender, MaritalStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
   Phone,
@@ -71,6 +71,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
 
   const [nik, setNik] = React.useState(data?.nik ?? "");
   const [fullName, setFullName] = React.useState(data?.fullName ?? "");
+  const [gender, setGender] = React.useState<Gender>(data?.gender ?? "LAKILAKI");
+  const [maritalStatus, setMaritalStatus] = React.useState<MaritalStatus>(data?.maritalStatus ?? "SINGLE");
   const [phone, setPhone] = React.useState(data?.phone ?? "");
   const [email, setEmail] = React.useState(data?.email ?? "");
   const [birthDate, setBirthDate] = React.useState(data?.birthDate ?? "1998-05-20");
@@ -110,6 +112,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     if (!open) return;
     setNik(data?.nik ?? "");
     setFullName(data?.fullName ?? "");
+    setGender(data?.gender ?? "LAKILAKI");
+    setMaritalStatus(data?.maritalStatus ?? "SINGLE");
     setPhone(data?.phone ?? "");
     setEmail(data?.email ?? "");
     setBirthDate(data?.birthDate ?? "1998-05-20");
@@ -208,6 +212,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     const payload: Partial<Employee> = {
       nik: nik.trim(),
       fullName: fullName.trim(),
+      gender,
+      maritalStatus,
       phone: phone.trim(),
       email: email.trim(),
       birthDate,
@@ -354,6 +360,29 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                   <User className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nama lengkap karyawan" className="pl-8" />
                 </div>
+              </Field>
+            </FormRow>
+
+            <FormRow>
+              <Field label="Jenis Kelamin">
+                <Select value={gender} onValueChange={(v) => setGender(v as Gender)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LAKILAKI">Laki-laki</SelectItem>
+                    <SelectItem value="PEREMPUAN">Perempuan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+
+              <Field label="Status Pernikahan">
+                <Select value={maritalStatus} onValueChange={(v) => setMaritalStatus(v as MaritalStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SINGLE">Lajang / Belum Menikah</SelectItem>
+                    <SelectItem value="MENIKAH">Menikah</SelectItem>
+                    <SelectItem value="CERAI">Cerai</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
             </FormRow>
 

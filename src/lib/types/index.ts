@@ -144,11 +144,15 @@ export interface Contract {
 export type EmployeeCategory = "OUTLET" | "PH_KLATEN" | "GUDANG_JAKARTA" | "NON_OUTLET";
 export type EmployeeStatus = "AKTIF" | "NONAKTIF" | "RESIGN";
 export type SalaryType = "HARIAN" | "BULANAN";
+export type Gender = "LAKILAKI" | "PEREMPUAN";
+export type MaritalStatus = "SINGLE" | "MENIKAH" | "CERAI";
 
 export interface Employee {
   id: string;
   nik: string;
   fullName: string;
+  gender?: Gender;
+  maritalStatus?: MaritalStatus;
   phone: string;
   email: string;
   startDate: ISODate; // tanggal mulai bekerja / bergabung

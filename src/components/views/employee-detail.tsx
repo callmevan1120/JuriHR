@@ -270,6 +270,20 @@ function ProfilTab({ employee }: { employee: Employee }) {
             <InfoRow label="NIK (Nomor Induk)" value={<span className="font-mono font-bold text-foreground">{employee.nik}</span>} />
             <InfoRow label="Nama Lengkap" value={employee.fullName} />
             <InfoRow
+              label="Jenis Kelamin"
+              value={employee.gender === "PEREMPUAN" ? "Perempuan" : "Laki-laki"}
+            />
+            <InfoRow
+              label="Status Pernikahan"
+              value={
+                employee.maritalStatus === "MENIKAH"
+                  ? "Menikah"
+                  : employee.maritalStatus === "CERAI"
+                  ? "Cerai"
+                  : "Lajang / Belum Menikah"
+              }
+            />
+            <InfoRow
               label="Tanggal Lahir (Kredensial Login v2)"
               value={
                 <span className="inline-flex items-center gap-1 text-foreground font-medium">

@@ -405,6 +405,40 @@ function OutletDetail({
         </Card>
       </div>
 
+      {/* Peta Lokasi Outlet & Geofence Card */}
+      <Card className="border-border shadow-soft">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MapPin className="size-4 text-primary" /> Peta Lokasi Cabang &amp; Radius Geofence Presensi
+            </CardTitle>
+            <a
+              href={`https://maps.google.com/?q=${outlet.latitude},${outlet.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+            >
+              <span>Buka di Google Maps</span> <ExternalLink className="size-3" />
+            </a>
+          </div>
+          <CardDescription className="text-xs">
+            Pratinjau peta titik lokasi outlet ({outlet.latitude.toFixed(5)}, {outlet.longitude.toFixed(5)}) dan radius geofence presensi {outlet.geofenceRadiusMeters} meter.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-hidden rounded-b-xl border-t border-border">
+            <EmployeeMiniMap
+              lat={outlet.latitude}
+              lon={outlet.longitude}
+              outlet={outlet}
+              employeeName={outlet.name}
+              editable={false}
+              height={320}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Daftar karyawan outlet */}
       <Card className="border-border shadow-soft">
         <CardHeader className="pb-3">
