@@ -443,6 +443,32 @@ export const shiftTemplates: ShiftTemplate[] = [
     createdAt: NOW,
     updatedAt: NOW,
   },
+  {
+    id: "shift-klaten-senin-kamis",
+    name: "PH Klaten (Senin - Kamis)",
+    startTime: "07:30",
+    endTime: "16:30",
+    toleranceLateMinutes: 5,
+    crossesMidnight: false,
+    color: "#D97706",
+    status: "active",
+    phConfig: { isPH: false },
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "shift-klaten-jumat",
+    name: "PH Klaten (Jumat)",
+    startTime: "07:30",
+    endTime: "17:00",
+    toleranceLateMinutes: 5,
+    crossesMidnight: false,
+    color: "#B45309",
+    status: "active",
+    phConfig: { isPH: false },
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
 ];
 
 // ------------------------------------------------------------
@@ -481,6 +507,26 @@ export const shiftGroups: ShiftGroup[] = [
       { day: 4, shiftTemplateId: "shift-produksi-pagi" },
       { day: 5, shiftTemplateId: "shift-produksi-pagi" },
       { day: 0, shiftTemplateId: "shift-malam" },
+    ],
+    memberIds: [],
+    effectiveFrom: addDaysISO(TODAY, -180),
+    status: "active",
+    createdAt: NOW,
+    updatedAt: NOW,
+  },
+  {
+    id: "sg-ph-klaten",
+    name: "Pabrik PH Klaten (Sen-Kam 07:30-16:30, Jum 07:30-17:00, Sab-Min Libur)",
+    scopeType: "DIVISI",
+    scopeId: "div-produksi",
+    weeklyPattern: [
+      { day: 0 }, // Minggu Libur
+      { day: 1, shiftTemplateId: "shift-klaten-senin-kamis" }, // Senin 07:30 - 16:30
+      { day: 2, shiftTemplateId: "shift-klaten-senin-kamis" }, // Selasa 07:30 - 16:30
+      { day: 3, shiftTemplateId: "shift-klaten-senin-kamis" }, // Rabu 07:30 - 16:30
+      { day: 4, shiftTemplateId: "shift-klaten-senin-kamis" }, // Kamis 07:30 - 16:30
+      { day: 5, shiftTemplateId: "shift-klaten-jumat" }, // Jumat 07:30 - 17:00
+      { day: 6 }, // Sabtu Libur
     ],
     memberIds: [],
     effectiveFrom: addDaysISO(TODAY, -180),

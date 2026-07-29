@@ -210,6 +210,21 @@ export const employeeService = {
     const now = NOW();
     const item: Employee = { ...input, id: uid("emp"), createdAt: now, updatedAt: now };
     store.setCollection("employees", [item, ...store.getState().employees]);
+
+    // Otomatis daftarkan karyawan ke memberIds ShiftGroup
+    if (item.shiftGroupId) {
+      const sgs = store.getState().shiftGroups;
+      const sgIdx = sgs.findIndex((s) => s.id === item.shiftGroupId);
+      if (sgIdx >= 0) {
+        const sg = sgs[sgIdx]!;
+        if (!sg.memberIds.includes(item.id)) {
+          const newSgs = [...sgs];
+          newSgs[sgIdx] = { ...sg, memberIds: [...sg.memberIds, item.id], updatedAt: now };
+          store.setCollection("shiftGroups", newSgs);
+        }
+      }
+    }
+
     logAudit({ module: "Karyawan", action: "CREATE", description: `Menambah karyawan "${item.fullName}".`, after: item });
     return item;
   },
@@ -223,6 +238,20 @@ export const employeeService = {
     const next = [...list];
     next[idx] = after;
     store.setCollection("employees", next);
+
+    // Otomatis daftarkan karyawan ke memberIds ShiftGroup jika berubah
+    if (after.shiftGroupId) {
+      const sgs = store.getState().shiftGroups;
+      const sgIdx = sgs.findIndex((s) => s.id === after.shiftGroupId);
+      if (sgIdx >= 0) {
+        const sg = sgs[sgIdx]!;
+        if (!sg.memberIds.includes(id)) {
+          const newSgs = [...sgs];
+          newSgs[sgIdx] = { ...sg, memberIds: [...sg.memberIds, id], updatedAt: NOW() };
+          store.setCollection("shiftGroups", newSgs);
+        }
+      }
+    }
     logAudit({ module: "Karyawan", action: "UPDATE", description: `Memperbarui data karyawan "${after.fullName}".`, before, after });
     // Catat histori untuk field penting
     const tracked: (keyof Employee)[] = ["positionId", "divisionId", "primaryOutletId", "status", "salaryAmount", "shiftGroupId", "holidayGroupId", "supervisorId"];

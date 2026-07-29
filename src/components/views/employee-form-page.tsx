@@ -183,6 +183,34 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
     }
   };
 
+  const handleCategoryChange = (cat: EmployeeCategory) => {
+    setCategory(cat);
+    if (cat === "PH_KLATEN") {
+      const klatenSg = shiftGroups.find((sg) => sg.id === "sg-ph-klaten");
+      if (klatenSg) {
+        setShiftGroupId(klatenSg.id);
+        toast.info("Shift Group otomatis terhubung: Pabrik PH Klaten (Sen-Kam 07:30-16:30, Jum 07:30-17:00)");
+      }
+    } else if (cat === "NON_OUTLET") {
+      const officeSg = shiftGroups.find((sg) => sg.id === "sg-office");
+      if (officeSg) setShiftGroupId(officeSg.id);
+    }
+  };
+
+  const handleOutletChange = (outletId: string) => {
+    setPrimaryOutletId(outletId);
+    const matchSg = shiftGroups.find((sg) => sg.scopeType === "OUTLET" && sg.scopeId === outletId)
+      || shiftGroups.find((sg) => sg.id === "sg-outlet-5day");
+    if (matchSg) {
+      setShiftGroupId(matchSg.id);
+      toast.info(`Shift Group otomatis terhubung ke outlet terpilih (${matchSg.name})`);
+    }
+    const matchHg = holidayGroups.find((hg) => hg.id === "hg-nasional") || holidayGroups[0];
+    if (matchHg) {
+      setHolidayGroupId(matchHg.id);
+    }
+  };
+
   // Handler Google Maps URL & Raw Coords Regex Parser
   const handleMapsUrlChange = (url: string) => {
     setMapsUrl(url);
@@ -424,7 +452,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             <CardContent className="pt-4 space-y-4">
               <FormRow>
                 <Field label="Kategori Karyawan / Unit Kerja" required hint="Kategori penempatan lokasi kerja utama">
-                  <Select value={category} onValueChange={(v) => setCategory(v as EmployeeCategory)}>
+                  <Select value={category} onValueChange={(v) => handleCategoryChange(v as EmployeeCategory)}>
                     <SelectTrigger className="bg-background font-medium">
                       <SelectValue />
                     </SelectTrigger>
@@ -450,8 +478,8 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               </FormRow>
 
               {category === "OUTLET" ? (
-                <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan">
-                  <Select value={primaryOutletId} onValueChange={setPrimaryOutletId}>
+                <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan (Shift &amp; Holiday Group terhubung otomatis)">
+                  <Select value={primaryOutletId} onValueChange={handleOutletChange}>
                     <SelectTrigger className="bg-background font-medium">
                       <SelectValue placeholder="Pilih cabang outlet..." />
                     </SelectTrigger>
@@ -900,22 +928,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
           </CardContent>
         </Card>
         )}
-      </div>
-
-      {/* Bottom Summary Bar */}
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
-        <div className="text-xs text-muted-foreground">
-          Kategori aktif: <span className="font-semibold text-foreground uppercase">{activeTab}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack}>
-            Batal
-          </Button>
-          <Button type="submit" className="gap-2 font-bold px-6">
-            <Save className="size-4" />
-            {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
-          </Button>
-        </div>
       </div>
     </form>
   );
