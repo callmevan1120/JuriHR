@@ -323,6 +323,18 @@ function ProfilTab({ employee }: { employee: Employee }) {
                 </span>
               }
             />
+            <InfoRow
+              label="Tanggal Berakhir Bekerja (ERPNext Relieving Date)"
+              value={
+                employee.endOfEmploymentDate ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-warning">
+                    <CalendarDays className="size-3.5 text-warning" /> {formatDateLong(employee.endOfEmploymentDate)}
+                  </span>
+                ) : (
+                  "Masih Aktif Bekerja (Tanpa Tanggal Berakhir)"
+                )
+              }
+            />
           </div>
         </div>
 

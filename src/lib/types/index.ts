@@ -155,7 +155,8 @@ export interface Employee {
   maritalStatus?: MaritalStatus;
   phone: string;
   email: string;
-  startDate: ISODate; // tanggal mulai bekerja / bergabung
+  startDate: ISODate; // tanggal mulai bekerja / bergabung (Date of Joining)
+  endOfEmploymentDate?: ISODate; // tanggal berakhir bekerja / masa kerja karyawan (ERPNext Relieving Date / Date of Leaving)
   birthDate?: ISODate; // tanggal lahir karyawan (untuk kredensial login v2)
   category: EmployeeCategory;
   positionId: string;

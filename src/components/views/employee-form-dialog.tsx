@@ -77,6 +77,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [email, setEmail] = React.useState(data?.email ?? "");
   const [birthDate, setBirthDate] = React.useState(data?.birthDate ?? "1998-05-20");
   const [startDate, setStartDate] = React.useState(data?.startDate ?? todayISODate());
+  const [endOfEmploymentDate, setEndOfEmploymentDate] = React.useState(data?.endOfEmploymentDate ?? "");
   const [category, setCategory] = React.useState<EmployeeCategory>(data?.category ?? "OUTLET");
   const [positionId, setPositionId] = React.useState(data?.positionId ?? "");
   const [divisionId, setDivisionId] = React.useState(data?.divisionId ?? "");
@@ -123,6 +124,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setBirthDate(data?.birthDate ?? "1998-05-20");
     const stDate = data?.startDate ?? todayISODate();
     setStartDate(stDate);
+    setEndOfEmploymentDate(data?.endOfEmploymentDate ?? "");
     setCategory(data?.category ?? "OUTLET");
     setPositionId(data?.positionId ?? "");
     setDivisionId(data?.divisionId ?? "");
@@ -260,6 +262,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       email: email.trim(),
       birthDate,
       startDate,
+      endOfEmploymentDate: endOfEmploymentDate || undefined,
       category,
       positionId,
       divisionId,
@@ -442,14 +445,20 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </FormRow>
 
             <FormRow>
+              <Field label="Tanggal Bergabung / Mulai Kerja" required>
+                <Input type="date" value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
+              </Field>
+              <Field label="Tanggal Berakhir Bekerja (ERPNext Relieving Date)" hint="Opsional. Diisi jika tanggal akhir hubungan kerja sudah ditentukan">
+                <Input type="date" value={endOfEmploymentDate} onChange={(e) => setEndOfEmploymentDate(e.target.value)} />
+              </Field>
+            </FormRow>
+
+            <FormRow>
               <Field label="No. Telepon / WA">
                 <div className="relative">
                   <Phone className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="081234567890" className="pl-8 font-mono" />
                 </div>
-              </Field>
-              <Field label="Tanggal Bergabung / Mulai Kerja">
-                <Input type="date" value={startDate} onChange={(e) => handleStartDateChange(e.target.value)} />
               </Field>
             </FormRow>
 
