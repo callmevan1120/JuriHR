@@ -75,6 +75,7 @@ import {
   Store,
   ExternalLink,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 
 const CLASSIFICATION_LABEL: Record<OutletClassification, string> = {
@@ -190,13 +191,14 @@ export function OutletView() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 text-destructive hover:text-destructive"
+            className="size-7 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={(e) => {
               e.stopPropagation();
               setConfirm({ id: row.original.id, name: row.original.name });
             }}
+            title="Hapus Outlet"
           >
-            <Archive className="size-3.5" />
+            <Trash2 className="size-3.5" />
           </Button>
         </div>
       ),
@@ -242,14 +244,14 @@ export function OutletView() {
       <ConfirmDialog
         open={!!confirm}
         onOpenChange={(o) => !o && setConfirm(null)}
-        title="Arsipkan outlet?"
-        description={`"${confirm?.name}" akan diarsipkan.`}
+        title="Hapus Outlet?"
+        description={`Apakah Anda yakin ingin menghapus outlet "${confirm?.name}"? Data outlet akan dihapus dari sistem.`}
         destructive
-        confirmLabel="Arsipkan"
+        confirmLabel="Hapus Outlet"
         onConfirm={() => {
           if (confirm) {
-            outletService.softDelete(confirm.id);
-            toast.success("Outlet diarsipkan");
+            outletService.delete(confirm.id);
+            toast.success("Outlet berhasil dihapus");
           }
         }}
       />
@@ -270,6 +272,7 @@ function OutletDetail({
   onBack: () => void;
 }) {
   const [editOpen, setEditOpen] = React.useState(false);
+  const [deleteConfirm, setDeleteConfirm] = React.useState(false);
   const stats = React.useMemo(() => outletService.stats(outlet.id), [outlet.id]);
   const employees = useStore((s) => s.employees);
   const positions = useStore((s) => s.positions);
@@ -299,9 +302,18 @@ function OutletDetail({
         title={outlet.name}
         description={outlet.address}
         actions={
-          <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
-            <Pencil className="size-4 text-primary" /> Edit Outlet
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
+              <Pencil className="size-4 text-primary" /> Edit Outlet
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(true)}
+              className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+            >
+              <Trash2 className="size-4" /> Hapus Outlet
+            </Button>
+          </div>
         }
       />
 
@@ -443,6 +455,21 @@ function OutletDetail({
         onOpenChange={setEditOpen}
         mode="edit"
         data={outlet}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm}
+        onOpenChange={setDeleteConfirm}
+        title="Hapus Outlet?"
+        description={`Apakah Anda yakin ingin menghapus outlet "${outlet.name}" (${outlet.code})? Data outlet akan dihapus dari sistem.`}
+        destructive
+        confirmLabel="Hapus Outlet"
+        onConfirm={() => {
+          outletService.delete(outlet.id);
+          toast.success("Outlet berhasil dihapus");
+          window.location.hash = "#/outlet";
+        }}
       />
     </div>
   );

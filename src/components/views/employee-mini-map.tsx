@@ -45,7 +45,18 @@ interface Props {
 function Recenter({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   React.useEffect(() => {
-    map.setView([lat, lon], map.getZoom() || 13);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      // Invalidate container size for modal dialogs and recenter
+      const timer = setTimeout(() => {
+        try {
+          map.invalidateSize();
+          map.setView([lat, lon], map.getZoom() || 14);
+        } catch {
+          // ignore
+        }
+      }, 60);
+      return () => clearTimeout(timer);
+    }
   }, [lat, lon, map]);
   return null;
 }

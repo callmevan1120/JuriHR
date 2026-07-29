@@ -152,6 +152,17 @@ export const outletService = {
     );
     logAudit({ module: "Outlet", action: "DELETE", description: `Mengarsipkan outlet "${item.name}".` });
   },
+  delete(id: string): void {
+    const store = getStore();
+    const list = store.getState().outlets;
+    const item = list.find((o) => o.id === id);
+    if (!item) return;
+    store.setCollection(
+      "outlets",
+      list.filter((o) => o.id !== id),
+    );
+    logAudit({ module: "Outlet", action: "DELETE", description: `Menghapus outlet "${item.name}".` });
+  },
   /** Statistik karyawan per outlet + jarak domisili rata-rata. */
   stats(outletId: string) {
     const state = getStore().getState();
@@ -248,6 +259,17 @@ export const employeeService = {
   },
   reactivate(id: string): Employee | undefined {
     return this.update(id, { status: "AKTIF" }, "Diaktifkan kembali");
+  },
+  delete(id: string): void {
+    const store = getStore();
+    const list = store.getState().employees;
+    const item = list.find((e) => e.id === id);
+    if (!item) return;
+    store.setCollection(
+      "employees",
+      list.filter((e) => e.id !== id),
+    );
+    logAudit({ module: "Karyawan", action: "DELETE", description: `Menghapus data karyawan "${item.fullName}" (${item.nik}).` });
   },
   histories(entityId: string) {
     return getStore().getState().changeHistories.filter((h) => h.entityId === entityId);

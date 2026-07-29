@@ -224,7 +224,26 @@ export function parseGoogleMapsCoordinates(urlOrText: string): { lat: number; lo
   if (!urlOrText || !urlOrText.trim()) return null;
   const input = urlOrText.trim();
 
-  // 1. Ekstrak dari URL berformat: @-6.1953,106.8231 atau /@-6.1953,106.8231,17z
+  // 1. Ekstrak dari parameter Google Maps share/embed: !3d-6.1953!4d106.8231
+  const d3d4 = input.match(/!3d(-?\d+\.\d+).*?!4d(-?\d+\.\d+)/);
+  if (d3d4) {
+    const lat = Number(d3d4[1]);
+    const lon = Number(d3d4[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  const d2d3 = input.match(/!2d(-?\d+\.\d+).*?!3d(-?\d+\.\d+)/);
+  if (d2d3) {
+    const lat = Number(d2d3[2]);
+    const lon = Number(d2d3[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  // 2. Ekstrak dari URL berformat @: @-6.1953,106.8231 atau /@-6.1953,106.8231,17z
   const atMatch = input.match(/@(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
   if (atMatch) {
     const lat = Number(atMatch[1]);
@@ -234,8 +253,8 @@ export function parseGoogleMapsCoordinates(urlOrText: string): { lat: number; lo
     }
   }
 
-  // 2. Ekstrak dari query parameter: ?q=-6.1953,106.8231 atau ?q=-6.1953%2C106.8231 atau ll=-6.1953,106.8231
-  const queryMatch = input.match(/(?:q|ll|place|search|center)=(-?\d+\.\d+)(?:%2C|,|\s+)(-?\d+\.\d+)/i);
+  // 3. Ekstrak dari query parameter: ?q=-6.1953,106.8231 atau ?q=-6.1953%2C106.8231 atau ll=-6.1953,106.8231 atau query=-6.1953,106.8231
+  const queryMatch = input.match(/(?:q|ll|place|search|center|query)=(-?\d+\.\d+)(?:%2C|,|\s+)(-?\d+\.\d+)/i);
   if (queryMatch) {
     const lat = Number(queryMatch[1]);
     const lon = Number(queryMatch[2]);
@@ -244,8 +263,18 @@ export function parseGoogleMapsCoordinates(urlOrText: string): { lat: number; lo
     }
   }
 
-  // 3. Ekstrak dari angka lat, lon mentah atau path URL: -6.1953, 106.8231
-  const rawMatch = input.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+  // 4. Ekstrak dari path URL dir//-6.1953,106.8231 atau /place/-6.1953,106.8231
+  const dirMatch = input.match(/(?:dir|place|maps)\/\/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/i);
+  if (dirMatch) {
+    const lat = Number(dirMatch[1]);
+    const lon = Number(dirMatch[2]);
+    if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+      return { lat, lon };
+    }
+  }
+
+  // 5. Ekstrak dari koordinat (-6.xxxx, 106.xxxx) mentah
+  const rawMatch = input.match(/(-?\d{1,2}\.\d+)\s*[%2C,\s]\s*(-?\d{1,3}\.\d+)/);
   if (rawMatch) {
     const lat = Number(rawMatch[1]);
     const lon = Number(rawMatch[2]);

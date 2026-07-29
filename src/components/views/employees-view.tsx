@@ -63,6 +63,7 @@ import {
   Sliders,
   Filter,
   MoreVertical,
+  Trash2,
 } from "lucide-react";
 
 export function EmployeesView() {
@@ -78,6 +79,7 @@ export function EmployeesView() {
   const [filterCategory, setFilterCategory] = React.useState<string>("all");
   const [formOpen, setFormOpen] = React.useState<{ mode: "create" | "edit"; data?: Employee } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string; action: "deactivate" | "activate" } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; name: string } | null>(null);
   const [selected, setSelected] = React.useState<Employee[]>([]);
 
   // Dialog State ERPNext Style
@@ -250,6 +252,15 @@ export function EmployeesView() {
             >
               {active ? <PowerOff className="size-3.5 text-warning" /> : <Power className="size-3.5 text-success" />}
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setDeleteConfirm({ id: e.id, name: e.fullName })}
+              title="Hapus Data Karyawan"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
           </div>
         );
       },
@@ -402,6 +413,21 @@ export function EmployeesView() {
           } else {
             employeeService.reactivate(confirm.id);
             toast.success("Karyawan diaktifkan kembali");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(o) => !o && setDeleteConfirm(null)}
+        title="Hapus Data Karyawan?"
+        description={`Apakah Anda yakin ingin menghapus data karyawan "${deleteConfirm?.name}"? Data yang dihapus akan dihilangkan dari sistem.`}
+        destructive
+        confirmLabel="Hapus Karyawan"
+        onConfirm={() => {
+          if (deleteConfirm) {
+            employeeService.delete(deleteConfirm.id);
+            toast.success("Data karyawan berhasil dihapus");
           }
         }}
       />

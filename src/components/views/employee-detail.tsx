@@ -16,12 +16,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { InfoRow } from "@/components/common/info-row";
 import { StatusBadge } from "@/components/common/status-badge";
 import { EmptyState } from "@/components/common/states";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { DomicileEditor } from "./domicile-editor";
 import { EmployeeFormDialog } from "@/components/views/employee-form-dialog";
 import { useStore } from "@/hooks/use-store";
 import {
   lookupService,
   contractService,
+  employeeService,
 } from "@/lib/services/master-data";
 import {
   formatRupiah,
@@ -35,6 +37,7 @@ import {
   cn,
 } from "@/lib/utils";
 import type { Employee } from "@/lib/types";
+import { toast } from "sonner";
 import {
   Pencil,
   ChevronRight,
@@ -57,6 +60,7 @@ import {
   ExternalLink,
   KeyRound,
   Cake,
+  Trash2,
 } from "lucide-react";
 
 interface Props {
@@ -68,6 +72,7 @@ interface Props {
 export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
   const [tab, setTab] = React.useState("profil");
   const [editOpen, setEditOpen] = React.useState(false);
+  const [deleteConfirm, setDeleteConfirm] = React.useState(false);
 
   const categoryLabels: Record<string, string> = {
     OUTLET: "Karyawan Outlet",
@@ -132,10 +137,19 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
               </div>
             </div>
             
-            {/* Fix Edit Data Trigger Button */}
-            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
-              <Pencil className="size-4 text-primary" /> Edit Data Karyawan
-            </Button>
+            {/* Action Buttons: Edit & Hapus */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
+                <Pencil className="size-4 text-primary" /> Edit Data Karyawan
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm(true)}
+                className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+              >
+                <Trash2 className="size-4" /> Hapus Karyawan
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -172,6 +186,21 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         onOpenChange={setEditOpen}
         mode="edit"
         data={employee}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm}
+        onOpenChange={setDeleteConfirm}
+        title="Hapus Karyawan?"
+        description={`Apakah Anda yakin ingin menghapus data karyawan "${employee.fullName}" (${employee.nik})? Data yang dihapus tidak dapat dikembalikan.`}
+        destructive
+        confirmLabel="Hapus Karyawan"
+        onConfirm={() => {
+          employeeService.delete(employee.id);
+          toast.success("Karyawan berhasil dihapus");
+          window.location.hash = "#/karyawan";
+        }}
       />
     </div>
   );
