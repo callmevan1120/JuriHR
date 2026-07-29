@@ -38,6 +38,8 @@ import {
   CheckCircle2,
   Sparkles,
   Users,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 const EmployeeMiniMap = dynamic(
@@ -409,82 +411,91 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
       <div className="space-y-6 px-1">
         {/* SECTION 1: Penempatan & Status Kepegawaian */}
-        <Card id="section-penempatan" className="border-border shadow-soft scroll-mt-36">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-              <Building2 className="size-4" /> 1. Penempatan Lokasi &amp; Status Kepegawaian
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Pilih kategori unit penempatan kerja (Outlet, Pabrik PH Klaten, Gudang Jakarta, atau HQ).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <FormRow>
-              <Field label="Kategori Karyawan / Unit Kerja" required hint="Kategori penempatan lokasi kerja utama">
-                <Select value={category} onValueChange={(v) => setCategory(v as EmployeeCategory)}>
-                  <SelectTrigger className="bg-background font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OUTLET">Karyawan Outlet (Jabodetabek)</SelectItem>
-                    <SelectItem value="PH_KLATEN">Karyawan PH Klaten (Pabrik Produksi)</SelectItem>
-                    <SelectItem value="GUDANG_JAKARTA">Karyawan Gudang Jakarta</SelectItem>
-                    <SelectItem value="NON_OUTLET">Karyawan HQ / Head Office</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
+        {activeTab === "penempatan" && (
+          <Card id="section-penempatan" className="border-border shadow-soft">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
+                <Building2 className="size-4" /> 1. Penempatan Lokasi &amp; Status Kepegawaian
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Pilih kategori unit penempatan kerja (Outlet, Pabrik PH Klaten, Gudang Jakarta, atau HQ).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <FormRow>
+                <Field label="Kategori Karyawan / Unit Kerja" required hint="Kategori penempatan lokasi kerja utama">
+                  <Select value={category} onValueChange={(v) => setCategory(v as EmployeeCategory)}>
+                    <SelectTrigger className="bg-background font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="OUTLET">Karyawan Outlet (Jabodetabek)</SelectItem>
+                      <SelectItem value="PH_KLATEN">Karyawan PH Klaten (Pabrik Produksi)</SelectItem>
+                      <SelectItem value="GUDANG_JAKARTA">Karyawan Gudang Jakarta</SelectItem>
+                      <SelectItem value="NON_OUTLET">Karyawan HQ / Head Office</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
 
-              <Field label="Status Kepegawaian">
-                <Select value={status} onValueChange={(v) => setStatus(v as EmployeeStatus)}>
-                  <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AKTIF">Aktif</SelectItem>
-                    <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
-                    <SelectItem value="RESIGN">Resign</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </FormRow>
+                <Field label="Status Kepegawaian">
+                  <Select value={status} onValueChange={(v) => setStatus(v as EmployeeStatus)}>
+                    <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AKTIF">Aktif</SelectItem>
+                      <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
+                      <SelectItem value="RESIGN">Resign</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </FormRow>
 
-            {category === "OUTLET" ? (
-              <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan">
-                <Select value={primaryOutletId} onValueChange={setPrimaryOutletId}>
-                  <SelectTrigger className="bg-background font-medium">
-                    <SelectValue placeholder="Pilih cabang outlet..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredOutlets.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.name} ({o.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            ) : (
-              <div className="rounded-xl bg-muted/30 border border-border p-3.5 text-xs text-muted-foreground flex items-center justify-between">
-                <span>Penempatan Lokasi Kerja Non-Outlet:</span>
-                <Badge variant="outline" className="font-bold text-foreground">
-                  {category === "PH_KLATEN" && "Pabrik Produksi PH Klaten"}
-                  {category === "GUDANG_JAKARTA" && "Gudang Logistik & QC Jakarta"}
-                  {category === "NON_OUTLET" && "Head Office (HQ Jakarta)"}
-                </Badge>
+              {category === "OUTLET" ? (
+                <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan">
+                  <Select value={primaryOutletId} onValueChange={setPrimaryOutletId}>
+                    <SelectTrigger className="bg-background font-medium">
+                      <SelectValue placeholder="Pilih cabang outlet..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredOutlets.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.name} ({o.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              ) : (
+                <div className="rounded-xl bg-muted/30 border border-border p-3.5 text-xs text-muted-foreground flex items-center justify-between">
+                  <span>Penempatan Lokasi Kerja Non-Outlet:</span>
+                  <Badge variant="outline" className="font-bold text-foreground">
+                    {category === "PH_KLATEN" && "Pabrik Produksi PH Klaten"}
+                    {category === "GUDANG_JAKARTA" && "Gudang Logistik & QC Jakarta"}
+                    {category === "NON_OUTLET" && "Head Office (HQ Jakarta)"}
+                  </Badge>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end border-t border-border pt-4 mt-6">
+                <Button type="button" onClick={() => setActiveTab("identitas")} className="gap-1.5 font-semibold">
+                  Langkah 2: Identitas &amp; Masa Kerja <ChevronRight className="size-4" />
+                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* SECTION 2: Identitas Diri, Kontak & Masa Kerja */}
-        <Card id="section-identitas" className="border-border shadow-soft scroll-mt-36">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-              <User className="size-4" /> 2. Identitas Diri, Kontak &amp; Tanggal Masa Kerja (ERPNext Style)
-            </CardTitle>
-            <CardDescription className="text-xs">
-              Lengkapi NIK, Nama Lengkap, Jenis Kelamin, Tanggal Bergabung, dan Tanggal Berakhir Bekerja.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
+        {activeTab === "identitas" && (
+          <Card id="section-identitas" className="border-border shadow-soft">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
+                <User className="size-4" /> 2. Identitas Diri, Kontak &amp; Tanggal Masa Kerja (ERPNext Style)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Lengkapi NIK, Nama Lengkap, Jenis Kelamin, Tanggal Bergabung, dan Tanggal Berakhir Bekerja.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
             <FormRow>
               <Field label="NIK (Nomor Induk Karyawan)" required hint="Nomor unik registrasi karyawan">
                 <div className="relative">
@@ -585,11 +596,22 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                 </Select>
               </Field>
             </FormRow>
+
+            <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+              <Button type="button" variant="outline" onClick={() => setActiveTab("penempatan")} className="gap-1.5">
+                <ChevronLeft className="size-4" /> Sebelumnya
+              </Button>
+              <Button type="button" onClick={() => setActiveTab("kontrak")} className="gap-1.5 font-semibold">
+                Langkah 3: Kontrak &amp; Gaji <ChevronRight className="size-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
+        )}
 
         {/* SECTION 3: Kontrak Kerja & Gaji */}
-        <Card id="section-kontrak" className="border-border shadow-soft scroll-mt-36">
+        {activeTab === "kontrak" && (
+        <Card id="section-kontrak" className="border-border shadow-soft">
           <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
               <FileText className="size-4" /> 3. Detail Kontrak Kerja &amp; Kompensasi Gaji (ERPNext Auto-Calculate)
@@ -667,11 +689,22 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             <Field label="Saldo Cuti Tahunan (hari)">
               <Input type="number" value={leaveBalance} onChange={(e) => setLeaveBalance(e.target.value)} className="tabular-nums" />
             </Field>
+
+            <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+              <Button type="button" variant="outline" onClick={() => setActiveTab("identitas")} className="gap-1.5">
+                <ChevronLeft className="size-4" /> Sebelumnya
+              </Button>
+              <Button type="button" onClick={() => setActiveTab("rekening")} className="gap-1.5 font-semibold">
+                Langkah 4: Rekening Bank <ChevronRight className="size-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
+        )}
 
         {/* SECTION 4: Data Rekening Bank */}
-        <Card id="section-rekening" className="border-border shadow-soft scroll-mt-36">
+        {activeTab === "rekening" && (
+        <Card id="section-rekening" className="border-border shadow-soft">
           <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
               <CreditCard className="size-4" /> 4. Data Rekening Bank (Payroll)
@@ -738,11 +771,22 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                 placeholder="Nama sesuai buku tabungan"
               />
             </Field>
+
+            <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+              <Button type="button" variant="outline" onClick={() => setActiveTab("kontrak")} className="gap-1.5">
+                <ChevronLeft className="size-4" /> Sebelumnya
+              </Button>
+              <Button type="button" onClick={() => setActiveTab("domisili")} className="gap-1.5 font-semibold">
+                Langkah 5: Domisili &amp; Peta <ChevronRight className="size-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
+        )}
 
         {/* SECTION 5: Domisili & Peta Lokasi Rumah */}
-        <Card id="section-domisili" className="border-border shadow-soft scroll-mt-36">
+        {activeTab === "domisili" && (
+        <Card id="section-domisili" className="border-border shadow-soft">
           <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
               <MapPin className="size-4" /> 5. Alamat Domisili &amp; Peta Lokasi Rumah (Leaflet Real-time)
@@ -843,19 +887,35 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                 placeholder="Catatan tambahan internal HRD mengenai karyawan ini..."
               />
             </Field>
+
+            <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
+              <Button type="button" variant="outline" onClick={() => setActiveTab("rekening")} className="gap-1.5">
+                <ChevronLeft className="size-4" /> Sebelumnya
+              </Button>
+              <Button type="submit" className="gap-2 font-bold px-6">
+                <Save className="size-4" />
+                {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
-      {/* Bottom Floating Actions */}
-      <div className="flex items-center justify-end gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
-        <Button variant="outline" type="button" onClick={onBack}>
-          Batal
-        </Button>
-        <Button type="submit" className="gap-2 font-bold px-6">
-          <Save className="size-4" />
-          {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
-        </Button>
+      {/* Bottom Summary Bar */}
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-soft">
+        <div className="text-xs text-muted-foreground">
+          Kategori aktif: <span className="font-semibold text-foreground uppercase">{activeTab}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack}>
+            Batal
+          </Button>
+          <Button type="submit" className="gap-2 font-bold px-6">
+            <Save className="size-4" />
+            {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
+          </Button>
+        </div>
       </div>
     </form>
   );
