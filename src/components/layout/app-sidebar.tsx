@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { NAV_GROUPS } from "@/lib/router/routes";
@@ -28,19 +29,23 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-            <Wheat className="size-5" />
+      <SidebarHeader className="border-b border-sidebar-border/60 pb-2">
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+              <Wheat className="size-5" />
+            </div>
+            <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+              <span className="text-sm font-bold tracking-tight text-foreground">
+                JURI HR
+              </span>
+              <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                HR Management
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
-            <span className="text-base font-bold tracking-tight text-foreground">
-              JURI HR
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              HRD Management
-            </span>
-          </div>
+          {/* Hamburger Icon Toggle inside Sidebar Header */}
+          <SidebarTrigger className="size-8 hover:bg-sidebar-accent text-sidebar-foreground shrink-0 rounded-lg" />
         </div>
       </SidebarHeader>
 

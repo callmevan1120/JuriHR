@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Field, FormRow } from "@/components/common/field";
 import { useStore } from "@/hooks/use-store";
 import { employeeService } from "@/lib/services/master-data";
-import { todayISODate, parseGoogleMapsCoordinates, addMonthsISO, formatDateLong } from "@/lib/utils";
+import { todayISODate, parseGoogleMapsCoordinates, addMonthsISO, formatDateLong, cn } from "@/lib/utils";
 import type { Employee, EmployeeCategory, EmployeeStatus, SalaryType, Gender, MaritalStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
@@ -349,29 +349,29 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 pb-12">
-      {/* Top Header Bar & Actions (ERPNext Style Sticky Bar) */}
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      {/* Top Header Bar & Actions (Apple / Google Minimalist Style) */}
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
             <ArrowLeft className="size-4" /> Kembali
           </Button>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border/80" />
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Users className="size-5 text-primary" />
               {mode === "edit" ? `Edit Data Karyawan — ${data?.fullName}` : "Tambah Karyawan Baru"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              Formulir terpadu manajemen data karyawan JURI HR.
+              Formulir manajemen data karyawan JURI HR.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack}>
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
             Batal
           </Button>
-          <Button type="submit" className="gap-1.5 font-semibold">
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
             <Save className="size-4" />
             {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
           </Button>
@@ -380,60 +380,75 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
       {/* Error Callout */}
       {error && (
-        <div className="mx-4 sm:mx-0 flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-xs text-destructive">
+        <div className="mx-4 sm:mx-0 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
           <AlertCircle className="size-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Sticky ERPNext Category Sub-Header Tab Bar */}
-      <div className="sticky top-[69px] z-20 overflow-x-auto border-b border-border bg-card/90 px-4 py-2 backdrop-blur-xs shadow-2xs">
-        <div className="flex w-max items-center gap-1.5">
-          <Button
+      {/* Segmented Control Category Tab Bar (Google / Apple Style) */}
+      <div className="px-1">
+        <div className="flex overflow-x-auto rounded-2xl bg-muted/60 p-1.5 border border-border/60 max-w-full">
+          <button
             type="button"
-            variant={activeTab === "penempatan" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => scrollToSection("penempatan")}
-            className="gap-1.5 text-xs rounded-lg"
+            onClick={() => setActiveTab("penempatan")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
+              activeTab === "penempatan"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+            )}
           >
-            <Building2 className="size-3.5" /> 1. Penempatan &amp; Status
-          </Button>
-          <Button
+            <Building2 className="size-3.5 text-primary" /> 1. Penempatan &amp; Status
+          </button>
+          <button
             type="button"
-            variant={activeTab === "identitas" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => scrollToSection("identitas")}
-            className="gap-1.5 text-xs rounded-lg"
+            onClick={() => setActiveTab("identitas")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
+              activeTab === "identitas"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+            )}
           >
-            <User className="size-3.5" /> 2. Identitas &amp; Masa Kerja
-          </Button>
-          <Button
+            <User className="size-3.5 text-primary" /> 2. Identitas &amp; Masa Kerja
+          </button>
+          <button
             type="button"
-            variant={activeTab === "kontrak" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => scrollToSection("kontrak")}
-            className="gap-1.5 text-xs rounded-lg"
+            onClick={() => setActiveTab("kontrak")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
+              activeTab === "kontrak"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+            )}
           >
-            <FileText className="size-3.5" /> 3. Kontrak &amp; Gaji
-          </Button>
-          <Button
+            <FileText className="size-3.5 text-primary" /> 3. Kontrak &amp; Gaji
+          </button>
+          <button
             type="button"
-            variant={activeTab === "rekening" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => scrollToSection("rekening")}
-            className="gap-1.5 text-xs rounded-lg"
+            onClick={() => setActiveTab("rekening")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
+              activeTab === "rekening"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+            )}
           >
-            <CreditCard className="size-3.5" /> 4. Data Rekening Bank
-          </Button>
-          <Button
+            <CreditCard className="size-3.5 text-primary" /> 4. Rekening Bank
+          </button>
+          <button
             type="button"
-            variant={activeTab === "domisili" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => scrollToSection("domisili")}
-            className="gap-1.5 text-xs rounded-lg"
+            onClick={() => setActiveTab("domisili")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
+              activeTab === "domisili"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/40"
+            )}
           >
-            <MapPin className="size-3.5" /> 5. Domisili &amp; Peta Lokasi
-          </Button>
+            <MapPin className="size-3.5 text-primary" /> 5. Domisili &amp; Peta
+          </button>
         </div>
       </div>
 

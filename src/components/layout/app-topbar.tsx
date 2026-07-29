@@ -60,9 +60,7 @@ export function AppTopbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 shrink-0 flex h-16 items-center gap-2 border-b border-border bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-4 shadow-xs">
-      <SidebarTrigger className="size-9" />
-      <Separator orientation="vertical" className="mr-1 h-6" />
+    <header className="sticky top-0 z-40 shrink-0 flex h-16 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 sm:px-6">
       <AppBreadcrumb />
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
