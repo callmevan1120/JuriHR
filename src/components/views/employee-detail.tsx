@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/common/states";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { DomicileEditor } from "./domicile-editor";
 import { EmployeeFormDialog } from "@/components/views/employee-form-dialog";
+import { EmployeeFormPage } from "./employee-form-page";
 import { useStore } from "@/hooks/use-store";
 import {
   lookupService,
@@ -85,6 +86,16 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
     setEditOpen(true);
     if (onEdit) onEdit();
   };
+
+  if (editOpen) {
+    return (
+      <EmployeeFormPage
+        mode="edit"
+        data={employee}
+        onBack={() => setEditOpen(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">

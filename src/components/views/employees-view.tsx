@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { EmployeeFormDialog } from "@/components/views/employee-form-dialog";
 import { EmployeeDetail } from "@/components/views/employee-detail";
+import { EmployeeFormPage } from "./employee-form-page";
 import { useStore } from "@/hooks/use-store";
 import { useRoute } from "@/lib/router/use-route";
 import { employeeService, lookupService } from "@/lib/services/master-data";
@@ -86,7 +87,18 @@ export function EmployeesView() {
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  // Detail view jika ada ?id= (REVISI ITEM 4: Reset formOpen state saat Kembali)
+  // Render Dedicated Full-Page Form ERPNext Style
+  if (formOpen) {
+    return (
+      <EmployeeFormPage
+        mode={formOpen.mode}
+        data={formOpen.data}
+        onBack={() => setFormOpen(null)}
+      />
+    );
+  }
+
+  // Detail view jika ada ?id=
   if (selectedId) {
     const emp = employees.find((e) => e.id === selectedId);
     if (emp) {
@@ -388,15 +400,6 @@ export function EmployeesView() {
           />
         </CardContent>
       </Card>
-
-      {formOpen ? (
-        <EmployeeFormDialog
-          open
-          onOpenChange={(o) => !o && setFormOpen(null)}
-          mode={formOpen.mode}
-          data={formOpen.data}
-        />
-      ) : null}
 
       <ConfirmDialog
         open={!!confirm}
