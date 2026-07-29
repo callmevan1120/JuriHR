@@ -101,6 +101,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [contractDurationMonths, setContractDurationMonths] = React.useState(String(data?.contractDurationMonths ?? 12));
   const [homeAddress, setHomeAddress] = React.useState(data?.homeAddress ?? "");
   const [mapsUrl, setMapsUrl] = React.useState(data?.mapsUrl ?? "");
+  const [rawCoords, setRawCoords] = React.useState("");
   const [latitude, setLatitude] = React.useState(String(data?.latitude ?? -6.2088));
   const [longitude, setLongitude] = React.useState(String(data?.longitude ?? 106.8456));
 
@@ -147,19 +148,35 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setContractDurationMonths(String(data?.contractDurationMonths ?? 12));
     setHomeAddress(data?.homeAddress ?? "");
     setMapsUrl(data?.mapsUrl ?? "");
+    setRawCoords(data?.latitude && data?.longitude ? `${data.latitude}, ${data.longitude}` : "");
     setLatitude(String(data?.latitude ?? -6.2088));
     setLongitude(String(data?.longitude ?? 106.8456));
     setError(undefined);
   }, [open, data]);
 
-  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput (Mendukung semua format link & koordinat Google Maps)
+  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput
   const handleMapsUrlChange = (url: string) => {
     setMapsUrl(url);
     const coords = parseGoogleMapsCoordinates(url);
     if (coords) {
       setLatitude(coords.lat.toFixed(6));
       setLongitude(coords.lon.toFixed(6));
+      setRawCoords(`${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}`);
       toast.info(`Koordinat peta terdeteksi: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`);
+    }
+  };
+
+  const handleRawCoordsChange = (text: string) => {
+    setRawCoords(text);
+    // Regex memisahkan Latitude (-7.592203) dan Longitude (110.649421)
+    const match = text.match(/(-?\d+\.\d+)\s*[%2C,\s]\s*(-?\d+\.\d+)/);
+    if (match) {
+      const parsedLat = match[1];
+      const parsedLon = match[2];
+      setLatitude(parsedLat);
+      setLongitude(parsedLon);
+      setMapsUrl(`https://maps.google.com/?q=${parsedLat},${parsedLon}`);
+      toast.success(`Koordinat terpisah oleh Regex: LU ${parsedLat}, LT ${parsedLon}`);
     }
   };
 
@@ -584,6 +601,18 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 onChange={(e) => handleMapsUrlChange(e.target.value)}
                 placeholder="https://maps.google.com/?q=-6.1953,106.8231 atau -6.1953, 106.8231"
               />
+            </Field>
+
+            <Field label="Tempel Teks Koordinat Google Maps" hint="Otomatis dipisah oleh Regex untuk mengisi LU dan LT di bawah (misal: -7.592203, 110.649421)">
+              <div className="relative">
+                <MapPin className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                <Input
+                  value={rawCoords}
+                  onChange={(e) => handleRawCoordsChange(e.target.value)}
+                  placeholder="-7.592203, 110.649421"
+                  className="pl-8 font-mono tabular-nums text-xs font-semibold text-foreground border-primary/40 bg-primary/5 focus:border-primary"
+                />
+              </div>
             </Field>
 
             <FormRow>

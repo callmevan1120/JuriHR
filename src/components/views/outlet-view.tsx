@@ -562,6 +562,7 @@ function OutletFormDialog({
   const [lat, setLat] = React.useState(String(data?.latitude ?? -6.2));
   const [lon, setLon] = React.useState(String(data?.longitude ?? 106.8));
   const [mapsLink, setMapsLink] = React.useState("");
+  const [rawCoords, setRawCoords] = React.useState("");
   const [radius, setRadius] = React.useState(String(data?.geofenceRadiusMeters ?? 100));
   const [classification, setClassification] = React.useState<OutletClassification>(data?.classification ?? "STANDARD");
   const [headId, setHeadId] = React.useState(data?.headId ?? "");
@@ -576,6 +577,7 @@ function OutletFormDialog({
       setLat(String(data?.latitude ?? -6.2));
       setLon(String(data?.longitude ?? 106.8));
       setMapsLink(data?.latitude ? `https://maps.google.com/?q=${data.latitude},${data.longitude}` : "");
+      setRawCoords(data?.latitude && data?.longitude ? `${data.latitude}, ${data.longitude}` : "");
       setRadius(String(data?.geofenceRadiusMeters ?? 100));
       setClassification(data?.classification ?? "STANDARD");
       setHeadId(data?.headId ?? "");
@@ -590,7 +592,22 @@ function OutletFormDialog({
     if (coords) {
       setLat(coords.lat.toFixed(6));
       setLon(coords.lon.toFixed(6));
+      setRawCoords(`${coords.lat.toFixed(6)}, ${coords.lon.toFixed(6)}`);
       toast.info(`Koordinat outlet terdeteksi: Lat ${coords.lat.toFixed(5)}, Lon ${coords.lon.toFixed(5)}`);
+    }
+  };
+
+  const handleRawCoordsChange = (text: string) => {
+    setRawCoords(text);
+    // Regex memisahkan Latitude (-7.592203) dan Longitude (110.649421)
+    const match = text.match(/(-?\d+\.\d+)\s*[%2C,\s]\s*(-?\d+\.\d+)/);
+    if (match) {
+      const parsedLat = match[1];
+      const parsedLon = match[2];
+      setLat(parsedLat);
+      setLon(parsedLon);
+      setMapsLink(`https://maps.google.com/?q=${parsedLat},${parsedLon}`);
+      toast.success(`Koordinat terpisah oleh Regex: LU ${parsedLat}, LT ${parsedLon}`);
     }
   };
 
@@ -654,6 +671,18 @@ function OutletFormDialog({
               onChange={(e) => handleMapsLinkChange(e.target.value)}
               placeholder="https://maps.google.com/?q=-6.214,106.845"
             />
+          </Field>
+
+          <Field label="Tempel Teks Koordinat Google Maps" hint="Otomatis dipisah oleh Regex untuk mengisi LU dan LT di bawah (misal: -7.592203, 110.649421)">
+            <div className="relative">
+              <MapPin className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-primary" />
+              <Input
+                value={rawCoords}
+                onChange={(e) => handleRawCoordsChange(e.target.value)}
+                placeholder="-7.592203, 110.649421"
+                className="pl-8 font-mono tabular-nums text-xs font-semibold text-foreground border-primary/40 bg-primary/5 focus:border-primary"
+              />
+            </div>
           </Field>
 
           <FormRow>
