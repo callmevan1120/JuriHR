@@ -53,6 +53,9 @@ import {
   Check,
   ChevronsUpDown,
   Search,
+  ArrowLeft,
+  Save,
+  AlertCircle,
 } from "lucide-react";
 
 const DAYS = [
@@ -69,6 +72,16 @@ export function ShiftGroupsView() {
   const shiftGroups = useStore((s) => s.shiftGroups);
   const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: ShiftGroup } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
+
+  if (dialog) {
+    return (
+      <ShiftGroupFormPage
+        mode={dialog.mode}
+        data={dialog.data}
+        onBack={() => setDialog(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -92,15 +105,6 @@ export function ShiftGroupsView() {
           />
         ))}
       </div>
-
-      {dialog ? (
-        <ShiftGroupFormDialog
-          open
-          onOpenChange={(o) => !o && setDialog(null)}
-          mode={dialog.mode}
-          data={dialog.data}
-        />
-      ) : null}
 
       <ConfirmDialog
         open={!!confirm}
@@ -220,18 +224,16 @@ function ShiftGroupCard({
 }
 
 // ------------------------------------------------------------
-// Form Dialog
+// Full-Page Shift Group Form Component (ERPNext Architecture)
 // ------------------------------------------------------------
-function ShiftGroupFormDialog({
-  open,
-  onOpenChange,
+function ShiftGroupFormPage({
   mode,
   data,
+  onBack,
 }: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
   mode: "create" | "edit";
   data?: ShiftGroup;
+  onBack: () => void;
 }) {
   const shiftTemplates = useStore((s) => s.shiftTemplates);
   const employees = useStore((s) => s.employees);
@@ -260,26 +262,6 @@ function ShiftGroupFormDialog({
   const [memberOpen, setMemberOpen] = React.useState(false);
   const [error, setError] = React.useState<string>();
 
-  React.useEffect(() => {
-    if (!open) return;
-    setName(data?.name ?? "");
-    setScopeType(data?.scopeType === "DIVISI" ? "DIVISI" : "OUTLET");
-    setScopeId(data?.scopeId ?? "");
-    setOutletIds(data?.outletIds ?? (data?.scopeId ? [data.scopeId] : []));
-    setDivisionIds(data?.divisionIds ?? (data?.scopeId ? [data.scopeId] : []));
-    const m: Record<number, string | undefined> = {};
-    DAYS.forEach((d) => {
-      const p = data?.weeklyPattern.find((wp) => wp.day === d.day);
-      m[d.day] = p?.shiftTemplateId;
-    });
-    setPattern(m);
-    setMemberIds(data?.memberIds ?? []);
-    setEffectiveFrom(data?.effectiveFrom ?? todayISODate());
-    setEffectiveUntil(data?.effectiveUntil ?? "");
-    setStatus(data?.status ?? "active");
-    setError(undefined);
-  }, [open, data]);
-
   const toggleMember = (id: string) => {
     setMemberIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
@@ -292,7 +274,8 @@ function ShiftGroupFormDialog({
     setDivisionIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
-  const submit = () => {
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!name.trim()) {
       setError("Nama group wajib diisi.");
       return;
@@ -320,167 +303,201 @@ function ShiftGroupFormDialog({
       shiftGroupService.create(payload);
       toast.success("Shift group ditambahkan");
     }
-    onOpenChange(false);
+    onBack();
   };
 
-  const scopeOptions = scopeType === "OUTLET" ? outlets.filter((o) => o.status === "active") : divisions.filter((d) => d.status === "active");
   const memberCandidates = employees.filter((e) => e.status === "AKTIF");
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="size-5 text-primary" />
-            {mode === "edit" ? "Edit Shift Group" : "Tambah Shift Group"}
-          </DialogTitle>
-          <DialogDescription>Atur pola shift mingguan & anggota.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <FormRow>
-            <Field label="Nama Group" required>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Outlet 5 Hari (Sen–Jum)" />
-            </Field>
-            <Field label="Scope">
-              <Select value={scopeType} onValueChange={(v) => { setScopeType(v as "OUTLET" | "DIVISI"); setScopeId(""); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OUTLET">Outlet</SelectItem>
-                  <SelectItem value="DIVISI">Divisi</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </FormRow>
-          <Field
-            label={scopeType === "OUTLET" ? "Pilih Outlet (Bisa Lebih Dari 1)" : "Pilih Divisi (Bisa Lebih Dari 1)"}
-            hint={
-              scopeType === "OUTLET"
-                ? `${outletIds.length} outlet dipilih`
-                : `${divisionIds.length} divisi dipilih`
-            }
-          >
-            <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/20 p-2.5 max-h-[140px] overflow-y-auto">
-              {scopeType === "OUTLET"
-                ? outlets.filter((o) => o.status === "active").map((o) => {
-                    const checked = outletIds.includes(o.id);
-                    return (
-                      <label
-                        key={o.id}
-                        className={cn(
-                          "flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors",
-                          checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40"
-                        )}
-                      >
-                        <Checkbox checked={checked} onCheckedChange={() => toggleOutlet(o.id)} className="size-3.5" />
-                        <span>{o.name}</span>
-                      </label>
-                    );
-                  })
-                : divisions.filter((d) => d.status === "active").map((d) => {
-                    const checked = divisionIds.includes(d.id);
-                    return (
-                      <label
-                        key={d.id}
-                        className={cn(
-                          "flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors",
-                          checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40"
-                        )}
-                      >
-                        <Checkbox checked={checked} onCheckedChange={() => toggleDivision(d.id)} className="size-3.5" />
-                        <span>{d.name}</span>
-                      </label>
-                    );
-                  })}
-            </div>
-          </Field>
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
+            <ArrowLeft className="size-4" /> Kembali
+          </Button>
+          <div className="h-4 w-px bg-border/80" />
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <CalendarDays className="size-5 text-primary" />
+              {mode === "edit" ? `Edit Shift Group — ${data?.name}` : "Tambah Shift Group Baru"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Pengaturan pola shift mingguan, lokasi outlet/divisi, dan anggota karyawan.
+            </p>
+          </div>
+        </div>
 
-          {/* Weekly pattern editor */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-foreground">Pola Mingguan</p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {DAYS.map((d) => (
-                <div key={d.day} className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2">
-                  <span className="w-12 text-xs font-medium text-foreground">{d.short}</span>
-                  <Select
-                    value={pattern[d.day] ?? "libur"}
-                    onValueChange={(v) => setPattern((prev) => ({ ...prev, [d.day]: v === "libur" ? undefined : v }))}
-                  >
-                    <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue /></SelectTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+            Batal
+          </Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" />
+            {mode === "edit" ? "Simpan Perubahan" : "Simpan Shift Group"}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground">1. Info Group &amp; Scope Lokasi</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <FormRow>
+                <Field label="Nama Shift Group" required hint="Contoh: Outlet 5 Hari (Sen–Jum)">
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Outlet 5 Hari (Sen–Jum)" className="font-semibold" />
+                </Field>
+                <Field label="Tipe Scope">
+                  <Select value={scopeType} onValueChange={(v) => setScopeType(v as "OUTLET" | "DIVISI")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="libur">Libur</SelectItem>
-                      {shiftTemplates.filter((s) => s.status === "active").map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          <span className="flex items-center gap-1.5">
-                            <span className="size-2 rounded-full" style={{ background: s.color }} />
-                            {s.name} ({s.startTime}-{s.endTime})
-                          </span>
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="OUTLET">Outlet Cabang</SelectItem>
+                      <SelectItem value="DIVISI">Divisi Perusahaan</SelectItem>
                     </SelectContent>
                   </Select>
+                </Field>
+              </FormRow>
+
+              <Field
+                label={scopeType === "OUTLET" ? "Pilih Outlet Cabang (Bisa Pilih Beberapa)" : "Pilih Divisi (Bisa Pilih Beberapa)"}
+                hint={scopeType === "OUTLET" ? `${outletIds.length} outlet dipilih` : `${divisionIds.length} divisi dipilih`}
+              >
+                <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3 max-h-[160px] overflow-y-auto">
+                  {scopeType === "OUTLET"
+                    ? outlets.filter((o) => o.status === "active").map((o) => {
+                        const checked = outletIds.includes(o.id);
+                        return (
+                          <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                            <Checkbox checked={checked} onCheckedChange={() => toggleOutlet(o.id)} className="size-3.5" />
+                            <span>{o.name}</span>
+                          </label>
+                        );
+                      })
+                    : divisions.filter((d) => d.status === "active").map((d) => {
+                        const checked = divisionIds.includes(d.id);
+                        return (
+                          <label key={d.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                            <Checkbox checked={checked} onCheckedChange={() => toggleDivision(d.id)} className="size-3.5" />
+                            <span>{d.name}</span>
+                          </label>
+                        );
+                      })}
                 </div>
-              ))}
-            </div>
-          </div>
+              </Field>
 
-          {/* Members multi-select */}
-          <Field label="Anggota" hint={`${memberIds.length} karyawan terpilih`}>
-            <Popover open={memberOpen} onOpenChange={setMemberOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                  {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan dipilih`}
-                  <ChevronsUpDown className="size-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Cari karyawan..." />
-                  <CommandList>
-                    <CommandEmpty>Tidak ditemukan.</CommandEmpty>
-                    <CommandGroup>
-                      {memberCandidates.map((e) => (
-                        <CommandItem
-                          key={e.id}
-                          value={`${e.fullName} ${e.nik}`}
-                          onSelect={() => toggleMember(e.id)}
-                        >
-                          <Checkbox checked={memberIds.includes(e.id)} className="mr-2" />
-                          <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">
-                            {initials(e.fullName)}
-                          </div>
-                          <span className="flex-1 text-sm">{e.fullName}</span>
-                          <span className="font-mono text-[10px] text-muted-foreground">{e.nik}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </Field>
+              <FormRow>
+                <Field label="Tanggal Berlaku Dari" required>
+                  <Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
+                </Field>
+                <Field label="Tanggal Berlaku Sampai" hint="Kosongkan jika tanpa batas akhir">
+                  <Input type="date" value={effectiveUntil} onChange={(e) => setEffectiveUntil(e.target.value)} />
+                </Field>
+              </FormRow>
+            </CardContent>
+          </Card>
 
-          <FormRow>
-            <Field label="Berlaku Dari">
-              <Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
-            </Field>
-            <Field label="Berlaku Sampai" hint="Kosongkan untuk tanpa batas">
-              <Input type="date" value={effectiveUntil} onChange={(e) => setEffectiveUntil(e.target.value)} />
-            </Field>
-          </FormRow>
-          <Field label="Status">
-            <div className="flex items-center gap-2">
-              <Switch checked={status === "active"} onCheckedChange={(c) => setStatus(c ? "active" : "inactive")} />
-              <span className="text-sm">{status === "active" ? "Aktif" : "Nonaktif"}</span>
-            </div>
-          </Field>
-
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground">2. Pola Shift Mingguan (Senin — Minggu)</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {DAYS.map((d) => (
+                  <div key={d.day} className="flex items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-2xs">
+                    <span className="w-14 text-xs font-semibold text-foreground">{d.short}</span>
+                    <Select
+                      value={pattern[d.day] ?? "libur"}
+                      onValueChange={(v) => setPattern((prev) => ({ ...prev, [d.day]: v === "libur" ? undefined : v }))}
+                    >
+                      <SelectTrigger className="h-8 flex-1 text-xs rounded-lg"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="libur">Libur (Off)</SelectItem>
+                        {shiftTemplates.filter((s) => s.status === "active").map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="flex items-center gap-1.5">
+                              <span className="size-2 rounded-full" style={{ background: s.color }} />
+                              {s.name} ({s.startTime}-{s.endTime})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>{mode === "edit" ? "Simpan" : "Tambah"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <div className="space-y-6">
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
+                <span>Anggota Karyawan</span>
+                <span className="text-xs font-normal text-muted-foreground">{memberIds.length} terpilih</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <Popover open={memberOpen} onOpenChange={setMemberOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal rounded-xl">
+                    {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan dipilih`}
+                    <ChevronsUpDown className="size-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Cari karyawan..." />
+                    <CommandList>
+                      <CommandEmpty>Tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {memberCandidates.map((e) => (
+                          <CommandItem key={e.id} value={`${e.fullName} ${e.nik}`} onSelect={() => toggleMember(e.id)}>
+                            <Checkbox checked={memberIds.includes(e.id)} className="mr-2" />
+                            <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">
+                              {initials(e.fullName)}
+                            </div>
+                            <span className="flex-1 text-sm">{e.fullName}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">{e.nik}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <div className="flex flex-wrap gap-1.5 max-h-[220px] overflow-y-auto pt-1">
+                {memberIds.map((id) => {
+                  const emp = employees.find((e) => e.id === id);
+                  if (!emp) return null;
+                  return (
+                    <Badge key={id} variant="secondary" className="gap-1 rounded-lg text-xs py-1">
+                      <span>{emp.fullName}</span>
+                      <button type="button" onClick={() => toggleMember(id)} className="ml-1 text-muted-foreground hover:text-foreground">×</button>
+                    </Badge>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                <span className="text-xs font-medium text-foreground">Status Aktif</span>
+                <Switch checked={status === "active"} onCheckedChange={(c) => setStatus(c ? "active" : "inactive")} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </form>
   );
 }
+

@@ -76,6 +76,8 @@ import {
   ExternalLink,
   AlertCircle,
   Trash2,
+  ArrowLeft,
+  Save,
 } from "lucide-react";
 
 const CLASSIFICATION_LABEL: Record<OutletClassification, string> = {
@@ -98,6 +100,16 @@ export function OutletView() {
   const selectedId = route.query.get("id");
   const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: Outlet } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
+
+  if (dialog) {
+    return (
+      <OutletFormPage
+        mode={dialog.mode}
+        data={dialog.data}
+        onBack={() => setDialog(null)}
+      />
+    );
+  }
 
   // Detail view jika ada ?id= (REVISI: Reset state dialog saat Kembali)
   if (selectedId) {
@@ -232,14 +244,7 @@ export function OutletView() {
         </CardContent>
       </Card>
 
-      {dialog ? (
-        <OutletFormDialog
-          open
-          onOpenChange={(o) => !o && setDialog(null)}
-          mode={dialog.mode}
-          data={dialog.data}
-        />
-      ) : null}
+
 
       <ConfirmDialog
         open={!!confirm}
@@ -271,7 +276,6 @@ function OutletDetail({
   onEdit: () => void;
   onBack: () => void;
 }) {
-  const [editOpen, setEditOpen] = React.useState(false);
   const [deleteConfirm, setDeleteConfirm] = React.useState(false);
   const stats = React.useMemo(() => outletService.stats(outlet.id), [outlet.id]);
   const employees = useStore((s) => s.employees);
@@ -284,7 +288,6 @@ function OutletDetail({
   const todaySched = schedules.filter((s) => s.outletId === outlet.id).length;
 
   const handleOpenEdit = () => {
-    setEditOpen(true);
     if (onEdit) onEdit();
   };
 
@@ -483,13 +486,7 @@ function OutletDetail({
         </CardContent>
       </Card>
 
-      {/* Form Edit Dialog Lokal */}
-      <OutletFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        mode="edit"
-        data={outlet}
-      />
+
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -542,18 +539,16 @@ function MiniStat({
 }
 
 // ------------------------------------------------------------
-// Form Dialog Outlet (REVISI: Responsif max-h-[90vh] overflow-y-auto)
+// Full-Page Outlet Form Page (ERPNext Full Page Architecture)
 // ------------------------------------------------------------
-function OutletFormDialog({
-  open,
-  onOpenChange,
+function OutletFormPage({
   mode,
   data,
+  onBack,
 }: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
   mode: "create" | "edit";
   data?: Outlet;
+  onBack: () => void;
 }) {
   const employees = useStore((s) => s.employees);
   const [code, setCode] = React.useState(data?.code ?? "");
@@ -561,30 +556,13 @@ function OutletFormDialog({
   const [address, setAddress] = React.useState(data?.address ?? "");
   const [lat, setLat] = React.useState(String(data?.latitude ?? -6.2));
   const [lon, setLon] = React.useState(String(data?.longitude ?? 106.8));
-  const [mapsLink, setMapsLink] = React.useState("");
-  const [rawCoords, setRawCoords] = React.useState("");
+  const [mapsLink, setMapsLink] = React.useState(data?.latitude ? `https://maps.google.com/?q=${data.latitude},${data.longitude}` : "");
+  const [rawCoords, setRawCoords] = React.useState(data?.latitude && data?.longitude ? `${data.latitude}, ${data.longitude}` : "");
   const [radius, setRadius] = React.useState(String(data?.geofenceRadiusMeters ?? 100));
   const [classification, setClassification] = React.useState<OutletClassification>(data?.classification ?? "STANDARD");
   const [headId, setHeadId] = React.useState(data?.headId ?? "");
   const [note, setNote] = React.useState(data?.note ?? "");
   const [error, setError] = React.useState<string>();
-
-  React.useEffect(() => {
-    if (open) {
-      setCode(data?.code ?? "");
-      setName(data?.name ?? "");
-      setAddress(data?.address ?? "");
-      setLat(String(data?.latitude ?? -6.2));
-      setLon(String(data?.longitude ?? 106.8));
-      setMapsLink(data?.latitude ? `https://maps.google.com/?q=${data.latitude},${data.longitude}` : "");
-      setRawCoords(data?.latitude && data?.longitude ? `${data.latitude}, ${data.longitude}` : "");
-      setRadius(String(data?.geofenceRadiusMeters ?? 100));
-      setClassification(data?.classification ?? "STANDARD");
-      setHeadId(data?.headId ?? "");
-      setNote(data?.note ?? "");
-      setError(undefined);
-    }
-  }, [open, data]);
 
   const handleMapsLinkChange = (url: string) => {
     setMapsLink(url);
@@ -599,7 +577,6 @@ function OutletFormDialog({
 
   const handleRawCoordsChange = (text: string) => {
     setRawCoords(text);
-    // Regex memisahkan Latitude (-7.592203) dan Longitude (110.649421)
     const match = text.match(/(-?\d+\.\d+)\s*[%2C,\s]\s*(-?\d+\.\d+)/);
     if (match) {
       const parsedLat = match[1];
@@ -611,7 +588,8 @@ function OutletFormDialog({
     }
   };
 
-  const submit = () => {
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!code.trim() || !name.trim()) {
       setError("Kode dan nama outlet wajib diisi.");
       return;
@@ -635,86 +613,153 @@ function OutletFormDialog({
       outletService.create(payload);
       toast.success("Outlet baru berhasil ditambahkan");
     }
-    onOpenChange(false);
+    onBack();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[580px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-            <Store className="size-5 text-primary" />
-            {mode === "edit" ? "Edit Data Outlet Cabang" : "Tambah Outlet Cabang Baru"}
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Lengkapi profil outlet, lokasi alamat, koordinat (LU / LT), radius geofence, serta penunjukan kepala outlet.
-          </DialogDescription>
-        </DialogHeader>
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      {/* Top Bar Navigation */}
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
+            <ArrowLeft className="size-4" /> Kembali
+          </Button>
+          <div className="h-4 w-px bg-border/80" />
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Store className="size-5 text-primary" />
+              {mode === "edit" ? `Edit Data Outlet — ${data?.name}` : "Tambah Outlet Cabang Baru"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Halaman kelola profil outlet, lokasi peta, koordinat LU/LT, dan geofencing.
+            </p>
+          </div>
+        </div>
 
-        <div className="space-y-4 py-2">
-          <FormRow>
-            <Field label="Kode Outlet" required hint="Contoh: JBD-SDR">
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="JBD-SDR" maxLength={12} className="font-mono" />
-            </Field>
-            <Field label="Nama Outlet" required>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="JURI Bun — Sudirman" />
-            </Field>
-          </FormRow>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+            Batal
+          </Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" />
+            {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Outlet"}
+          </Button>
+        </div>
+      </div>
 
-          <Field label="Alamat Outlet Lengkap">
-            <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Jl. Jend. Sudirman No. 1, Jakarta Pusat..." />
-          </Field>
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
-          <Field label="Link Google Maps (Opsional)" hint="Tempel link peta untuk mengekstrak koordinat otomatis">
-            <Input
-              value={mapsLink}
-              onChange={(e) => handleMapsLinkChange(e.target.value)}
-              placeholder="https://maps.google.com/?q=-6.214,106.845"
-            />
-          </Field>
+      {/* Main Full-Page Form Cards */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground">1. Identitas &amp; Klasifikasi Outlet</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <FormRow>
+                <Field label="Kode Outlet" required hint="Contoh: JBD-SDR">
+                  <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="JBD-SDR" maxLength={12} className="font-mono" />
+                </Field>
+                <Field label="Nama Outlet Cabang" required>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="JURI Bun — Sudirman" className="font-semibold" />
+                </Field>
+              </FormRow>
 
-          <Field label="Tempel Teks Koordinat Google Maps" hint="Otomatis dipisah oleh Regex untuk mengisi LU dan LT di bawah (misal: -7.592203, 110.649421)">
-            <div className="relative">
-              <MapPin className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-primary" />
-              <Input
-                value={rawCoords}
-                onChange={(e) => handleRawCoordsChange(e.target.value)}
-                placeholder="-7.592203, 110.649421"
-                className="pl-8 font-mono tabular-nums text-xs font-semibold text-foreground border-primary/40 bg-primary/5 focus:border-primary"
-              />
-            </div>
-          </Field>
+              <FormRow>
+                <Field label="Klasifikasi Outlet">
+                  <Select value={classification} onValueChange={(v) => setClassification(v as OutletClassification)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FLAGSHIP">Flagship (Utama)</SelectItem>
+                      <SelectItem value="STANDARD">Standard</SelectItem>
+                      <SelectItem value="EXPRESS">Express</SelectItem>
+                      <SelectItem value="KIOSK">Kiosk</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Kepala Outlet / Supervisor">
+                  <Select value={headId} onValueChange={setHeadId}>
+                    <SelectTrigger><SelectValue placeholder="Pilih penanggung jawab..." /></SelectTrigger>
+                    <SelectContent>
+                      {employees.filter((e) => e.category === "OUTLET" && e.status === "AKTIF").map((e) => (
+                        <SelectItem key={e.id} value={e.id}>{e.fullName} — {e.nik}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </FormRow>
 
-          <FormRow>
-            <Field label="Latitude (LU / Lintang)" required hint="Derajat Lintang (-6.xxxx)">
-              <div className="relative">
-                <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="pl-8 font-mono tabular-nums text-xs" />
-              </div>
-            </Field>
-            <Field label="Longitude (LT / Bujur)" required hint="Derajat Bujur Timur (106.xxxx)">
-              <div className="relative">
-                <Navigation className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input type="number" step="any" value={lon} onChange={(e) => setLon(e.target.value)} className="pl-8 font-mono tabular-nums text-xs" />
-              </div>
-            </Field>
-          </FormRow>
+              <Field label="Alamat Outlet Lengkap">
+                <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} placeholder="Jl. Jend. Sudirman No. 1, Jakarta Pusat..." />
+              </Field>
+            </CardContent>
+          </Card>
 
-          {/* Pratinjau Peta Lokasi Outlet Langsung */}
-          <div className="space-y-1.5 pt-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
-              <span>Pratinjau Peta Lokasi Outlet (Real-time):</span>
-              <span className="font-mono text-[10px] text-muted-foreground">
-                Lat: {Number(lat).toFixed(5)}, Lon: {Number(lon).toFixed(5)}
-              </span>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground">2. Alamat, Link Maps &amp; Koordinat Regex</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <Field label="Link Google Maps (Opsional)" hint="Tempel link peta untuk mengekstrak koordinat otomatis">
+                <Input
+                  value={mapsLink}
+                  onChange={(e) => handleMapsLinkChange(e.target.value)}
+                  placeholder="https://maps.google.com/?q=-6.214,106.845"
+                />
+              </Field>
+
+              <Field label="Tempel Teks Koordinat Google Maps" hint="Otomatis dipisah oleh Regex untuk mengisi LU dan LT di bawah (misal: -7.592203, 110.649421)">
+                <div className="relative">
+                  <MapPin className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                  <Input
+                    value={rawCoords}
+                    onChange={(e) => handleRawCoordsChange(e.target.value)}
+                    placeholder="-7.592203, 110.649421"
+                    className="pl-8 font-mono tabular-nums text-xs font-semibold text-foreground border-primary/40 bg-primary/5 focus:border-primary"
+                  />
+                </div>
+              </Field>
+
+              <FormRow>
+                <Field label="Latitude (LU / Lintang)" required hint="Derajat Lintang (-6.xxxx)">
+                  <Input type="number" step="any" value={lat} onChange={(e) => setLat(e.target.value)} className="font-mono tabular-nums text-xs" />
+                </Field>
+                <Field label="Longitude (LT / Bujur)" required hint="Derajat Bujur Timur (106.xxxx)">
+                  <Input type="number" step="any" value={lon} onChange={(e) => setLon(e.target.value)} className="font-mono tabular-nums text-xs" />
+                </Field>
+              </FormRow>
+
+              <Field label="Radius Geofence Presensi (meter)">
+                <Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} className="tabular-nums" />
+              </Field>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Map Preview Column */}
+        <div className="space-y-6">
+          <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
+                <span>Pratinjau Peta Lokasi</span>
+                <span className="font-mono text-[10px] text-muted-foreground font-normal">
+                  Lat: {Number(lat).toFixed(4)}, Lon: {Number(lon).toFixed(4)}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
               <EmployeeMiniMap
                 lat={Number(lat) || -6.2}
                 lon={Number(lon) || 106.8}
                 employeeName={name || "Lokasi Outlet Cabang"}
                 editable={true}
-                height={220}
+                height={320}
                 onPick={(newLat, newLon) => {
                   setLat(newLat.toFixed(6));
                   setLon(newLon.toFixed(6));
@@ -722,54 +767,19 @@ function OutletFormDialog({
                   toast.success(`Koordinat outlet disesuaikan dari peta: Lat ${newLat.toFixed(5)}, Lon ${newLon.toFixed(5)}`);
                 }}
               />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <FormRow>
-            <Field label="Radius Geofence Presensi (meter)">
-              <Input type="number" value={radius} onChange={(e) => setRadius(e.target.value)} className="tabular-nums" />
-            </Field>
-            <Field label="Klasifikasi Outlet">
-              <Select value={classification} onValueChange={(v) => setClassification(v as OutletClassification)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FLAGSHIP">Flagship (Utama)</SelectItem>
-                  <SelectItem value="STANDARD">Standard</SelectItem>
-                  <SelectItem value="EXPRESS">Express</SelectItem>
-                  <SelectItem value="KIOSK">Kiosk</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </FormRow>
-
-          <Field label="Kepala Outlet (Supervisor Direct)">
-            <Select value={headId} onValueChange={setHeadId}>
-              <SelectTrigger><SelectValue placeholder="Pilih penanggung jawab..." /></SelectTrigger>
-              <SelectContent>
-                {employees.filter((e) => e.category === "OUTLET" && e.status === "AKTIF").map((e) => (
-                  <SelectItem key={e.id} value={e.id}>{e.fullName} — {e.nik}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field label="Catatan Internal Outlet">
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Catatan fasilitas atau operasional outlet..." />
-          </Field>
-
-          {error ? (
-            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-              <AlertCircle className="mt-0.5 size-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          ) : null}
+          <Card className="border-border/80 shadow-xs rounded-2xl">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold text-foreground">Catatan Internal</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="Catatan fasilitas, area parkir, atau operasional outlet..." />
+            </CardContent>
+          </Card>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>{mode === "edit" ? "Simpan Perubahan" : "Tambah Outlet"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </form>
   );
 }
