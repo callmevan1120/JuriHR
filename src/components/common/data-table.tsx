@@ -53,6 +53,8 @@ import { cn } from "@/lib/utils";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Key unik tabel untuk menyimpan visibilitas & ukuran kolom per user di localStorage */
+  tableKey?: string;
   /** Akses ke nilai untuk search global. */
   globalFilterFn?: (row: TData, query: string) => boolean;
   searchPlaceholder?: string;
@@ -70,6 +72,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
+  tableKey,
   globalFilterFn,
   searchPlaceholder = "Cari...",
   toolbar,
@@ -82,18 +85,45 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
+    if (tableKey && typeof window !== "undefined") {
+      const saved = localStorage.getItem(`juri_table_vis_${tableKey}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return {};
+  });
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [globalFilter, setGlobalFilter] = React.useState("");
+
+  const handleColumnVisibilityChange = React.useCallback(
+    (updaterOrValue: React.SetStateAction<VisibilityState>) => {
+      setColumnVisibility((prev) => {
+        const next = typeof updaterOrValue === "function" ? updaterOrValue(prev) : updaterOrValue;
+        if (tableKey && typeof window !== "undefined") {
+          localStorage.setItem(`juri_table_vis_${tableKey}`, JSON.stringify(next));
+        }
+        return next;
+      });
+    },
+    [tableKey],
+  );
 
   const table = useReactTable({
     data,
     columns,
     state: { sorting, columnFilters, columnVisibility, rowSelection, globalFilter },
     enableRowSelection: true,
+    enableColumnResizing: true,
+    columnResizeMode: "onChange",
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: globalFilterFn
@@ -179,11 +209,15 @@ export function DataTable<TData, TValue>({
                 <TableRow key={headerGroup.id} className="hover:bg-transparent">
                   {headerGroup.headers.map((header) => {
                     return (
-                      <TableHead key={header.id} className="h-10 text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                        className="relative h-10 text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap group/head"
+                      >
                         {header.isPlaceholder ? null : (
                           <div
                             className={cn(
-                              "flex items-center gap-1",
+                              "flex items-center gap-1 pr-2",
                               header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground",
                             )}
                             onClick={header.column.getToggleSortingHandler()}
@@ -210,6 +244,17 @@ export function DataTable<TData, TValue>({
                               </span>
                             ) : null}
                           </div>
+                        )}
+                        {/* Resizer handle for custom column width */}
+                        {header.column.getCanResize() && (
+                          <div
+                            onMouseDown={header.getResizeHandler()}
+                            onTouchStart={header.getResizeHandler()}
+                            className={cn(
+                              "absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none hover:bg-primary/60 transition-colors",
+                              header.column.getIsResizing() ? "bg-primary w-2" : "bg-transparent opacity-0 group-hover/head:opacity-100"
+                            )}
+                          />
                         )}
                       </TableHead>
                     );

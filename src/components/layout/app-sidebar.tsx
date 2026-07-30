@@ -30,12 +30,12 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border/60 pb-2">
-        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2.5 min-w-0 group-data-[collapsible=icon]:hidden">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
               <Wheat className="size-5" />
             </div>
-            <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+            <div className="flex flex-col leading-none">
               <span className="text-sm font-bold tracking-tight text-foreground">
                 JURI HR
               </span>
@@ -44,7 +44,7 @@ export function AppSidebar() {
               </span>
             </div>
           </div>
-          {/* Hamburger Icon Toggle inside Sidebar Header */}
+          {/* Hamburger Icon Toggle - Centered when collapsed */}
           <SidebarTrigger className="size-8 hover:bg-sidebar-accent text-sidebar-foreground shrink-0 rounded-lg" />
         </div>
       </SidebarHeader>

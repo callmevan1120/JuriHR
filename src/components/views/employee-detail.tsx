@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import {
   Pencil,
   ChevronRight,
+  ArrowLeft,
   Phone,
   Mail,
   CalendarDays,
@@ -100,10 +101,9 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2 text-sm">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 text-muted-foreground">
-          <ChevronRight className="size-4 rotate-180" /> Kembali
+        <Button variant="outline" size="icon" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+          <ArrowLeft className="size-4" />
         </Button>
-        <span className="text-muted-foreground">/</span>
         <span className="font-medium text-foreground">Detail Karyawan</span>
       </div>
 

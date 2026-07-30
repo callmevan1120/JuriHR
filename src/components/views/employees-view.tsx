@@ -354,6 +354,7 @@ export function EmployeesView() {
       <Card className="border-border shadow-soft">
         <CardContent className="pt-4">
           <DataTable
+            tableKey="employees"
             columns={[selectionColumn<Employee>(), ...columns] as ColumnDef<Employee>[]}
             data={filtered}
             searchPlaceholder="Cari nama atau NIK..."

@@ -5,21 +5,12 @@ import { PageHeader } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -36,7 +27,6 @@ import { useStore } from "@/hooks/use-store";
 import { positionService, divisionService, lookupService } from "@/lib/services/master-data";
 import {
   formatRupiah,
-  formatDateMed,
   cn,
 } from "@/lib/utils";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -50,6 +40,10 @@ import {
   Building2,
   Users,
   Hash,
+  ArrowLeft,
+  Save,
+  AlertCircle,
+  Banknote,
 } from "lucide-react";
 
 export function PositionsView() {
@@ -57,7 +51,9 @@ export function PositionsView() {
   const divisions = useStore((s) => s.divisions);
   const employees = useStore((s) => s.employees);
 
-  const [dialog, setDialog] = React.useState<{
+  const [activeTab, setActiveTab] = React.useState<"positions" | "divisions">("positions");
+
+  const [formState, setFormState] = React.useState<{
     type: "position" | "division" | null;
     mode: "create" | "edit";
     data?: Position | Division;
@@ -74,61 +70,168 @@ export function PositionsView() {
     employees.forEach((e) => m.set(e.positionId, (m.get(e.positionId) ?? 0) + 1));
     return m;
   }, [employees]);
+
   const empCountByDivision = React.useMemo(() => {
     const m = new Map<string, number>();
     employees.forEach((e) => m.set(e.divisionId, (m.get(e.divisionId) ?? 0) + 1));
     return m;
   }, [employees]);
 
+  // Full-Page Forms when active
+  if (formState.type === "position") {
+    return (
+      <PositionFormPage
+        mode={formState.mode}
+        data={formState.data as Position | undefined}
+        onBack={() => setFormState({ type: null, mode: "create" })}
+      />
+    );
+  }
+
+  if (formState.type === "division") {
+    return (
+      <DivisionFormPage
+        mode={formState.mode}
+        data={formState.data as Division | undefined}
+        onBack={() => setFormState({ type: null, mode: "create" })}
+      />
+    );
+  }
+
+  const activePositionsCount = positions.filter((p) => p.status === "active").length;
+  const activeDivisionsCount = divisions.filter((d) => d.status === "active").length;
+  const outletPositionsCount = positions.filter((p) => p.category === "OUTLET").length;
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
-        title="Posisi & Divisi"
-        description="Master data jabatan dan divisi beserta kategori OUTLET atau NON_OUTLET."
+        title="Posisi & Divisi Karyawan"
+        description="Pengelolaan struktur jabatan, departemen divisi, dan acuan default kompensasi gaji JURI Bun."
         actions={
-          <>
-            <Button variant="outline" onClick={() => setDialog({ type: "division", mode: "create" })}>
-              <Plus className="size-4" /> Divisi
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setFormState({ type: "division", mode: "create" })}
+              className="gap-1.5 rounded-xl font-semibold"
+            >
+              <Plus className="size-4 text-primary" /> Tambah Divisi
             </Button>
-            <Button onClick={() => setDialog({ type: "position", mode: "create" })}>
-              <Plus className="size-4" /> Posisi
+            <Button
+              onClick={() => setFormState({ type: "position", mode: "create" })}
+              className="gap-1.5 rounded-xl font-semibold shadow-xs"
+            >
+              <Plus className="size-4" /> Tambah Posisi
             </Button>
-          </>
+          </div>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <PositionsPanel
-          positions={positions}
-          empCount={empCountByPosition}
-          onEdit={(p) => setDialog({ type: "position", mode: "edit", data: p })}
-          onArchive={(p) => setConfirm({ type: "position", id: p.id, name: p.name })}
-        />
-        <DivisionsPanel
-          divisions={divisions}
-          empCount={empCountByDivision}
-          onEdit={(d) => setDialog({ type: "division", mode: "edit", data: d })}
-          onArchive={(d) => setConfirm({ type: "division", id: d.id, name: d.name })}
-        />
+      {/* Modern KPI Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary shrink-0">
+              <Briefcase className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Total Posisi Aktif</p>
+              <p className="text-xl font-bold tracking-tight text-foreground">{activePositionsCount} Jabatan</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-info/15 text-info shrink-0">
+              <Building2 className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Total Divisi &amp; HQ</p>
+              <p className="text-xl font-bold tracking-tight text-foreground">{activeDivisionsCount} Divisi</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-success/15 text-success shrink-0">
+              <Users className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Jabatan Kategori Outlet</p>
+              <p className="text-xl font-bold tracking-tight text-foreground">{outletPositionsCount} Posisi</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
+          <CardContent className="p-4 flex items-center gap-3.5">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 shrink-0">
+              <Banknote className="size-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">Karyawan Terdistribusi</p>
+              <p className="text-xl font-bold tracking-tight text-foreground">{employees.length} Anggota</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {dialog.type ? (
-        dialog.type === "position" ? (
-          <PositionFormDialog
-            open
-            onOpenChange={(o) => !o && setDialog({ type: null, mode: "create" })}
-            mode={dialog.mode}
-            data={dialog.data as Position | undefined}
-          />
-        ) : (
-          <DivisionFormDialog
-            open
-            onOpenChange={(o) => !o && setDialog({ type: null, mode: "create" })}
-            mode={dialog.mode}
-            data={dialog.data as Division | undefined}
-          />
-        )
-      ) : null}
+      {/* Segmented Tab Switcher (Apple / Google Style) */}
+      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="inline-flex rounded-2xl bg-muted/60 p-1.5 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab("positions")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "positions"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Briefcase className="size-4 text-primary" />
+            <span>Master Posisi &amp; Jabatan</span>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary font-bold">
+              {positions.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("divisions")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "divisions"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Building2 className="size-4 text-info" />
+            <span>Master Divisi &amp; Departemen</span>
+            <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] text-info font-bold">
+              {divisions.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Full-Width Table Render depending on tab */}
+      {activeTab === "positions" ? (
+        <PositionsTableSection
+          positions={positions}
+          empCount={empCountByPosition}
+          onEdit={(p) => setFormState({ type: "position", mode: "edit", data: p })}
+          onArchive={(p) => setConfirm({ type: "position", id: p.id, name: p.name })}
+        />
+      ) : (
+        <DivisionsTableSection
+          divisions={divisions}
+          empCount={empCountByDivision}
+          onEdit={(d) => setFormState({ type: "division", mode: "edit", data: d })}
+          onArchive={(d) => setConfirm({ type: "division", id: d.id, name: d.name })}
+        />
+      )}
 
       <ConfirmDialog
         open={!!confirm}
@@ -141,7 +244,7 @@ export function PositionsView() {
           if (!confirm) return;
           if (confirm.type === "position") positionService.softDelete(confirm.id);
           else divisionService.softDelete(confirm.id);
-          toast.success("Data diarsipkan");
+          toast.success("Data berhasil diarsipkan");
         }}
       />
     </div>
@@ -149,9 +252,9 @@ export function PositionsView() {
 }
 
 // ------------------------------------------------------------
-// Panel Posisi
+// Full Table Section for Positions
 // ------------------------------------------------------------
-function PositionsPanel({
+function PositionsTableSection({
   positions,
   empCount,
   onEdit,
@@ -165,43 +268,50 @@ function PositionsPanel({
   const columns: ColumnDef<Position>[] = [
     {
       accessorKey: "code",
-      header: "Kode",
+      header: "Kode Jabatan",
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-medium text-foreground">{row.original.code}</span>
+        <span className="font-mono text-xs font-bold text-foreground bg-muted/40 px-2 py-1 rounded-md border border-border/60">
+          {row.original.code}
+        </span>
       ),
     },
     {
       accessorKey: "name",
-      header: "Nama Posisi",
+      header: "Nama Posisi / Jabatan",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Briefcase className="size-3.5" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary shrink-0 font-bold">
+            <Briefcase className="size-4" />
           </div>
-          <span className="font-medium text-foreground">{row.original.name}</span>
+          <div>
+            <p className="font-bold text-sm text-foreground">{row.original.name}</p>
+            {row.original.note && (
+              <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">{row.original.note}</p>
+            )}
+          </div>
         </div>
       ),
     },
     {
       accessorKey: "category",
-      header: "Kategori",
+      header: "Kategori Operasional",
       cell: ({ row }) => (
         <StatusBadge
           status={row.original.category}
-          label={row.original.category === "OUTLET" ? "Outlet" : "Non-Outlet"}
+          label={row.original.category === "OUTLET" ? "Cabang Outlet" : "Non-Outlet / HQ"}
           className={cn(
             row.original.category === "OUTLET"
-              ? "bg-primary/15 text-primary-foreground border-primary/30"
-              : "bg-info/15 text-info border-info/30",
+              ? "bg-primary/15 text-primary border-primary/30 font-semibold"
+              : "bg-info/15 text-info border-info/30 font-semibold",
           )}
         />
       ),
     },
     {
-      id: "salary",
-      header: "Gaji (Bulanan)",
+      id: "salaryMonthly",
+      header: "Default Gaji Bulanan",
       cell: ({ row }) => (
-        <span className="tabular-nums text-foreground">
+        <span className="tabular-nums font-semibold text-foreground">
           {row.original.defaultMonthlySalary > 0
             ? formatRupiah(row.original.defaultMonthlySalary)
             : "—"}
@@ -209,12 +319,23 @@ function PositionsPanel({
       ),
     },
     {
-      id: "empCount",
-      header: "Karyawan",
+      id: "salaryDaily",
+      header: "Default Gaji Harian",
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-1 tabular-nums text-muted-foreground">
-          <Users className="size-3" />
-          {empCount.get(row.original.id) ?? 0}
+        <span className="tabular-nums text-muted-foreground">
+          {row.original.defaultDailySalary > 0
+            ? formatRupiah(row.original.defaultDailySalary)
+            : "—"}
+        </span>
+      ),
+    },
+    {
+      id: "empCount",
+      header: "Jumlah Karyawan",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums font-bold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
+          <Users className="size-3.5 text-primary" />
+          {empCount.get(row.original.id) ?? 0} Anggota
         </span>
       ),
     },
@@ -231,24 +352,26 @@ function PositionsPanel({
           <Button
             variant="ghost"
             size="icon"
-            className="size-7"
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(row.original);
             }}
+            title="Edit Posisi"
           >
-            <Pencil className="size-3.5" />
+            <Pencil className="size-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 text-destructive hover:text-destructive"
+            className="size-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={(e) => {
               e.stopPropagation();
               onArchive(row.original);
             }}
+            title="Arsipkan"
           >
-            <Archive className="size-3.5" />
+            <Archive className="size-4" />
           </Button>
         </div>
       ),
@@ -256,28 +379,19 @@ function PositionsPanel({
   ];
 
   return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Briefcase className="size-4" />
-            </div>
-            <div>
-              <CardTitle className="text-base">Daftar Posisi</CardTitle>
-              <CardDescription className="text-xs">{positions.length} posisi terdaftar</CardDescription>
-            </div>
-          </div>
-        </div>
+    <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
+      <CardHeader className="pb-3 border-b border-border/60">
+        <CardTitle className="text-base font-bold text-foreground">Daftar Lengkap Posisi &amp; Jabatan</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <DataTable
+          tableKey="positions"
           columns={[selectionColumn<Position>(), ...columns] as ColumnDef<Position>[]}
           data={positions}
-          searchPlaceholder="Cari posisi..."
-          pageSize={8}
+          searchPlaceholder="Cari berdasarkan nama atau kode posisi..."
+          pageSize={10}
           globalFilterFn={(row, q) =>
-            (row.name + row.code).toLowerCase().includes(q.toLowerCase())
+            (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
           }
         />
       </CardContent>
@@ -286,9 +400,9 @@ function PositionsPanel({
 }
 
 // ------------------------------------------------------------
-// Panel Divisi
+// Full Table Section for Divisions
 // ------------------------------------------------------------
-function DivisionsPanel({
+function DivisionsTableSection({
   divisions,
   empCount,
   onEdit,
@@ -299,87 +413,138 @@ function DivisionsPanel({
   onEdit: (d: Division) => void;
   onArchive: (d: Division) => void;
 }) {
-  return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-info/10 text-info">
+  const columns: ColumnDef<Division>[] = [
+    {
+      accessorKey: "code",
+      header: "Kode Divisi",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs font-bold text-foreground bg-muted/40 px-2 py-1 rounded-md border border-border/60">
+          {row.original.code}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "name",
+      header: "Nama Divisi / Departemen",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-info/15 text-info shrink-0 font-bold">
             <Building2 className="size-4" />
           </div>
           <div>
-            <CardTitle className="text-base">Daftar Divisi</CardTitle>
-            <CardDescription className="text-xs">{divisions.length} divisi terdaftar</CardDescription>
+            <p className="font-bold text-sm text-foreground">{row.original.name}</p>
+            {row.original.note && (
+              <p className="text-[11px] text-muted-foreground truncate max-w-[240px]">{row.original.note}</p>
+            )}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {divisions.map((d) => (
-          <div
-            key={d.id}
-            className="group flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-muted/30"
+      ),
+    },
+    {
+      accessorKey: "category",
+      header: "Kategori Divisi",
+      cell: ({ row }) => (
+        <StatusBadge
+          status={row.original.category}
+          label={row.original.category === "OUTLET" ? "Divisi Outlet" : "HQ / Non-Outlet"}
+          className={cn(
+            row.original.category === "OUTLET"
+              ? "bg-primary/15 text-primary border-primary/30 font-semibold"
+              : "bg-info/15 text-info border-info/30 font-semibold",
+          )}
+        />
+      ),
+    },
+    {
+      id: "head",
+      header: "Kepala Divisi",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {lookupService.employeeName(row.original.headId) || "—"}
+        </span>
+      ),
+    },
+    {
+      id: "empCount",
+      header: "Jumlah Anggota",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 tabular-nums font-bold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
+          <Users className="size-3.5 text-info" />
+          {empCount.get(row.original.id) ?? 0} Karyawan
+        </span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(row.original);
+            }}
+            title="Edit Divisi"
           >
-            <div className="flex size-9 items-center justify-center rounded-lg bg-info/10 text-info">
-              <Building2 className="size-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] font-medium text-muted-foreground">{d.code}</span>
-                <span className="truncate text-sm font-medium text-foreground">{d.name}</span>
-              </div>
-              <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <Users className="size-3" />
-                  {empCount.get(d.id) ?? 0} karyawan
-                </span>
-                <span>·</span>
-                <span>Kepala: {lookupService.employeeName(d.headId)}</span>
-              </div>
-            </div>
-            <StatusBadge
-              status={d.category}
-              label={d.category === "OUTLET" ? "Outlet" : "Non-Outlet"}
-              className={cn(
-                d.category === "OUTLET"
-                  ? "bg-primary/15 text-primary-foreground border-primary/30"
-                  : "bg-info/15 text-info border-info/30",
-              )}
-            />
-            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button variant="ghost" size="icon" className="size-7" onClick={() => onEdit(d)}>
-                <Pencil className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-destructive hover:text-destructive"
-                onClick={() => onArchive(d)}
-              >
-                <Archive className="size-3.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
-        {divisions.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Belum ada divisi.</p>
-        ) : null}
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive(row.original);
+            }}
+            title="Arsipkan"
+          >
+            <Archive className="size-4" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
+      <CardHeader className="pb-3 border-b border-border/60">
+        <CardTitle className="text-base font-bold text-foreground">Daftar Lengkap Divisi &amp; Departemen</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <DataTable
+          tableKey="divisions"
+          columns={[selectionColumn<Division>(), ...columns] as ColumnDef<Division>[]}
+          data={divisions}
+          searchPlaceholder="Cari berdasarkan nama atau kode divisi..."
+          pageSize={10}
+          globalFilterFn={(row, q) =>
+            (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
+          }
+        />
       </CardContent>
     </Card>
   );
 }
 
 // ------------------------------------------------------------
-// Form Dialog Posisi
+// Full-Page Position Form Component (ERPNext Architecture)
 // ------------------------------------------------------------
-function PositionFormDialog({
-  open,
-  onOpenChange,
+function PositionFormPage({
   mode,
   data,
+  onBack,
 }: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
   mode: "create" | "edit";
   data?: Position;
+  onBack: () => void;
 }) {
   const [code, setCode] = React.useState(data?.code ?? "");
   const [name, setName] = React.useState(data?.name ?? "");
@@ -390,22 +555,10 @@ function PositionFormDialog({
   const [note, setNote] = React.useState(data?.note ?? "");
   const [error, setError] = React.useState<string>();
 
-  React.useEffect(() => {
-    if (open) {
-      setCode(data?.code ?? "");
-      setName(data?.name ?? "");
-      setCategory(data?.category ?? "OUTLET");
-      setMonthly(String(data?.defaultMonthlySalary ?? 0));
-      setDaily(String(data?.defaultDailySalary ?? 0));
-      setStatus(data?.status ?? "active");
-      setNote(data?.note ?? "");
-      setError(undefined);
-    }
-  }, [open, data]);
-
-  const submit = () => {
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!code.trim() || !name.trim()) {
-      setError("Kode dan nama wajib diisi.");
+      setError("Kode dan nama posisi wajib diisi.");
       return;
     }
     const payload = {
@@ -419,177 +572,247 @@ function PositionFormDialog({
     };
     if (mode === "edit" && data) {
       positionService.update(data.id, payload);
-      toast.success("Posisi diperbarui");
+      toast.success("Data posisi berhasil diperbarui");
     } else {
       positionService.create(payload);
-      toast.success("Posisi ditambahkan");
+      toast.success("Posisi baru berhasil ditambahkan");
     }
-    onOpenChange(false);
+    onBack();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit Posisi" : "Tambah Posisi"}</DialogTitle>
-          <DialogDescription>
-            Master jabatan dengan kategori dan default gaji.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <FormRow>
-            <Field label="Kode Posisi" required>
-              <div className="relative">
-                <Hash className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="BAR" className="pl-8" maxLength={6} />
-              </div>
-            </Field>
-            <Field label="Nama Posisi" required>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Barista" />
-            </Field>
-          </FormRow>
-          <FormRow>
-            <Field label="Kategori">
-              <Select value={category} onValueChange={(v) => setCategory(v as "OUTLET" | "NON_OUTLET")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OUTLET">Outlet</SelectItem>
-                  <SelectItem value="NON_OUTLET">Non-Outlet</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Status">
-              <Select value={status} onValueChange={(v) => setStatus(v as RecordStatus)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Aktif</SelectItem>
-                  <SelectItem value="inactive">Nonaktif</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </FormRow>
-          <FormRow>
-            <Field label="Default Gaji Bulanan" hint="Untuk karyawan bergaji bulanan.">
-              <Input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} className="tabular-nums" />
-            </Field>
-            <Field label="Default Gaji Harian" hint="Untuk karyawan bergaji harian.">
-              <Input type="number" value={daily} onChange={(e) => setDaily(e.target.value)} className="tabular-nums" />
-            </Field>
-          </FormRow>
-          <Field label="Catatan">
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Opsional" />
-          </Field>
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      {/* Top Header Navigation */}
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Briefcase className="size-5 text-primary" />
+              {mode === "edit" ? `Edit Posisi — ${data?.name}` : "Tambah Posisi Jabatan Baru"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Formulir kelola kode posisi, nama jabatan, kategori outlet/HQ, dan acuan standar gaji.
+            </p>
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>{mode === "edit" ? "Simpan" : "Tambah"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+            Batal
+          </Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" />
+            {mode === "edit" ? "Simpan Perubahan" : "Simpan Posisi"}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="max-w-4xl space-y-6">
+        <Card className="border-border/80 shadow-xs rounded-2xl">
+          <CardHeader className="pb-3 border-b border-border/60">
+            <CardTitle className="text-base font-bold text-foreground">1. Identitas Posisi &amp; Kategori</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <FormRow>
+              <Field label="Kode Posisi" required hint="Singkatan unik maks 6 karakter (cth: BAR, KSR, BKR)">
+                <div className="relative">
+                  <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="BAR" className="pl-9 font-mono uppercase font-bold" maxLength={6} />
+                </div>
+              </Field>
+              <Field label="Nama Posisi / Jabatan" required>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Barista Senior" className="font-semibold" />
+              </Field>
+            </FormRow>
+
+            <FormRow>
+              <Field label="Kategori Operasional" hint="Menentukan penempatan posisi di cabang outlet atau markas HQ">
+                <Select value={category} onValueChange={(v) => setCategory(v as "OUTLET" | "NON_OUTLET")}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OUTLET">Cabang Outlet (Operasional)</SelectItem>
+                    <SelectItem value="NON_OUTLET">Non-Outlet / Markas Utama (HQ)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Status Rekaman">
+                <Select value={status} onValueChange={(v) => setStatus(v as RecordStatus)}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Aktif</SelectItem>
+                    <SelectItem value="inactive">Nonaktif</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FormRow>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/80 shadow-xs rounded-2xl">
+          <CardHeader className="pb-3 border-b border-border/60">
+            <CardTitle className="text-base font-bold text-foreground">2. Acuan Kompensasi &amp; Catatan</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <FormRow>
+              <Field label="Default Gaji Bulanan (Rp)" hint="Default nilai penggajian bagi karyawan tipe bulanan">
+                <Input type="number" value={monthly} onChange={(e) => setMonthly(e.target.value)} className="tabular-nums font-mono font-semibold" />
+              </Field>
+              <Field label="Default Gaji Harian (Rp)" hint="Default nilai penggajian bagi karyawan tipe harian/part-time">
+                <Input type="number" value={daily} onChange={(e) => setDaily(e.target.value)} className="tabular-nums font-mono" />
+              </Field>
+            </FormRow>
+
+            <Field label="Catatan Tambahan">
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Tuliskan deskripsi tugas atau syarat khusus posisi ini (opsional)..." />
+            </Field>
+          </CardContent>
+        </Card>
+      </div>
+    </form>
   );
 }
 
 // ------------------------------------------------------------
-// Form Dialog Divisi
+// Full-Page Division Form Component (ERPNext Architecture)
 // ------------------------------------------------------------
-function DivisionFormDialog({
-  open,
-  onOpenChange,
+function DivisionFormPage({
   mode,
   data,
+  onBack,
 }: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
   mode: "create" | "edit";
   data?: Division;
+  onBack: () => void;
 }) {
+  const employees = useStore((s) => s.employees);
   const [code, setCode] = React.useState(data?.code ?? "");
   const [name, setName] = React.useState(data?.name ?? "");
   const [category, setCategory] = React.useState<"OUTLET" | "NON_OUTLET">(data?.category ?? "NON_OUTLET");
+  const [headId, setHeadId] = React.useState(data?.headId ?? "");
   const [status, setStatus] = React.useState<RecordStatus>(data?.status ?? "active");
   const [note, setNote] = React.useState(data?.note ?? "");
   const [error, setError] = React.useState<string>();
 
-  React.useEffect(() => {
-    if (open) {
-      setCode(data?.code ?? "");
-      setName(data?.name ?? "");
-      setCategory(data?.category ?? "NON_OUTLET");
-      setStatus(data?.status ?? "active");
-      setNote(data?.note ?? "");
-      setError(undefined);
-    }
-  }, [open, data]);
-
-  const submit = () => {
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!code.trim() || !name.trim()) {
-      setError("Kode dan nama wajib diisi.");
+      setError("Kode dan nama divisi wajib diisi.");
       return;
     }
     const payload = {
       code: code.trim().toUpperCase(),
       name: name.trim(),
       category,
+      headId: headId || undefined,
       status,
       note: note.trim() || undefined,
     };
     if (mode === "edit" && data) {
       divisionService.update(data.id, payload);
-      toast.success("Divisi diperbarui");
+      toast.success("Data divisi berhasil diperbarui");
     } else {
       divisionService.create(payload);
-      toast.success("Divisi ditambahkan");
+      toast.success("Divisi baru berhasil ditambahkan");
     }
-    onOpenChange(false);
+    onBack();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit Divisi" : "Tambah Divisi"}</DialogTitle>
-          <DialogDescription>Master divisi organisasi.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <FormRow>
-            <Field label="Kode Divisi" required>
-              <div className="relative">
-                <Hash className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="OPS" className="pl-8" maxLength={6} />
-              </div>
-            </Field>
-            <Field label="Nama Divisi" required>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Operasional Outlet" />
-            </Field>
-          </FormRow>
-          <FormRow>
-            <Field label="Kategori">
-              <Select value={category} onValueChange={(v) => setCategory(v as "OUTLET" | "NON_OUTLET")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="OUTLET">Outlet</SelectItem>
-                  <SelectItem value="NON_OUTLET">Non-Outlet</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Status">
-              <div className="flex items-center gap-2">
-                <Switch checked={status === "active"} onCheckedChange={(c) => setStatus(c ? "active" : "inactive")} />
-                <span className="text-sm">{status === "active" ? "Aktif" : "Nonaktif"}</span>
-              </div>
-            </Field>
-          </FormRow>
-          <Field label="Catatan">
-            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Opsional" />
-          </Field>
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      {/* Top Header Navigation */}
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Building2 className="size-5 text-info" />
+              {mode === "edit" ? `Edit Divisi — ${data?.name}` : "Tambah Divisi / Departemen Baru"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Formulir kelola divisi organisasi, kepala divisi, dan struktur departemen.
+            </p>
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>{mode === "edit" ? "Simpan" : "Tambah"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+            Batal
+          </Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" />
+            {mode === "edit" ? "Simpan Perubahan" : "Simpan Divisi"}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="max-w-4xl space-y-6">
+        <Card className="border-border/80 shadow-xs rounded-2xl">
+          <CardHeader className="pb-3 border-b border-border/60">
+            <CardTitle className="text-base font-bold text-foreground">Identitas Divisi &amp; Struktural</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <FormRow>
+              <Field label="Kode Divisi" required hint="Kode unik maks 6 karakter (cth: OPS, MKT, HRD, FIN)">
+                <div className="relative">
+                  <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="OPS" className="pl-9 font-mono uppercase font-bold" maxLength={6} />
+                </div>
+              </Field>
+              <Field label="Nama Divisi / Departemen" required>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Operasional Outlet" className="font-semibold" />
+              </Field>
+            </FormRow>
+
+            <FormRow>
+              <Field label="Kategori Divisi">
+                <Select value={category} onValueChange={(v) => setCategory(v as "OUTLET" | "NON_OUTLET")}>
+                  <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="OUTLET">Divisi Operasional Outlet</SelectItem>
+                    <SelectItem value="NON_OUTLET">HQ / Headquarter (Non-Outlet)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Kepala Divisi (Opsional)">
+                <Select value={headId || "none"} onValueChange={(v) => setHeadId(v === "none" ? "" : v)}>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih Kepala Divisi..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-- Belum Ada --</SelectItem>
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.fullName} ({e.nik})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </FormRow>
+
+            <Field label="Catatan / Lingkup Kerja">
+              <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} placeholder="Tuliskan wewenang &amp; ruang lingkup divisi ini (opsional)..." />
+            </Field>
+          </CardContent>
+        </Card>
+      </div>
+    </form>
   );
 }

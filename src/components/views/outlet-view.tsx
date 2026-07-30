@@ -294,10 +294,9 @@ function OutletDetail({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-2 text-sm">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 text-muted-foreground">
-          <ChevronRight className="size-4 rotate-180" /> Kembali
+        <Button variant="outline" size="icon" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+          <ArrowLeft className="size-4" />
         </Button>
-        <span className="text-muted-foreground">/</span>
         <span className="font-medium text-foreground">Detail Outlet</span>
       </div>
 
@@ -621,10 +620,9 @@ function OutletFormPage({
       {/* Top Bar Navigation */}
       <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
-            <ArrowLeft className="size-4" /> Kembali
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
           </Button>
-          <div className="h-4 w-px bg-border/80" />
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Store className="size-5 text-primary" />

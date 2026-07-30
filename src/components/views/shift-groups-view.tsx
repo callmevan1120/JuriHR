@@ -312,10 +312,9 @@ function ShiftGroupFormPage({
     <form onSubmit={submit} className="space-y-6 pb-12">
       <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" type="button" onClick={onBack} className="gap-1.5 text-muted-foreground hover:text-foreground rounded-lg">
-            <ArrowLeft className="size-4" /> Kembali
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
           </Button>
-          <div className="h-4 w-px bg-border/80" />
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <CalendarDays className="size-5 text-primary" />

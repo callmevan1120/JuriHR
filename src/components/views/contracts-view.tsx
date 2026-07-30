@@ -5,7 +5,6 @@ import { PageHeader } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -30,11 +29,9 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/common/data-table";
 import { StatusBadge } from "@/components/common/status-badge";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { useStore } from "@/hooks/use-store";
 import {
   contractService,
-  lookupService,
 } from "@/lib/services/master-data";
 import {
   formatDateMed,
@@ -47,39 +44,41 @@ import type { Contract, ContractType } from "@/lib/types";
 import { toast } from "sonner";
 import {
   FileText,
-  Search,
   CalendarClock,
-  AlertTriangle,
   RotateCcw,
   Pencil,
   Download,
-  TrendingDown,
-  CalendarX,
+  FilterX,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
 const REMINDER_BUCKETS = [
-  { key: "all", label: "Semua", color: "" },
-  { key: "lewat", label: "Lewat Jatuh Tempo", color: "bg-destructive/10 text-destructive border-destructive/30" },
-  { key: "3h", label: "≤ 3 hari", color: "bg-destructive/10 text-destructive border-destructive/30" },
-  { key: "7h", label: "≤ 7 hari", color: "bg-destructive/10 text-destructive border-destructive/30" },
-  { key: "14h", label: "≤ 14 hari", color: "bg-warning/10 text-warning border-warning/30" },
-  { key: "30h", label: "≤ 30 hari", color: "bg-warning/10 text-warning border-warning/30" },
-  { key: "60h", label: "≤ 60 hari", color: "bg-info/10 text-info border-info/30" },
-  { key: "90h", label: "≤ 90 hari", color: "bg-info/10 text-info border-info/30" },
-  { key: "aman", label: "Aman (>90 hari)", color: "bg-success/10 text-success border-success/30" },
+  { key: "all", label: "Semua Kontrak", color: "bg-muted text-foreground border-border" },
+  { key: "lewat", label: "Lewat Tempo", color: "bg-destructive/15 text-destructive border-destructive/30" },
+  { key: "3h", label: "≤ 3 hari", color: "bg-destructive/15 text-destructive border-destructive/30" },
+  { key: "7h", label: "≤ 7 hari", color: "bg-destructive/15 text-destructive border-destructive/30" },
+  { key: "14h", label: "≤ 14 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
+  { key: "30h", label: "≤ 30 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
+  { key: "60h", label: "≤ 60 hari", color: "bg-info/15 text-info border-info/30" },
+  { key: "aman", label: "Aman (>60 hari)", color: "bg-success/15 text-success border-success/30" },
 ] as const;
 
 export function ContractsView() {
   const contracts = useStore((s) => s.contracts);
   const employees = useStore((s) => s.employees);
+
   const [filterBucket, setFilterBucket] = React.useState<string>("all");
   const [filterStatus, setFilterStatus] = React.useState<string>("all");
-  const [search, setSearch] = React.useState("");
+  const [filterType, setFilterType] = React.useState<string>("all");
+
   const [extendTarget, setExtendTarget] = React.useState<Contract | null>(null);
   const [editTarget, setEditTarget] = React.useState<Contract | null>(null);
 
-  // Hitung distribusi reminder
   const today = todayISODate();
+
+  // Hitung distribusi reminder
   const bucketCounts = React.useMemo(() => {
     const counts = new Map<string, number>();
     contracts.forEach((c) => {
@@ -89,25 +88,33 @@ export function ContractsView() {
     return counts;
   }, [contracts]);
 
-  // Filter
-  const filtered = contracts.filter((c) => {
-    const r = contractService.reminderCategory(c.endDate);
-    if (filterBucket !== "all" && r.bucket !== filterBucket) return false;
-    if (filterStatus !== "all" && c.status !== filterStatus) return false;
-    const emp = employees.find((e) => e.id === c.employeeId);
-    if (search) {
-      const hay = `${c.contractNo} ${emp?.fullName ?? ""} ${emp?.nik ?? ""}`.toLowerCase();
-      if (!hay.includes(search.toLowerCase())) return false;
-    }
-    return true;
-  });
+  // Filter gabungan terpusat (tanpa kontrol ganda)
+  const filteredContracts = React.useMemo(() => {
+    return contracts.filter((c) => {
+      const r = contractService.reminderCategory(c.endDate);
+      if (filterBucket !== "all" && r.bucket !== filterBucket) return false;
+      if (filterStatus !== "all" && c.status !== filterStatus) return false;
+      if (filterType !== "all" && c.type !== filterType) return false;
+      return true;
+    });
+  }, [contracts, filterBucket, filterStatus, filterType]);
+
+  const hasActiveFilters = filterBucket !== "all" || filterStatus !== "all" || filterType !== "all";
+
+  const resetFilters = () => {
+    setFilterBucket("all");
+    setFilterStatus("all");
+    setFilterType("all");
+  };
 
   const columns: ColumnDef<Contract>[] = [
     {
       accessorKey: "contractNo",
       header: "No. Kontrak",
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-medium text-foreground">{row.original.contractNo}</span>
+        <span className="font-mono text-xs font-bold text-foreground bg-muted/40 px-2 py-1 rounded-md border border-border/60">
+          {row.original.contractNo}
+        </span>
       ),
     },
     {
@@ -117,51 +124,57 @@ export function ContractsView() {
         const emp = employees.find((e) => e.id === row.original.employeeId);
         return emp ? (
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">{emp.fullName}</p>
+            <p className="truncate text-sm font-bold text-foreground">{emp.fullName}</p>
             <p className="font-mono text-[11px] text-muted-foreground">{emp.nik}</p>
           </div>
-        ) : <span className="text-muted-foreground">—</span>;
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
       },
     },
     {
       accessorKey: "type",
-      header: "Jenis",
-      cell: ({ row }) => <span className="text-sm">{row.original.type}</span>,
+      header: "Jenis Kontrak",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="font-semibold text-xs rounded-lg bg-muted/20">
+          {row.original.type}
+        </Badge>
+      ),
     },
     {
       id: "periode",
-      header: "Periode",
+      header: "Masa Berlaku",
       cell: ({ row }) => (
         <div className="text-xs">
-          <p className="text-foreground">{formatDateMed(row.original.startDate)}</p>
+          <p className="font-medium text-foreground">{formatDateMed(row.original.startDate)}</p>
           <p className="text-muted-foreground">s/d {formatDateMed(row.original.endDate)}</p>
         </div>
       ),
     },
     {
       id: "reminder",
-      header: "Reminder",
+      header: "Status Remind Jatuh Tempo",
       cell: ({ row }) => {
         const r = contractService.reminderCategory(row.original.endDate);
         const style =
           r.bucket === "lewat" || r.bucket === "3h" || r.bucket === "7h"
-            ? "bg-destructive/10 text-destructive border-destructive/30"
+            ? "bg-destructive/15 text-destructive border-destructive/30 font-bold"
             : r.bucket === "14h" || r.bucket === "30h"
-            ? "bg-warning/10 text-warning border-warning/30"
+            ? "bg-amber-500/15 text-amber-600 border-amber-500/30 font-semibold"
             : r.bucket === "60h" || r.bucket === "90h"
-            ? "bg-info/10 text-info border-info/30"
-            : "bg-success/10 text-success border-success/30";
+            ? "bg-info/15 text-info border-info/30"
+            : "bg-success/15 text-success border-success/30 font-medium";
         return (
-          <Badge variant="outline" className={style}>
-            <CalendarClock className="size-3" />
-            {r.days < 0 ? `${Math.abs(r.days)}h lewat` : `${r.days}h lagi`}
+          <Badge variant="outline" className={cn("gap-1.5 py-1 px-2.5 rounded-lg text-xs", style)}>
+            <CalendarClock className="size-3.5 shrink-0" />
+            {r.days < 0 ? `${Math.abs(r.days)} Hari Lewat` : `${r.days} Hari Lagi`}
           </Badge>
         );
       },
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: "Status Kontrak",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
@@ -172,21 +185,27 @@ export function ContractsView() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-7"
-            title="Edit kontrak"
-            onClick={(e) => { e.stopPropagation(); setEditTarget(row.original); }}
+            className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+            title="Edit detail kontrak"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditTarget(row.original);
+            }}
           >
-            <Pencil className="size-3.5" />
+            <Pencil className="size-4" />
           </Button>
           {row.original.status !== "DIPERPANJANG" && row.original.status !== "BERAKHIR" ? (
             <Button
               variant="ghost"
               size="icon"
-              className="size-7 text-primary"
-              title="Perpanjang kontrak"
-              onClick={(e) => { e.stopPropagation(); setExtendTarget(row.original); }}
+              className="size-8 rounded-lg text-primary hover:text-primary hover:bg-primary/10"
+              title="Perpanjang masa kontrak"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExtendTarget(row.original);
+              }}
             >
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-4" />
             </Button>
           ) : null}
         </div>
@@ -195,8 +214,8 @@ export function ContractsView() {
   ];
 
   const handleExport = () => {
-    const headers = ["No Kontrak", "Karyawan", "NIK", "Jenis", "Mulai", "Berakhir", "Status", "Sisa Hari"];
-    const rows = filtered.map((c) => {
+    const headers = ["No Kontrak", "Nama Karyawan", "NIK", "Jenis", "Mulai", "Berakhir", "Status", "Sisa Hari"];
+    const rows = filteredContracts.map((c) => {
       const emp = employees.find((e) => e.id === c.employeeId);
       const r = contractService.reminderCategory(c.endDate);
       return [c.contractNo, emp?.fullName ?? "", emp?.nik ?? "", c.type, c.startDate, c.endDate, c.status, String(r.days)];
@@ -209,76 +228,98 @@ export function ContractsView() {
     a.download = `monitoring-kontrak-${today}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`${rows.length} kontrak diekspor`);
+    toast.success(`${rows.length} data kontrak berhasil diekspor`);
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
-        title="Kontrak & Monitoring"
-        description="Pantau jatuh tempo kontrak (90/60/30/14/7/3 hari) dan perpanjang kontrak dengan histori."
+        title="Kontrak &amp; Monitoring Masa Kerja"
+        description="Pantau tanggal jatuh tempo kontrak kerja karyawan JURI Bun secara otomatis."
         actions={
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="size-4" /> Export
+          <Button variant="outline" onClick={handleExport} className="gap-1.5 rounded-xl font-semibold">
+            <Download className="size-4 text-primary" /> Export Data CSV
           </Button>
         }
       />
 
-      {/* Reminder bucket summary */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-        {REMINDER_BUCKETS.slice(1).map((b) => {
-          const count = bucketCounts.get(b.key) ?? 0;
+      {/* Modern KPI Reminder Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+        {REMINDER_BUCKETS.map((b) => {
+          const count = b.key === "all" ? contracts.length : bucketCounts.get(b.key) ?? 0;
           const active = filterBucket === b.key;
           return (
             <button
               key={b.key}
-              onClick={() => setFilterBucket(active ? "all" : b.key)}
+              type="button"
+              onClick={() => setFilterBucket(b.key)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border bg-card p-3 text-center transition-all hover:-translate-y-0.5 hover:shadow-soft",
-                active ? "border-primary ring-2 ring-primary/20" : "border-border",
+                "flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center transition-all duration-150 hover:-translate-y-0.5 shadow-xs",
+                active ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-border/80 hover:bg-muted/40",
               )}
             >
-              <span className={cn("inline-flex size-7 items-center justify-center rounded-lg text-xs font-bold", b.color)}>
+              <span className={cn("inline-flex size-7 items-center justify-center rounded-xl text-xs font-bold", b.color)}>
                 {count}
               </span>
-              <span className="text-[10px] font-medium leading-tight text-muted-foreground">{b.label}</span>
+              <span className="text-[11px] font-semibold leading-tight text-foreground">{b.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Filter + table */}
-      <Card className="border-border shadow-soft">
+      {/* Main Table with Unified Single Toolbar Filtering */}
+      <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
+        <CardHeader className="pb-3 border-b border-border/60 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-bold text-foreground">Daftar Kontrak Kerja Karyawan</CardTitle>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+              <FilterX className="size-3.5" /> Reset Semua Filter
+            </Button>
+          )}
+        </CardHeader>
         <CardContent className="pt-4">
-          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative flex-1 sm:max-w-xs">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari kontrak/karyawan..." className="pl-8" />
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-9 w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="AKTIF">Aktif</SelectItem>
-                <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
-                <SelectItem value="BERAKHIR">Berakhir</SelectItem>
-                <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-            {filterBucket !== "all" ? (
-              <Button variant="ghost" size="sm" onClick={() => setFilterBucket("all")}>
-                Reset filter reminder
-              </Button>
-            ) : null}
-          </div>
           <DataTable
+            tableKey="contracts"
             columns={columns}
-            data={filtered}
-            searchPlaceholder="Cari..."
+            data={filteredContracts}
+            searchPlaceholder="Cari nomor kontrak, NIK, atau nama karyawan..."
             pageSize={10}
-            globalFilterFn={() => true}
-            emptyMessage="Tidak ada kontrak pada filter ini."
+            globalFilterFn={(row, q) => {
+              const emp = employees.find((e) => e.id === row.employeeId);
+              return (row.contractNo + (emp?.fullName ?? "") + (emp?.nik ?? "")).toLowerCase().includes(q.toLowerCase());
+            }}
+            toolbar={
+              <div className="flex items-center gap-2">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
+                    <SelectValue placeholder="Status Kontrak" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="AKTIF">Aktif</SelectItem>
+                    <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
+                    <SelectItem value="BERAKHIR">Berakhir</SelectItem>
+                    <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
+                    <SelectValue placeholder="Jenis Kontrak" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Jenis</SelectItem>
+                    <SelectItem value="PKWT">PKWT</SelectItem>
+                    <SelectItem value="PKWTT">PKWTT</SelectItem>
+                    <SelectItem value="PROBATION">Probation</SelectItem>
+                    <SelectItem value="MAGANG">Magang</SelectItem>
+                    <SelectItem value="HARIAN">Harian</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            }
+            emptyMessage="Tidak ada kontrak yang sesuai dengan filter pencarian."
           />
         </CardContent>
       </Card>
@@ -313,7 +354,6 @@ function ExtendDialog({ contract, onClose }: { contract: Contract; onClose: () =
   const [error, setError] = React.useState<string>();
 
   React.useEffect(() => {
-    // Default end = +1 year from new start
     if (newStart) {
       const d = new Date(newStart);
       d.setFullYear(d.getFullYear() + 1);
@@ -331,41 +371,41 @@ function ExtendDialog({ contract, onClose }: { contract: Contract; onClose: () =
       return;
     }
     contractService.extend(contract.id, { newStartDate: newStart, newEndDate: newEnd, type, note: note.trim() || undefined });
-    toast.success(`Kontrak ${emp?.fullName ?? ""} diperpanjang hingga ${formatDateMed(newEnd)}`);
+    toast.success(`Kontrak ${emp?.fullName ?? ""} berhasil diperpanjang hingga ${formatDateMed(newEnd)}`);
     onClose();
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <RotateCcw className="size-5 text-primary" /> Perpanjang Kontrak
+            <RotateCcw className="size-5 text-primary" /> Perpanjang Kontrak Kerja
           </DialogTitle>
           <DialogDescription>
-            Kontrak lama akan ditandai DIPERPANJANG dan kontrak baru dibuat sebagai histori terpisah.
+            Kontrak lama akan ditandai DIPERPANJANG dan kontrak baru dibuat sebagai riwayat terpisah.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-            <p className="font-medium text-foreground">{emp?.fullName}</p>
+          <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-xs space-y-1">
+            <p className="font-bold text-foreground">{emp?.fullName}</p>
             <p className="text-muted-foreground">Kontrak lama: {contract.contractNo}</p>
-            <p className="text-muted-foreground">{formatDateMed(contract.startDate)} — {formatDateMed(contract.endDate)}</p>
+            <p className="text-muted-foreground font-mono">{formatDateMed(contract.startDate)} — {formatDateMed(contract.endDate)}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Tanggal Mulai Baru</Label>
-              <Input type="date" value={newStart} onChange={(e) => setNewStart(e.target.value)} />
+              <Label className="text-xs font-semibold">Tanggal Mulai Baru</Label>
+              <Input type="date" value={newStart} onChange={(e) => setNewStart(e.target.value)} className="rounded-xl" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Tanggal Berakhir Baru</Label>
-              <Input type="date" value={newEnd} onChange={(e) => setNewEnd(e.target.value)} />
+              <Label className="text-xs font-semibold">Tanggal Berakhir Baru</Label>
+              <Input type="date" value={newEnd} onChange={(e) => setNewEnd(e.target.value)} className="rounded-xl" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Jenis Kontrak Baru</Label>
+            <Label className="text-xs font-semibold">Jenis Kontrak Baru</Label>
             <Select value={type} onValueChange={(v) => setType(v as ContractType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="PROBATION">Probation</SelectItem>
                 <SelectItem value="PKWT">PKWT</SelectItem>
@@ -376,14 +416,14 @@ function ExtendDialog({ contract, onClose }: { contract: Contract; onClose: () =
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Catatan Perpanjangan</Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsional" />
+            <Label className="text-xs font-semibold">Catatan Perpanjangan</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsional" className="rounded-xl" />
           </div>
           {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button onClick={submit}>Perpanjang Kontrak</Button>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} className="rounded-xl">Batal</Button>
+          <Button onClick={submit} className="rounded-xl font-semibold">Perpanjang Kontrak</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -391,7 +431,7 @@ function ExtendDialog({ contract, onClose }: { contract: Contract; onClose: () =
 }
 
 // ------------------------------------------------------------
-// Dialog Edit Kontrak (status, decision, last working date, note)
+// Dialog Edit Kontrak
 // ------------------------------------------------------------
 function EditDialog({ contract, onClose }: { contract: Contract; onClose: () => void }) {
   const employees = useStore((s) => s.employees);
@@ -408,25 +448,25 @@ function EditDialog({ contract, onClose }: { contract: Contract; onClose: () => 
       lastWorkingDate: lastWorkingDate || undefined,
       note: note.trim() || undefined,
     });
-    toast.success("Kontrak diperbarui");
+    toast.success("Data kontrak berhasil diperbarui");
     onClose();
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pencil className="size-5 text-primary" /> Edit Kontrak
+            <Pencil className="size-5 text-primary" /> Edit Status &amp; Keputusan Kontrak
           </DialogTitle>
           <DialogDescription>{contract.contractNo} — {emp?.fullName}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Status</Label>
+              <Label className="text-xs font-semibold">Status Kontrak</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as Contract["status"])}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="DRAFT">Draft</SelectItem>
                   <SelectItem value="AKTIF">Aktif</SelectItem>
@@ -439,9 +479,9 @@ function EditDialog({ contract, onClose }: { contract: Contract; onClose: () => 
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Keputusan</Label>
+              <Label className="text-xs font-semibold">Keputusan Manajemen</Label>
               <Select value={decision} onValueChange={(v) => setDecision(v as Contract["decision"])}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="PERPANJANG">Perpanjang</SelectItem>
@@ -454,17 +494,17 @@ function EditDialog({ contract, onClose }: { contract: Contract; onClose: () => 
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Last Working Date</Label>
-            <Input type="date" value={lastWorkingDate} onChange={(e) => setLastWorkingDate(e.target.value)} />
+            <Label className="text-xs font-semibold font-mono">Hari Kerja Terakhir (Last Working Date)</Label>
+            <Input type="date" value={lastWorkingDate} onChange={(e) => setLastWorkingDate(e.target.value)} className="rounded-xl" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Catatan</Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsional" />
+            <Label className="text-xs font-semibold">Catatan Internal</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Opsional" className="rounded-xl" />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button onClick={submit}>Simpan</Button>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} className="rounded-xl">Batal</Button>
+          <Button onClick={submit} className="rounded-xl font-semibold">Simpan Perubahan</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
