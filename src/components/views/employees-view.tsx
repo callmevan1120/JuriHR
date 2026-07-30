@@ -486,24 +486,24 @@ function EmployeeImportDialog({
   const [importTargetCategory, setImportTargetCategory] = React.useState("all");
 
   const ALL_IMPORT_FIELDS = [
-    { key: "nik", label: "NIK", defaultChecked: true },
-    { key: "fullName", label: "Nama Lengkap", defaultChecked: true },
-    { key: "email", label: "Email (Login v2)", defaultChecked: true },
-    { key: "birthDate", label: "Tanggal Lahir (Login v2)", defaultChecked: true },
-    { key: "phone", label: "Nomor Telepon / WA", defaultChecked: true },
-    { key: "category", label: "Kategori Karyawan", defaultChecked: true },
-    { key: "positionId", label: "Posisi / Jabatan", defaultChecked: true },
-    { key: "divisionId", label: "Divisi", defaultChecked: true },
-    { key: "primaryOutletId", label: "Penempatan Outlet", defaultChecked: true },
-    { key: "bankName", label: "Nama Bank Payroll", defaultChecked: true },
-    { key: "accountNumber", label: "Nomor Rekening", defaultChecked: true },
-    { key: "accountHolderName", label: "Atas Nama Rekening", defaultChecked: true },
-    { key: "contractType", label: "Tipe Kontrak", defaultChecked: true },
-    { key: "contractDurationMonths", label: "Durasi Kontrak (Bulan)", defaultChecked: true },
-    { key: "startDate", label: "Tanggal Bergabung", defaultChecked: true },
-    { key: "salaryAmount", label: "Nominal Gaji", defaultChecked: true },
-    { key: "homeAddress", label: "Alamat Rumah", defaultChecked: false },
-    { key: "mapsUrl", label: "Link Google Maps", defaultChecked: false },
+    { key: "nik", label: "ID / NIK Karyawan", priority: "wajib", defaultChecked: true },
+    { key: "fullName", label: "Nama Lengkap", priority: "wajib", defaultChecked: true },
+    { key: "email", label: "Email (Login / SSO)", priority: "disarankan", defaultChecked: true },
+    { key: "birthDate", label: "Tanggal Lahir", priority: "disarankan", defaultChecked: true },
+    { key: "phone", label: "Nomor WhatsApp", priority: "disarankan", defaultChecked: true },
+    { key: "category", label: "Kategori Operasional", priority: "wajib", defaultChecked: true },
+    { key: "positionId", label: "Posisi Jabatan", priority: "wajib", defaultChecked: true },
+    { key: "divisionId", label: "Divisi Departemen", priority: "wajib", defaultChecked: true },
+    { key: "primaryOutletId", label: "Outlet Utama", priority: "wajib", defaultChecked: true },
+    { key: "bankName", label: "Nama Bank", priority: "disarankan", defaultChecked: true },
+    { key: "accountNumber", label: "Nomor Rekening Bank", priority: "disarankan", defaultChecked: true },
+    { key: "accountHolderName", label: "Atas Nama Rekening", priority: "disarankan", defaultChecked: true },
+    { key: "contractType", label: "Tipe Kontrak", priority: "wajib", defaultChecked: true },
+    { key: "contractDurationMonths", label: "Durasi Kontrak (Bulan)", priority: "disarankan", defaultChecked: true },
+    { key: "startDate", label: "Tanggal Bergabung", priority: "wajib", defaultChecked: true },
+    { key: "salaryAmount", label: "Nominal Gaji", priority: "disarankan", defaultChecked: true },
+    { key: "homeAddress", label: "Alamat Rumah", priority: "opsional", defaultChecked: false },
+    { key: "mapsUrl", label: "Link Google Maps", priority: "opsional", defaultChecked: false },
   ];
 
   const [selectedImportColumns, setSelectedImportColumns] = React.useState<Record<string, boolean>>(() => {
@@ -699,15 +699,25 @@ function EmployeeImportDialog({
               {ALL_IMPORT_FIELDS.map((f) => (
                 <label
                   key={f.key}
-                  className="flex items-center gap-2 rounded-md p-1.5 hover:bg-muted/40 cursor-pointer transition-colors"
+                  className="flex items-center justify-between gap-2 rounded-lg p-2 border border-border/60 bg-background hover:bg-muted/40 cursor-pointer transition-colors"
                 >
-                  <Checkbox
-                    checked={!!selectedImportColumns[f.key]}
-                    onCheckedChange={(checked) =>
-                      setSelectedImportColumns((prev) => ({ ...prev, [f.key]: !!checked }))
-                    }
-                  />
-                  <span className="text-foreground font-medium">{f.label}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox
+                      checked={!!selectedImportColumns[f.key]}
+                      onCheckedChange={(checked) =>
+                        setSelectedImportColumns((prev) => ({ ...prev, [f.key]: !!checked }))
+                      }
+                      className="size-4"
+                    />
+                    <span className="text-foreground font-semibold text-xs truncate">{f.label}</span>
+                  </div>
+                  {f.priority === "wajib" ? (
+                    <Badge className="bg-destructive/15 text-destructive border-destructive/30 text-[9px] font-bold shrink-0">🔴 Wajib</Badge>
+                  ) : f.priority === "disarankan" ? (
+                    <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[9px] font-bold shrink-0">🟡 Disarankan</Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted/40 text-muted-foreground text-[9px] shrink-0">⚪ Opsional</Badge>
+                  )}
                 </label>
               ))}
             </div>

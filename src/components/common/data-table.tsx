@@ -33,11 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   ChevronLeft,
   ChevronRight,
@@ -47,6 +46,8 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  Settings,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -163,32 +164,86 @@ export function DataTable<TData, TValue>({
           </div>
           {toolbar}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-medium">
-                <SlidersHorizontal className="size-3.5 text-primary" /> Pilih Kolom
+          {/* ERPNext-style Column Settings Dropdown (Gear Icon) */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 text-xs font-semibold rounded-xl border-border/80 hover:bg-muted/50"
+                title="Pengaturan Tampilan & Ukuran Kolom (ERPNext Column Config)"
+              >
+                <Settings className="size-4 text-primary" />
+                <span>Pengaturan Kolom</span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[190px]">
-              {table
-                .getAllColumns()
-                .filter((col) => col.getCanHide())
-                .map((col) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={col.id}
-                      className="capitalize text-xs"
-                      checked={col.getIsVisible()}
-                      onCheckedChange={(val) => col.toggleVisibility(!!val)}
-                    >
-                      {typeof col.columnDef.header === "string"
-                        ? col.columnDef.header
-                        : col.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[320px] p-3 space-y-3 rounded-2xl shadow-lg border-border">
+              <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <Settings className="size-4 text-primary" />
+                  <h4 className="text-xs font-bold text-foreground">Kustomisasi Kolom Tabel</h4>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    table.getAllColumns().forEach((c) => c.toggleVisibility(true));
+                    if (tableKey && typeof window !== "undefined") {
+                      localStorage.removeItem(`juri_table_vis_${tableKey}`);
+                    }
+                  }}
+                >
+                  <RotateCcw className="mr-1 size-3" /> Reset
+                </Button>
+              </div>
+
+              <div className="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+                {table
+                  .getAllColumns()
+                  .filter((col) => col.getCanHide())
+                  .map((col) => {
+                    const label = typeof col.columnDef.header === "string" ? col.columnDef.header : col.id;
+                    const isVis = col.getIsVisible();
+                    const currentSize = col.getSize();
+
+                    return (
+                      <div
+                        key={col.id}
+                        className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
+                      >
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground min-w-0 flex-1">
+                          <Checkbox
+                            checked={isVis}
+                            onCheckedChange={(val) => col.toggleVisibility(!!val)}
+                            className="size-3.5"
+                          />
+                          <span className="truncate">{label}</span>
+                        </label>
+
+                        {isVis && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[10px] text-muted-foreground font-mono">Lebar:</span>
+                            <Input
+                              type="number"
+                              min={80}
+                              max={500}
+                              value={currentSize}
+                              onChange={(e) => {
+                                const val = Math.min(500, Math.max(80, Number(e.target.value) || 150));
+                                col.columnDef.size = val;
+                              }}
+                              className="h-6 w-16 px-1.5 text-right font-mono text-[11px] rounded-md"
+                            />
+                            <span className="text-[10px] text-muted-foreground">px</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         {hasSelection && bulkActions ? (
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">

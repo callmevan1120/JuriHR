@@ -14,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,13 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -39,10 +39,9 @@ import { Field, FormRow } from "@/components/common/field";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { StatusBadge } from "@/components/common/status-badge";
 import { useStore } from "@/hooks/use-store";
-import { shiftGroupService } from "@/lib/services/schedule";
-import { lookupService } from "@/lib/services/master-data";
-import { formatDateMed, todayISODate, cn, initials } from "@/lib/utils";
-import type { ShiftGroup, WeeklyPatternDay, RecordStatus } from "@/lib/types";
+import { shiftGroupService, shiftTemplateService } from "@/lib/services/schedule";
+import { formatDateMed, todayISODate, shiftDurationMinutes, formatDuration, cn, initials } from "@/lib/utils";
+import type { ShiftGroup, ShiftTemplate, WeeklyPatternDay, RecordStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
   Plus,
@@ -50,12 +49,18 @@ import {
   Archive,
   CalendarDays,
   Users,
-  Check,
   ChevronsUpDown,
-  Search,
   ArrowLeft,
   Save,
   AlertCircle,
+  Clock,
+  Sun,
+  Moon,
+  AlarmClock,
+  CheckCircle2,
+  Palette,
+  Building2,
+  Store,
 } from "lucide-react";
 
 const DAYS = [
@@ -68,55 +73,240 @@ const DAYS = [
   { day: 0, label: "Min", short: "Minggu" },
 ];
 
+const PRESET_COLORS = [
+  "#FCBA0C",
+  "#E8A604",
+  "#C2780C",
+  "#3A2518",
+  "#74665D",
+  "#2F855A",
+  "#2B6CB0",
+  "#DC2626",
+];
+
 export function ShiftGroupsView() {
   const shiftGroups = useStore((s) => s.shiftGroups);
-  const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: ShiftGroup } | null>(null);
-  const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
+  const shiftTemplates = useStore((s) => s.shiftTemplates);
+  const schedules = useStore((s) => s.schedules);
 
-  if (dialog) {
+  const [activeTab, setActiveTab] = React.useState<"groups" | "templates">("groups");
+
+  const [groupDialog, setGroupDialog] = React.useState<{ mode: "create" | "edit"; data?: ShiftGroup } | null>(null);
+  const [templateDialog, setTemplateDialog] = React.useState<{ mode: "create" | "edit"; data?: ShiftTemplate } | null>(null);
+
+  const [confirmGroup, setConfirmGroup] = React.useState<{ id: string; name: string } | null>(null);
+  const [confirmTemplate, setConfirmTemplate] = React.useState<{ id: string; name: string } | null>(null);
+
+  // Hitung penggunaan tiap shift template
+  const templateUsageCount = React.useMemo(() => {
+    const m = new Map<string, number>();
+    schedules.forEach((s) => {
+      if (s.shiftTemplateId) m.set(s.shiftTemplateId, (m.get(s.shiftTemplateId) ?? 0) + 1);
+    });
+    return m;
+  }, [schedules]);
+
+  if (groupDialog) {
     return (
       <ShiftGroupFormPage
-        mode={dialog.mode}
-        data={dialog.data}
-        onBack={() => setDialog(null)}
+        mode={groupDialog.mode}
+        data={groupDialog.data}
+        onBack={() => setGroupDialog(null)}
       />
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
-        title="Shift Group"
-        description="Pola shift mingguan per outlet/divisi beserta anggota & periode berlaku."
+        title="Shift &amp; Pola Kerja"
+        description="Kelola pola shift mingguan per outlet/divisi dan master template jam kerja dalam satu modul."
         actions={
-          <Button onClick={() => setDialog({ mode: "create" })}>
-            <Plus className="size-4" /> Tambah Group
-          </Button>
+          activeTab === "groups" ? (
+            <Button onClick={() => setGroupDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+              <Plus className="size-4" /> Tambah Shift Group
+            </Button>
+          ) : (
+            <Button onClick={() => setTemplateDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+              <Plus className="size-4" /> Tambah Shift Template
+            </Button>
+          )
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {shiftGroups.filter((g) => g.status !== "archived").map((group) => (
-          <ShiftGroupCard
-            key={group.id}
-            group={group}
-            onEdit={() => setDialog({ mode: "edit", data: group })}
-            onArchive={() => setConfirm({ id: group.id, name: group.name })}
-          />
-        ))}
+      {/* Segmented Control Tab Switcher */}
+      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="inline-flex rounded-2xl bg-muted/60 p-1.5 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab("groups")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "groups"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <CalendarDays className="size-4 text-primary" />
+            <span>Pola Shift Group</span>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary font-bold">
+              {shiftGroups.filter((g) => g.status !== "archived").length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("templates")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "templates"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Clock className="size-4 text-info" />
+            <span>Template Jam Kerja</span>
+            <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] text-info font-bold">
+              {shiftTemplates.filter((s) => s.status !== "archived").length}
+            </span>
+          </button>
+        </div>
       </div>
 
+      {activeTab === "groups" ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {shiftGroups.filter((g) => g.status !== "archived").map((group) => (
+            <ShiftGroupCard
+              key={group.id}
+              group={group}
+              onEdit={() => setGroupDialog({ mode: "edit", data: group })}
+              onArchive={() => setConfirmGroup({ id: group.id, name: group.name })}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {shiftTemplates.filter((s) => s.status !== "archived").map((shift) => {
+            const duration = shiftDurationMinutes(shift.startTime, shift.endTime, shift.crossesMidnight);
+            const usage = templateUsageCount.get(shift.id) ?? 0;
+            return (
+              <Card
+                key={shift.id}
+                className="group relative overflow-hidden border-border/80 shadow-xs rounded-2xl transition-all hover:-translate-y-0.5"
+              >
+                <div className="h-1.5 w-full" style={{ background: shift.color }} />
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="flex size-10 items-center justify-center rounded-xl text-white shadow-xs"
+                        style={{ background: shift.color }}
+                      >
+                        {shift.crossesMidnight ? <Moon className="size-5" /> : <Sun className="size-5" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-foreground">{shift.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{usage} jadwal aktif</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 rounded-lg"
+                        onClick={() => setTemplateDialog({ mode: "edit", data: shift })}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 rounded-lg text-destructive hover:text-destructive"
+                        onClick={() => setConfirmTemplate({ id: shift.id, name: shift.name })}
+                      >
+                        <Archive className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 border border-border/60">
+                    <Clock className="size-4 text-muted-foreground" />
+                    <span className="font-mono text-sm font-bold text-foreground">
+                      {shift.startTime} – {shift.endTime}
+                    </span>
+                    {shift.crossesMidnight ? (
+                      <Badge className="ml-auto bg-info/15 text-info border-info/30 text-[10px]">Lewat Malam</Badge>
+                    ) : null}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1.5">
+                      <AlarmClock className="size-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Toleransi</span>
+                      <span className="ml-auto font-semibold text-foreground">{shift.toleranceLateMinutes}m</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2.5 py-1.5">
+                      <Clock className="size-3.5 text-muted-foreground" />
+                      <span className="text-muted-foreground">Durasi</span>
+                      <span className="ml-auto font-semibold text-foreground">{formatDuration(duration)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
+                    <div className="flex items-center gap-1.5">
+                      {shift.phConfig.isPH ? (
+                        <Badge className="bg-primary/15 text-primary border-primary/30 font-semibold text-[10px]">
+                          <CheckCircle2 className="size-3 mr-1" /> PH
+                          {shift.phConfig.multiplier ? ` ×${shift.phConfig.multiplier}` : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">Bukan PH</span>
+                      )}
+                    </div>
+                    <StatusBadge status={shift.status} />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {templateDialog ? (
+        <ShiftTemplateDialog
+          open
+          onOpenChange={(o) => !o && setTemplateDialog(null)}
+          mode={templateDialog.mode}
+          data={templateDialog.data}
+        />
+      ) : null}
+
       <ConfirmDialog
-        open={!!confirm}
-        onOpenChange={(o) => !o && setConfirm(null)}
+        open={!!confirmGroup}
+        onOpenChange={(o) => !o && setConfirmGroup(null)}
         title="Arsipkan shift group?"
-        description={`"${confirm?.name}" akan diarsipkan.`}
+        description={`"${confirmGroup?.name}" akan diarsipkan.`}
         destructive
         confirmLabel="Arsipkan"
         onConfirm={() => {
-          if (confirm) {
-            shiftGroupService.softDelete(confirm.id);
+          if (confirmGroup) {
+            shiftGroupService.softDelete(confirmGroup.id);
             toast.success("Shift group diarsipkan");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!confirmTemplate}
+        onOpenChange={(o) => !o && setConfirmTemplate(null)}
+        title="Arsipkan shift template?"
+        description={`"${confirmTemplate?.name}" akan diarsipkan.`}
+        destructive
+        confirmLabel="Arsipkan"
+        onConfirm={() => {
+          if (confirmTemplate) {
+            shiftTemplateService.softDelete(confirmTemplate.id);
+            toast.success("Shift template diarsipkan");
           }
         }}
       />
@@ -138,85 +328,103 @@ function ShiftGroupCard({
   const outlets = useStore((s) => s.outlets);
   const divisions = useStore((s) => s.divisions);
 
-  const scopeName =
-    group.scopeType === "OUTLET"
-      ? outlets.find((o) => o.id === group.scopeId)?.name
-      : divisions.find((d) => d.id === group.scopeId)?.name;
+  const getShiftName = (id?: string) => {
+    if (!id) return "Libur";
+    const st = shiftTemplates.find((t) => t.id === id);
+    return st?.name ?? "Custom";
+  };
 
-  const memberCount = group.memberIds.length;
-  const activeMembers = group.memberIds.filter((id) =>
-    employees.find((e) => e.id === id)?.status === "AKTIF",
+  const getShiftColor = (id?: string) => {
+    if (!id) return "#74665D";
+    const st = shiftTemplates.find((t) => t.id === id);
+    return st?.color ?? "#FCBA0C";
+  };
+
+  const activeMembers = employees.filter(
+    (e) => group.memberIds.includes(e.id) && e.status === "AKTIF"
   ).length;
 
+  const targetOutletNames = (group.outletIds ?? []).map((id) => outlets.find((o) => o.id === id)?.name).filter(Boolean);
+  const targetDivisionNames = (group.divisionIds ?? []).map((id) => divisions.find((d) => d.id === id)?.name).filter(Boolean);
+
   return (
-    <Card className="group border-border shadow-soft transition-all hover:shadow-soft-md">
-      <CardHeader className="flex flex-row items-start justify-between pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <CalendarDays className="size-5" />
+    <Card className="group border-border/80 shadow-xs rounded-2xl transition-all hover:border-primary/40">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="size-4 text-primary" />
+              <CardTitle className="text-base font-bold">{group.name}</CardTitle>
+            </div>
+
+            {(targetOutletNames.length > 0 || targetDivisionNames.length > 0) && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {targetOutletNames.map((name) => (
+                  <Badge key={name} variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px]">
+                    <Store className="size-2.5 mr-1" /> {name}
+                  </Badge>
+                ))}
+                {targetDivisionNames.map((name) => (
+                  <Badge key={name} variant="outline" className="bg-info/10 text-info border-info/30 text-[10px]">
+                    <Building2 className="size-2.5 mr-1" /> {name}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
-          <div>
-            <CardTitle className="text-base">{group.name}</CardTitle>
-            <CardDescription className="text-xs">
-              {group.scopeType === "OUTLET" ? "Scope: Outlet" : "Scope: Divisi"}
-              {scopeName ? ` · ${scopeName}` : ""}
-            </CardDescription>
+
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={onEdit}>
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-lg text-destructive hover:text-destructive"
+              onClick={onArchive}
+            >
+              <Archive className="size-3.5" />
+            </Button>
           </div>
-        </div>
-        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <Button variant="ghost" size="icon" className="size-7" onClick={onEdit}>
-            <Pencil className="size-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive" onClick={onArchive}>
-            <Archive className="size-3.5" />
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Weekly pattern visual */}
-        <div>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pola Mingguan</p>
-          <div className="grid grid-cols-7 gap-1">
-            {DAYS.map((d) => {
-              const pattern = group.weeklyPattern.find((p) => p.day === d.day);
-              const shift = pattern?.shiftTemplateId ? shiftTemplates.find((s) => s.id === pattern.shiftTemplateId) : undefined;
-              return (
+        <div className="grid grid-cols-7 gap-1">
+          {DAYS.map(({ day, label }) => {
+            const pat = group.weeklyPattern.find((p) => p.day === day);
+            const shiftId = pat?.shiftTemplateId;
+            const shiftName = getShiftName(shiftId);
+            const color = getShiftColor(shiftId);
+            const isOff = !shiftId;
+            return (
+              <div
+                key={day}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-xl p-1.5 text-center border border-border/60 transition-colors",
+                  isOff ? "bg-muted/30 text-muted-foreground" : "bg-card"
+                )}
+              >
+                <span className="text-[10px] font-bold text-muted-foreground">{label}</span>
                 <div
-                  key={d.day}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-md border py-1.5",
-                    shift ? "border-border bg-card" : "border-dashed border-border bg-muted/30",
-                  )}
-                  title={shift ? `${d.short}: ${shift.name} (${shift.startTime}-${shift.endTime})` : `${d.short}: Libur`}
+                  className="mt-1 flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-white shadow-xs"
+                  style={{ background: color }}
                 >
-                  <span className="text-[9px] font-medium text-muted-foreground">{d.label}</span>
-                  {shift ? (
-                    <div className="size-3 rounded-full" style={{ background: shift.color }} />
-                  ) : (
-                    <div className="size-3 rounded-full border border-dashed border-muted-foreground/40" />
-                  )}
+                  {isOff ? "L" : shiftName.charAt(0)}
                 </div>
-              );
-            })}
-          </div>
+                <span className="mt-1 truncate text-[9px] font-medium text-foreground w-full">
+                  {shiftName}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Members & period */}
-        <div className="flex items-center justify-between border-t border-border pt-2.5">
-          <div className="flex items-center gap-1.5 text-xs">
-            <Users className="size-3.5 text-muted-foreground" />
-            <span className="font-medium text-foreground">{activeMembers}</span>
-            <span className="text-muted-foreground">anggota aktif</span>
-            {memberCount !== activeMembers ? (
-              <span className="text-muted-foreground/70">/ {memberCount} total</span>
-            ) : null}
+        <div className="flex items-center justify-between border-t border-border/60 pt-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-foreground font-semibold">
+            <Users className="size-3.5 text-primary" />
+            <span>{activeMembers} karyawan aktif</span>
           </div>
           <StatusBadge status={group.status} />
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <CalendarDays className="size-3" />
-          Berlaku: {formatDateMed(group.effectiveFrom)}
-          {group.effectiveUntil ? ` — ${formatDateMed(group.effectiveUntil)}` : " — sekarang"}
         </div>
       </CardContent>
     </Card>
@@ -224,7 +432,7 @@ function ShiftGroupCard({
 }
 
 // ------------------------------------------------------------
-// Full-Page Shift Group Form Component (ERPNext Architecture)
+// Full-Page Shift Group Form Component (ERPNext Architecture with Auto Employee Assignment)
 // ------------------------------------------------------------
 function ShiftGroupFormPage({
   mode,
@@ -235,43 +443,66 @@ function ShiftGroupFormPage({
   data?: ShiftGroup;
   onBack: () => void;
 }) {
-  const shiftTemplates = useStore((s) => s.shiftTemplates);
   const employees = useStore((s) => s.employees);
+  const shiftTemplates = useStore((s) => s.shiftTemplates);
   const outlets = useStore((s) => s.outlets);
   const divisions = useStore((s) => s.divisions);
 
   const [name, setName] = React.useState(data?.name ?? "");
-  const [scopeType, setScopeType] = React.useState<"OUTLET" | "DIVISI">(data?.scopeType === "DIVISI" ? "DIVISI" : "OUTLET");
-  const [scopeId, setScopeId] = React.useState(data?.scopeId ?? "");
-  const [outletIds, setOutletIds] = React.useState<string[]>(data?.outletIds ?? (data?.scopeId ? [data.scopeId] : []));
-  const [divisionIds, setDivisionIds] = React.useState<string[]>(data?.divisionIds ?? (data?.scopeId ? [data.scopeId] : []));
-  const [pattern, setPattern] = React.useState<Record<number, string | undefined>>(
-    () => {
-      const m: Record<number, string | undefined> = {};
-      DAYS.forEach((d) => {
-        const p = data?.weeklyPattern.find((wp) => wp.day === d.day);
-        m[d.day] = p?.shiftTemplateId;
-      });
-      return m;
-    },
-  );
-  const [memberIds, setMemberIds] = React.useState<string[]>(data?.memberIds ?? []);
+  const [outletIds, setOutletIds] = React.useState<string[]>(data?.outletIds ?? []);
+  const [divisionIds, setDivisionIds] = React.useState<string[]>(data?.divisionIds ?? []);
   const [effectiveFrom, setEffectiveFrom] = React.useState(data?.effectiveFrom ?? todayISODate());
   const [effectiveUntil, setEffectiveUntil] = React.useState(data?.effectiveUntil ?? "");
   const [status, setStatus] = React.useState<RecordStatus>(data?.status ?? "active");
+  const [memberIds, setMemberIds] = React.useState<string[]>(data?.memberIds ?? []);
+
+  const [weeklyPattern, setWeeklyPattern] = React.useState<WeeklyPatternDay[]>(
+    data?.weeklyPattern ??
+      DAYS.map((d) => ({
+        day: d.day,
+        shiftTemplateId: d.day === 0 ? undefined : shiftTemplates[0]?.id,
+      }))
+  );
+
   const [memberOpen, setMemberOpen] = React.useState(false);
   const [error, setError] = React.useState<string>();
 
-  const toggleMember = (id: string) => {
-    setMemberIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  // Automatic Employee Assignment when Outlet or Division toggles!
+  const syncEmployeesFromOutletsAndDivisions = (selectedOutlets: string[], selectedDivisions: string[]) => {
+    if (selectedOutlets.length === 0 && selectedDivisions.length === 0) return;
+    const matching = employees
+      .filter(
+        (e) =>
+          e.status === "AKTIF" &&
+          (selectedOutlets.includes(e.primaryOutletId) || selectedDivisions.includes(e.divisionId))
+      )
+      .map((e) => e.id);
+    
+    setMemberIds((prev) => Array.from(new Set([...prev, ...matching])));
   };
 
-  const toggleOutlet = (id: string) => {
-    setOutletIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const handleOutletToggle = (id: string) => {
+    const next = outletIds.includes(id) ? outletIds.filter((x) => x !== id) : [...outletIds, id];
+    setOutletIds(next);
+    syncEmployeesFromOutletsAndDivisions(next, divisionIds);
   };
 
-  const toggleDivision = (id: string) => {
-    setDivisionIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const handleDivisionToggle = (id: string) => {
+    const next = divisionIds.includes(id) ? divisionIds.filter((x) => x !== id) : [...divisionIds, id];
+    setDivisionIds(next);
+    syncEmployeesFromOutletsAndDivisions(outletIds, next);
+  };
+
+  const setDayShift = (day: number, shiftTemplateId?: string) => {
+    setWeeklyPattern((prev) =>
+      prev.map((p) => (p.day === day ? { ...p, shiftTemplateId } : p))
+    );
+  };
+
+  const toggleMember = (empId: string) => {
+    setMemberIds((prev) =>
+      prev.includes(empId) ? prev.filter((id) => id !== empId) : [...prev, empId]
+    );
   };
 
   const submit = (e: React.FormEvent) => {
@@ -280,33 +511,26 @@ function ShiftGroupFormPage({
       setError("Nama group wajib diisi.");
       return;
     }
-    const weeklyPattern: WeeklyPatternDay[] = DAYS.map((d) => ({
-      day: d.day,
-      shiftTemplateId: pattern[d.day] || undefined,
-    }));
     const payload = {
       name: name.trim(),
-      scopeType: scopeType === "OUTLET" && outletIds.length > 1 ? ("MULTI_OUTLET" as const) : scopeType,
-      scopeId: scopeType === "OUTLET" ? outletIds[0] : divisionIds[0],
+      scopeType: "MULTI_OUTLET" as const,
       outletIds,
       divisionIds,
-      weeklyPattern,
-      memberIds,
       effectiveFrom,
       effectiveUntil: effectiveUntil || undefined,
       status,
+      weeklyPattern,
+      memberIds,
     };
     if (mode === "edit" && data) {
       shiftGroupService.update(data.id, payload);
       toast.success("Shift group diperbarui");
     } else {
       shiftGroupService.create(payload);
-      toast.success("Shift group ditambahkan");
+      toast.success("Shift group baru ditambahkan");
     }
     onBack();
   };
-
-  const memberCandidates = employees.filter((e) => e.status === "AKTIF");
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
@@ -321,7 +545,7 @@ function ShiftGroupFormPage({
               {mode === "edit" ? `Edit Shift Group — ${data?.name}` : "Tambah Shift Group Baru"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              Pengaturan pola shift mingguan, lokasi outlet/divisi, dan anggota karyawan.
+              Pengaturan pola shift mingguan, lokasi outlet/divisi, dan anggota karyawan otomatis.
             </p>
           </div>
         </div>
@@ -348,56 +572,51 @@ function ShiftGroupFormPage({
         <div className="lg:col-span-2 space-y-6">
           <Card className="border-border/80 shadow-xs rounded-2xl">
             <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">1. Info Group &amp; Scope Lokasi</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">1. Profil Group &amp; Scope Multi-Outlet / Divisi</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
-              <FormRow>
-                <Field label="Nama Shift Group" required hint="Contoh: Outlet 5 Hari (Sen–Jum)">
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Outlet 5 Hari (Sen–Jum)" className="font-semibold" />
-                </Field>
-                <Field label="Tipe Scope">
-                  <Select value={scopeType} onValueChange={(v) => setScopeType(v as "OUTLET" | "DIVISI")}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="OUTLET">Outlet Cabang</SelectItem>
-                      <SelectItem value="DIVISI">Divisi Perusahaan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </FormRow>
+              <Field label="Nama Shift Group" required>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Shift Outlet Sudirman &amp; Kemang" className="font-semibold" />
+              </Field>
 
-              <Field
-                label={scopeType === "OUTLET" ? "Pilih Outlet Cabang (Bisa Pilih Beberapa)" : "Pilih Divisi (Bisa Pilih Beberapa)"}
-                hint={scopeType === "OUTLET" ? `${outletIds.length} outlet dipilih` : `${divisionIds.length} divisi dipilih`}
-              >
-                <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-3 max-h-[160px] overflow-y-auto">
-                  {scopeType === "OUTLET"
-                    ? outlets.filter((o) => o.status === "active").map((o) => {
+              <Field label="Pilih Scope Outlet / Divisi (Otomatis Menarik Karyawan Terkait)" hint="Karyawan di outlet/divisi terpilih akan otomatis terdaftar sebagai anggota shift ini">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Cabang Outlet ({outletIds.length} dipilih):</p>
+                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-2.5 max-h-[120px] overflow-y-auto">
+                      {outlets.filter((o) => o.status === "active").map((o) => {
                         const checked = outletIds.includes(o.id);
                         return (
-                          <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
-                            <Checkbox checked={checked} onCheckedChange={() => toggleOutlet(o.id)} className="size-3.5" />
+                          <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                            <Checkbox checked={checked} onCheckedChange={() => handleOutletToggle(o.id)} className="size-3.5" />
                             <span>{o.name}</span>
                           </label>
                         );
-                      })
-                    : divisions.filter((d) => d.status === "active").map((d) => {
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Divisi ({divisionIds.length} dipilih):</p>
+                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-2.5 max-h-[120px] overflow-y-auto">
+                      {divisions.filter((d) => d.status === "active").map((d) => {
                         const checked = divisionIds.includes(d.id);
                         return (
-                          <label key={d.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
-                            <Checkbox checked={checked} onCheckedChange={() => toggleDivision(d.id)} className="size-3.5" />
+                          <label key={d.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                            <Checkbox checked={checked} onCheckedChange={() => handleDivisionToggle(d.id)} className="size-3.5" />
                             <span>{d.name}</span>
                           </label>
                         );
                       })}
+                    </div>
+                  </div>
                 </div>
               </Field>
 
               <FormRow>
-                <Field label="Tanggal Berlaku Dari" required>
+                <Field label="Tanggal Berlaku Dari">
                   <Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
                 </Field>
-                <Field label="Tanggal Berlaku Sampai" hint="Kosongkan jika tanpa batas akhir">
+                <Field label="Tanggal Berlaku Sampai" hint="Kosongkan untuk berlaku seterusnya">
                   <Input type="date" value={effectiveUntil} onChange={(e) => setEffectiveUntil(e.target.value)} />
                 </Field>
               </FormRow>
@@ -406,33 +625,40 @@ function ShiftGroupFormPage({
 
           <Card className="border-border/80 shadow-xs rounded-2xl">
             <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">2. Pola Shift Mingguan (Senin — Minggu)</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground">2. Pola Jam Kerja Mingguan (Senin – Minggu)</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-3">
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                {DAYS.map((d) => (
-                  <div key={d.day} className="flex items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 shadow-2xs">
-                    <span className="w-14 text-xs font-semibold text-foreground">{d.short}</span>
-                    <Select
-                      value={pattern[d.day] ?? "libur"}
-                      onValueChange={(v) => setPattern((prev) => ({ ...prev, [d.day]: v === "libur" ? undefined : v }))}
-                    >
-                      <SelectTrigger className="h-8 flex-1 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="libur">Libur (Off)</SelectItem>
-                        {shiftTemplates.filter((s) => s.status === "active").map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            <span className="flex items-center gap-1.5">
-                              <span className="size-2 rounded-full" style={{ background: s.color }} />
-                              {s.name} ({s.startTime}-{s.endTime})
-                            </span>
+              {DAYS.map(({ day, short }) => {
+                const pat = weeklyPattern.find((p) => p.day === day);
+                const currentShiftId = pat?.shiftTemplateId;
+                return (
+                  <div key={day} className="flex flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="w-24 font-bold text-sm text-foreground">{short}</div>
+                    <div className="flex flex-1 items-center gap-2">
+                      <Select
+                        value={currentShiftId ?? "OFF"}
+                        onValueChange={(val) => setDayShift(day, val === "OFF" ? undefined : val)}
+                      >
+                        <SelectTrigger className="w-full sm:w-[260px] rounded-xl font-medium">
+                          <SelectValue placeholder="Pilih shift..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="OFF" className="font-semibold text-muted-foreground">
+                            Libur (OFF)
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          {shiftTemplates
+                            .filter((t) => t.status === "active")
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name} ({t.startTime} - {t.endTime})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
@@ -449,7 +675,7 @@ function ShiftGroupFormPage({
               <Popover open={memberOpen} onOpenChange={setMemberOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full justify-between font-normal rounded-xl">
-                    {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan dipilih`}
+                    {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan terpilih`}
                     <ChevronsUpDown className="size-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -459,12 +685,10 @@ function ShiftGroupFormPage({
                     <CommandList>
                       <CommandEmpty>Tidak ditemukan.</CommandEmpty>
                       <CommandGroup>
-                        {memberCandidates.map((e) => (
+                        {employees.filter((e) => e.status === "AKTIF").map((e) => (
                           <CommandItem key={e.id} value={`${e.fullName} ${e.nik}`} onSelect={() => toggleMember(e.id)}>
                             <Checkbox checked={memberIds.includes(e.id)} className="mr-2" />
-                            <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">
-                              {initials(e.fullName)}
-                            </div>
+                            <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">{initials(e.fullName)}</div>
                             <span className="flex-1 text-sm">{e.fullName}</span>
                             <span className="font-mono text-[10px] text-muted-foreground">{e.nik}</span>
                           </CommandItem>
@@ -475,7 +699,7 @@ function ShiftGroupFormPage({
                 </PopoverContent>
               </Popover>
 
-              <div className="flex flex-wrap gap-1.5 max-h-[220px] overflow-y-auto pt-1">
+              <div className="flex flex-wrap gap-1.5 max-h-[260px] overflow-y-auto pt-1">
                 {memberIds.map((id) => {
                   const emp = employees.find((e) => e.id === id);
                   if (!emp) return null;
@@ -500,3 +724,175 @@ function ShiftGroupFormPage({
   );
 }
 
+function ShiftTemplateDialog({
+  open,
+  onOpenChange,
+  mode,
+  data,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  mode: "create" | "edit";
+  data?: ShiftTemplate;
+}) {
+  const [name, setName] = React.useState(data?.name ?? "");
+  const [startTime, setStartTime] = React.useState(data?.startTime ?? "07:00");
+  const [endTime, setEndTime] = React.useState(data?.endTime ?? "15:00");
+  const [tolerance, setTolerance] = React.useState(String(data?.toleranceLateMinutes ?? 5));
+  const [crossesMidnight, setCrossesMidnight] = React.useState(data?.crossesMidnight ?? false);
+  const [color, setColor] = React.useState(data?.color ?? "#FCBA0C");
+  const [status, setStatus] = React.useState<RecordStatus>(data?.status ?? "active");
+  const [isPH, setIsPH] = React.useState(data?.phConfig.isPH ?? false);
+  const [multiplier, setMultiplier] = React.useState(String(data?.phConfig.multiplier ?? 2));
+  const [error, setError] = React.useState<string>();
+
+  React.useEffect(() => {
+    if (!open) return;
+    setName(data?.name ?? "");
+    setStartTime(data?.startTime ?? "07:00");
+    setEndTime(data?.endTime ?? "15:00");
+    setTolerance(String(data?.toleranceLateMinutes ?? 5));
+    setCrossesMidnight(data?.crossesMidnight ?? false);
+    setColor(data?.color ?? "#FCBA0C");
+    setStatus(data?.status ?? "active");
+    setIsPH(data?.phConfig.isPH ?? false);
+    setMultiplier(String(data?.phConfig.multiplier ?? 2));
+    setError(undefined);
+  }, [open, data]);
+
+  const duration = shiftDurationMinutes(startTime, endTime, crossesMidnight);
+
+  const submit = () => {
+    if (!name.trim()) {
+      setError("Nama shift wajib diisi.");
+      return;
+    }
+    const payload = {
+      name: name.trim(),
+      startTime,
+      endTime,
+      toleranceLateMinutes: Number(tolerance) || 0,
+      crossesMidnight,
+      color,
+      status,
+      phConfig: {
+        isPH,
+        multiplier: isPH ? Number(multiplier) || 1 : undefined,
+      },
+    };
+    if (mode === "edit" && data) {
+      shiftTemplateService.update(data.id, payload);
+      toast.success("Shift template diperbarui");
+    } else {
+      shiftTemplateService.create(payload);
+      toast.success("Shift template ditambahkan");
+    }
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px] rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Clock className="size-5 text-primary" />
+            {mode === "edit" ? "Edit Shift Template" : "Tambah Shift Template"}
+          </DialogTitle>
+          <DialogDescription>Default toleransi keterlambatan adalah 5 menit.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Field label="Nama Shift" required>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Shift Pagi" className="font-semibold" />
+          </Field>
+          <FormRow>
+            <Field label="Jam Mulai">
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="font-mono" />
+            </Field>
+            <Field label="Jam Selesai">
+              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="font-mono" />
+            </Field>
+          </FormRow>
+          <div className="flex items-center justify-between rounded-xl border border-border/80 bg-muted/30 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Clock className="size-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Durasi shift</span>
+            </div>
+            <span className="text-sm font-bold tabular-nums text-foreground">{formatDuration(duration)}</span>
+          </div>
+          <FormRow>
+            <Field label="Toleransi Terlambat (menit)">
+              <Input type="number" value={tolerance} onChange={(e) => setTolerance(e.target.value)} className="tabular-nums font-mono" />
+            </Field>
+            <Field label="Status">
+              <div className="flex items-center gap-2">
+                <Switch checked={status === "active"} onCheckedChange={(c) => setStatus(c ? "active" : "inactive")} />
+                <span className="text-sm">{status === "active" ? "Aktif" : "Nonaktif"}</span>
+              </div>
+            </Field>
+          </FormRow>
+          <div className="flex items-center justify-between rounded-xl border border-border/80 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Moon className="size-4 text-info" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Lewat Tengah Malam</p>
+                <p className="text-[11px] text-muted-foreground">Shift berakhir keesokan hari</p>
+              </div>
+            </div>
+            <Switch checked={crossesMidnight} onCheckedChange={setCrossesMidnight} />
+          </div>
+
+          <Field label="Warna Identitas">
+            <div className="flex flex-wrap items-center gap-2">
+              {PRESET_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={cn(
+                    "size-8 rounded-lg border-2 transition-all hover:scale-110",
+                    color === c ? "border-foreground ring-2 ring-primary/30" : "border-transparent",
+                  )}
+                  style={{ background: c }}
+                  aria-label={`Pilih warna ${c}`}
+                />
+              ))}
+              <div className="relative">
+                <Palette className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-8 w-12 cursor-pointer border-border p-0.5 pl-7 rounded-lg"
+                />
+              </div>
+            </div>
+          </Field>
+
+          <div className="space-y-3 rounded-xl border border-border/80 p-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="size-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Konfigurasi PH (Partial Holiday)</p>
+                  <p className="text-[11px] text-muted-foreground">Shift dihitung PH saat hari libur</p>
+                </div>
+              </div>
+              <Switch checked={isPH} onCheckedChange={setIsPH} />
+            </div>
+            {isPH ? (
+              <Field label="Faktor Pengali PH">
+                <Input type="number" step="0.5" value={multiplier} onChange={(e) => setMultiplier(e.target.value)} className="tabular-nums font-mono" />
+              </Field>
+            ) : null}
+          </div>
+
+          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Batal</Button>
+          <Button onClick={submit} className="rounded-xl font-semibold">{mode === "edit" ? "Simpan" : "Tambah"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

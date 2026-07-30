@@ -36,7 +36,7 @@ const VIEWS: Record<string, React.ComponentType> = {
   "#/posisi": PositionsView,
   "#/domisili": DomicileView,
   "#/kontrak": ContractsView,
-  "#/shift": ShiftTemplatesView,
+  "#/shift": ShiftGroupsView,
   "#/shift-group": ShiftGroupsView,
   "#/jadwal": ScheduleView,
   "#/libur": HolidayView,

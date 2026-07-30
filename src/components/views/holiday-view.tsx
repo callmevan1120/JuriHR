@@ -440,6 +440,32 @@ function HolidayGroupFormPage({
   const [memberOpen, setMemberOpen] = React.useState(false);
   const [error, setError] = React.useState<string>();
 
+  // Automatic Employee Assignment when Outlet or Division toggles!
+  const syncEmployeesFromOutletsAndDivisions = (selectedOutlets: string[], selectedDivisions: string[]) => {
+    if (selectedOutlets.length === 0 && selectedDivisions.length === 0) return;
+    const matching = employees
+      .filter(
+        (e) =>
+          e.status === "AKTIF" &&
+          (selectedOutlets.includes(e.primaryOutletId) || selectedDivisions.includes(e.divisionId))
+      )
+      .map((e) => e.id);
+
+    setMemberIds((prev) => Array.from(new Set([...prev, ...matching])));
+  };
+
+  const handleOutletToggle = (id: string) => {
+    const next = outletIds.includes(id) ? outletIds.filter((x) => x !== id) : [...outletIds, id];
+    setOutletIds(next);
+    syncEmployeesFromOutletsAndDivisions(next, divisionIds);
+  };
+
+  const handleDivisionToggle = (id: string) => {
+    const next = divisionIds.includes(id) ? divisionIds.filter((x) => x !== id) : [...divisionIds, id];
+    setDivisionIds(next);
+    syncEmployeesFromOutletsAndDivisions(outletIds, next);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setError("Nama wajib diisi."); return; }
@@ -525,7 +551,7 @@ function HolidayGroupFormPage({
                         const checked = outletIds.includes(o.id);
                         return (
                           <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
-                            <Checkbox checked={checked} onCheckedChange={() => setOutletIds((prev) => prev.includes(o.id) ? prev.filter((x) => x !== o.id) : [...prev, o.id])} className="size-3.5" />
+                            <Checkbox checked={checked} onCheckedChange={() => handleOutletToggle(o.id)} className="size-3.5" />
                             <span>{o.name}</span>
                           </label>
                         );
@@ -539,7 +565,7 @@ function HolidayGroupFormPage({
                         const checked = divisionIds.includes(d.id);
                         return (
                           <label key={d.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
-                            <Checkbox checked={checked} onCheckedChange={() => setDivisionIds((prev) => prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id])} className="size-3.5" />
+                            <Checkbox checked={checked} onCheckedChange={() => handleDivisionToggle(d.id)} className="size-3.5" />
                             <span>{d.name}</span>
                           </label>
                         );
