@@ -60,16 +60,16 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 
-const REMINDER_BUCKETS = [
-  { key: "all", label: "Semua Kontrak", color: "bg-muted text-foreground border-border" },
-  { key: "lewat", label: "Lewat Tempo", color: "bg-destructive/15 text-destructive border-destructive/30" },
-  { key: "3h", label: "≤ 3 hari", color: "bg-destructive/15 text-destructive border-destructive/30" },
-  { key: "7h", label: "≤ 7 hari", color: "bg-destructive/15 text-destructive border-destructive/30" },
-  { key: "14h", label: "≤ 14 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { key: "30h", label: "≤ 30 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { key: "60h", label: "≤ 60 hari", color: "bg-info/15 text-info border-info/30" },
-  { key: "90h", label: "≤ 90 hari", color: "bg-info/10 text-info border-info/20" },
-  { key: "aman", label: "Aman (>90 hari)", color: "bg-success/15 text-success border-success/30" },
+  const REMINDER_BUCKETS = [
+  { key: "all", label: "Semua", color: "border border-border/60" },
+  { key: "lewat", label: "Lewat Tempo", color: "bg-destructive/10 text-destructive border-destructive/30" },
+  { key: "3h", label: "3 hari", color: "bg-destructive/10 text-destructive border-destructive/30" },
+  { key: "7h", label: "7 hari", color: "bg-destructive/10 text-destructive border-destructive/30" },
+  { key: "14h", label: "14 hari", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+  { key: "30h", label: "30 hari", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
+  { key: "60h", label: "60 hari", color: "bg-info/10 text-info border-info/30" },
+  { key: "90h", label: "90 hari", color: "bg-info/10 text-info border-info/20" },
+  { key: "aman", label: "Aman", color: "bg-success/10 text-success border-success/30" },
 ] as const;
 
 export function ContractsView() {
@@ -119,7 +119,7 @@ export function ContractsView() {
       accessorKey: "contractNo",
       header: "No. Kontrak",
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-bold text-foreground bg-muted/40 px-2 py-1 rounded-md border border-border/60">
+        <span className="font-mono text-xs font-semibold text-foreground px-2 py-1 rounded-md border border-border/60">
           {row.original.contractNo}
         </span>
       ),
@@ -143,7 +143,7 @@ export function ContractsView() {
       accessorKey: "type",
       header: "Jenis Kontrak",
       cell: ({ row }) => (
-        <Badge variant="outline" className="font-semibold text-xs rounded-lg bg-muted/20">
+        <Badge variant="outline" className="font-semibold text-xs rounded-lg">
           {row.original.type}
         </Badge>
       ),
@@ -165,12 +165,12 @@ export function ContractsView() {
         const r = contractService.reminderCategory(row.original.endDate);
         const style =
           r.bucket === "lewat" || r.bucket === "3h" || r.bucket === "7h"
-            ? "bg-destructive/15 text-destructive border-destructive/30 font-bold"
+            ? "bg-destructive/10 text-destructive border-destructive/30 font-semibold"
             : r.bucket === "14h" || r.bucket === "30h"
-            ? "bg-amber-500/15 text-amber-600 border-amber-500/30 font-semibold"
+            ? "bg-amber-500/10 text-amber-600 border-amber-500/30 font-semibold"
             : r.bucket === "60h" || r.bucket === "90h"
-            ? "bg-info/15 text-info border-info/30"
-            : "bg-success/15 text-success border-success/30 font-medium";
+            ? "bg-info/10 text-info border-info/30"
+            : "bg-success/10 text-success border-success/30 font-medium";
         return (
           <Badge variant="outline" className={cn("gap-1.5 py-1 px-2.5 rounded-lg text-xs", style)}>
             <CalendarClock className="size-3.5 shrink-0" />
@@ -287,23 +287,23 @@ export function ContractsView() {
               type="button"
               onClick={() => setFilterBucket(b.key)}
               className={cn(
-                "flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center transition-all duration-150 hover:-translate-y-0.5 shadow-xs",
-                active ? "border-primary ring-2 ring-primary/20 bg-primary/5" : "border-border/80 hover:bg-muted/40",
+                "flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition-all",
+                active ? "border-primary ring-1 ring-primary/20" : "border-border/60 hover:border-border",
               )}
             >
-              <span className={cn("inline-flex size-7 items-center justify-center rounded-xl text-xs font-bold", b.color)}>
+              <span className={cn("inline-flex size-6 items-center justify-center rounded-lg text-[11px] font-bold", b.color)}>
                 {count}
               </span>
-              <span className="text-[11px] font-semibold leading-tight text-foreground">{b.label}</span>
+              <span className="text-[11px] font-semibold text-muted-foreground">{b.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Main Table with Unified Single Toolbar Filtering */}
-      <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
-        <CardHeader className="pb-3 border-b border-border/60 flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-bold text-foreground">Daftar Kontrak Kerja Karyawan</CardTitle>
+      {/* Main Table */}
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-semibold">Daftar Kontrak Kerja</CardTitle>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
               <FilterX className="size-3.5" /> Reset Semua Filter
@@ -466,8 +466,8 @@ function ExtendDialog({ contract, onClose }: { contract: Contract; onClose: () =
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-xs space-y-1">
-            <p className="font-bold text-foreground">{emp?.fullName}</p>
+          <div className="rounded-xl border border-border/60 p-3 text-xs space-y-1">
+            <p className="font-semibold text-foreground">{emp?.fullName}</p>
             <p className="text-muted-foreground">Kontrak lama: {contract.contractNo}</p>
             <p className="text-muted-foreground font-mono">{formatDateMed(contract.startDate)} — {formatDateMed(contract.endDate)}</p>
           </div>

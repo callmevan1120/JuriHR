@@ -86,7 +86,7 @@ export function ShiftTemplatesView() {
           return (
             <Card
               key={shift.id}
-              className="group relative overflow-hidden border-border shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-md"
+              className="group relative overflow-hidden rounded-2xl border border-border/60 transition-all hover:-translate-y-0.5"
             >
               {/* Color bar */}
               <div className="h-1.5 w-full" style={{ background: shift.color }} />
@@ -94,7 +94,7 @@ export function ShiftTemplatesView() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className="flex size-10 items-center justify-center rounded-xl text-white shadow-soft"
+                      className="flex size-10 items-center justify-center rounded-xl text-white"
                       style={{ background: shift.color }}
                     >
                       {shift.crossesMidnight ? <Moon className="size-5" /> : <Sun className="size-5" />}
@@ -124,7 +124,7 @@ export function ShiftTemplatesView() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2">
                   <Clock className="size-4 text-muted-foreground" />
                   <span className="font-mono text-sm font-medium text-foreground">
                     {shift.startTime} – {shift.endTime}
@@ -135,12 +135,12 @@ export function ShiftTemplatesView() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2.5 py-1.5">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1.5">
                     <AlarmClock className="size-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">Toleransi</span>
                     <span className="ml-auto font-medium text-foreground">{shift.toleranceLateMinutes}m</span>
                   </div>
-                  <div className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2.5 py-1.5">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1.5">
                     <Clock className="size-3.5 text-muted-foreground" />
                     <span className="text-muted-foreground">Durasi</span>
                     <span className="ml-auto font-medium text-foreground">{formatDuration(duration)}</span>
@@ -266,7 +266,7 @@ function ShiftFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="size-5 text-primary" />
@@ -286,7 +286,7 @@ function ShiftFormDialog({
               <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="font-mono" />
             </Field>
           </FormRow>
-          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <div className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2">
             <div className="flex items-center gap-2">
               <Clock className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">Durasi shift</span>
@@ -304,7 +304,7 @@ function ShiftFormDialog({
               </div>
             </Field>
           </FormRow>
-          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+          <div className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2">
             <div className="flex items-center gap-2">
               <Moon className="size-4 text-info" />
               <div>

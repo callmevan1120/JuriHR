@@ -90,10 +90,10 @@ export function ScheduleView() {
   return (
     <Tabs defaultValue="kalender" className="space-y-4">
       <TabsList className="bg-muted/40 p-1">
-        <TabsTrigger value="kalender" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="kalender" className="gap-1.5           data-[state=active]:bg-card">
           <CalendarRange className="size-3.5" /> Kalender Jadwal
         </TabsTrigger>
-        <TabsTrigger value="tukar" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="tukar" className="gap-1.5           data-[state=active]:bg-card">
           <ArrowLeftRight className="size-3.5" /> Pengajuan &amp; Tukar Shift
         </TabsTrigger>
       </TabsList>
@@ -195,18 +195,18 @@ function CalendarTab() {
       />
 
       {/* Toolbar */}
-      <Card className="border-border shadow-soft">
+      <Card className="rounded-2xl border border-border/60">
         <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             {/* Mode switcher */}
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
+             <div className="flex items-center gap-1 rounded-xl border border-border/60 p-0.5">
               {(["harian", "mingguan", "bulanan"] as ViewMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                    mode === m ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+                    mode === m ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {m === "harian" ? <Calendar className="size-3.5" /> : m === "mingguan" ? <CalendarDays className="size-3.5" /> : <CalendarRange className="size-3.5" />}
@@ -315,7 +315,7 @@ function CalendarTab() {
       </Card>
 
       {/* Calendar grid */}
-      <Card className="border-border shadow-soft">
+      <Card className="rounded-2xl border border-border/60">
         <CardContent className="p-0">
           {mode === "harian" ? (
             <DailyView date={range.from} employees={filteredEmps} onAssign={setAssignTarget} />
@@ -328,7 +328,7 @@ function CalendarTab() {
       </Card>
 
       {/* Lock toggle for range */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-xs text-muted-foreground">
         <Lock className="size-3.5" />
         Periode tampilan saat ini: {formatDateMed(range.from)} — {formatDateMed(range.to)}
         <Button variant="ghost" size="sm" className="ml-auto h-7 text-xs" onClick={() => setLockTarget({ from: range.from, to: range.to, lock: false })}>
@@ -388,7 +388,7 @@ function DailyView({
 
   return (
     <div className="divide-y divide-border">
-      <div className="flex items-center justify-between bg-muted/30 px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
         <div>
           <p className="text-sm font-semibold text-foreground">{formatDateLong(date)}</p>
           <p className="text-[11px] text-muted-foreground">{dayScheds.length} jadwal · {employees.length - dayScheds.length} tanpa jadwal</p>
@@ -440,8 +440,8 @@ function WeeklyView({
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-xs">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
-            <th className="sticky left-0 z-10 min-w-[160px] bg-muted/30 px-3 py-2 text-left font-semibold text-muted-foreground">Karyawan</th>
+          <tr className="border-b border-border">
+            <th className="sticky left-0 z-10 min-w-[160px] bg-card px-3 py-2 text-left font-semibold text-muted-foreground">Karyawan</th>
             {dates.map((d) => {
               const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
               const isToday = d === todayISODate();
@@ -451,7 +451,7 @@ function WeeklyView({
                   <div className="flex flex-col">
                     <span>{dayNames[dow]}</span>
                     <span className={cn("text-sm", isToday && "font-bold")}>{d.slice(8)}</span>
-                    {hol && <span className="text-[9px] font-normal text-destructive">🔴 {hol.name.slice(0, 12)}</span>}
+                    {hol && <span className="text-[9px] font-normal text-destructive">{hol.name.slice(0, 12)}</span>}
                   </div>
                 </th>
               );
@@ -491,7 +491,7 @@ function WeeklyView({
                         className={cn(
                           "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-md border text-[10px] transition-all hover:scale-[1.03]",
                           shift
-                            ? "border-transparent text-white shadow-soft"
+                            ? "border-transparent text-white"
                             : hol
                             ? "border-destructive/30 bg-destructive/5 text-destructive"
                             : sched
@@ -508,7 +508,7 @@ function WeeklyView({
                             {conflicts.length > 0 ? <AlertTriangle className="size-2.5 text-destructive" /> : null}
                           </>
                         ) : hol ? (
-                          <span className="text-[8px] font-semibold">🔴 Libur</span>
+                          <span className="text-[8px] font-semibold">Libur</span>
                         ) : sched ? (
                           <span>Libur</span>
                         ) : (
@@ -560,7 +560,7 @@ function MonthlyView({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <div className="grid grid-cols-7 gap-1 border-b border-border bg-muted/30 px-2 py-1.5">
+        <div className="grid grid-cols-7 gap-1 border-b border-border px-2 py-1.5">
           {dayNames.map((d) => (
             <div key={d} className="text-center text-[10px] font-semibold uppercase text-muted-foreground">{d}</div>
           ))}
@@ -584,7 +584,7 @@ function MonthlyView({
               >
                 <span className={cn("text-xs font-bold", isToday ? "text-primary" : "text-foreground")}>{d.slice(8)}</span>
                 {hol ? (
-                  <span className="text-[7px] text-destructive font-medium truncate w-full text-center">🔴 {hol.name.slice(0, 10)}</span>
+                  <span className="text-[7px] text-destructive font-medium truncate w-full text-center">{hol.name.slice(0, 10)}</span>
                 ) : dayScheds.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-0.5">
                     {dayScheds.slice(0, 4).map((s) => {
@@ -607,9 +607,9 @@ function MonthlyView({
         </div>
       </div>
       {/* Side panel: detail tanggal terpilih */}
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-2 border-b border-border/40">
+          <CardTitle className="text-sm font-semibold">
             {selectedDate ? formatDateLong(selectedDate) : `Detail ${monthLabel(format(anchorDate, "yyyy-MM"))}`}
           </CardTitle>
           <CardDescription className="text-xs">
@@ -702,7 +702,7 @@ function ScheduleCell({
       onClick={onClick}
       className={cn(
         "flex items-center gap-2 rounded-lg border p-2 text-left transition-all hover:scale-[1.02]",
-        shift ? "border-transparent text-white shadow-soft" : hasSched ? "border-dashed border-border bg-muted/30" : "border-border bg-card hover:border-primary/40",
+        shift ? "border-transparent text-white" : hasSched ? "border-dashed border-border bg-muted/30" : "border-border bg-card hover:border-primary/40",
       )}
       style={shift ? { background: shift.color } : undefined}
     >
@@ -768,7 +768,7 @@ function AssignDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="size-5 text-primary" /> Atur Jadwal
@@ -842,7 +842,7 @@ function GenerateDialog({ range, onClose }: { range: { from: string; to: string 
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-[440px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Wand2 className="size-5 text-primary" /> Generate dari Shift Group</DialogTitle>
           <DialogDescription>Otomatis buat jadwal dari pola mingguan shift group.</DialogDescription>
@@ -862,7 +862,7 @@ function GenerateDialog({ range, onClose }: { range: { from: string; to: string 
             <Field label="Dari Tanggal"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
             <Field label="Sampai Tanggal"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
           </FormRow>
-          <div className="flex items-center gap-2 rounded-lg border border-border p-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-border/60 p-2.5">
             <input type="checkbox" id="ow" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="accent-primary" />
             <label htmlFor="ow" className="text-xs text-foreground">Timpa jadwal yang sudah ada</label>
           </div>
@@ -892,7 +892,7 @@ function CopyWeekDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[400px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Copy className="size-5 text-primary" /> Copy Minggu</DialogTitle>
           <DialogDescription>Salin seluruh jadwal dari minggu sumber ke minggu target.</DialogDescription>
@@ -993,7 +993,7 @@ function SwapCard({ swap, onReview }: { swap: any; onReview: () => void }) {
   };
 
   return (
-    <Card className="border-border shadow-soft transition-all hover:shadow-soft-md">
+    <Card className="rounded-2xl border border-border/60 transition-all">
       <CardContent className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -1010,7 +1010,7 @@ function SwapCard({ swap, onReview }: { swap: any; onReview: () => void }) {
 
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {/* Before */}
-          <div className="rounded-lg border border-border bg-muted/20 p-2.5">
+          <div className="rounded-lg border border-border/60 p-2.5">
             <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Sebelum</p>
             <p className="text-xs text-foreground"><span className="font-medium">{requester?.fullName}</span>: {preview.before.requester ?? "—"}</p>
             {counterpart ? <p className="text-xs text-foreground"><span className="font-medium">{counterpart.fullName}</span>: {preview.before.counterpart ?? "—"}</p> : null}
@@ -1068,7 +1068,7 @@ function ReviewSwapDialog({ swapId, onClose }: { swapId: string; onClose: () => 
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] rounded-2xl">
         <DialogHeader>
           <DialogTitle>Review Pengajuan Tukar Shift</DialogTitle>
           <DialogDescription>{swap.requestNo}</DialogDescription>
@@ -1144,7 +1144,7 @@ function CreateSwapDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[540px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[540px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><ArrowLeftRight className="size-5 text-primary" /> Buat Pengajuan Tukar Shift</DialogTitle>
           <DialogDescription>Pilih tipe & isi detail tukar shift.</DialogDescription>

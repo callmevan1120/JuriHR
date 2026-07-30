@@ -135,7 +135,7 @@ export function AuditView() {
       </div>
 
       {/* Filter */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -163,7 +163,7 @@ export function AuditView() {
       </Card>
 
       {/* Timeline */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base"><ScrollText className="size-4 text-primary" /> Timeline Aktivitas</CardTitle>
           <CardDescription className="text-xs">{filtered.length} log</CardDescription>
@@ -232,7 +232,7 @@ export function AuditView() {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <Card className="border-border p-4 shadow-soft">
+    <Card className="border-border p-4 ">
       <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={cn("mt-0.5 text-2xl font-bold tabular-nums", color)}>{value}</p>
     </Card>

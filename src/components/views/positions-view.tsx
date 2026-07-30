@@ -86,7 +86,6 @@ export function PositionsView() {
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  // Full-Page Forms when active
   if (formState.type === "position") {
     return (
       <PositionFormPage
@@ -121,7 +120,7 @@ export function PositionsView() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
         title="Posisi &amp; Divisi Karyawan"
         description="Pengelolaan struktur jabatan, departemen divisi, dan acuan default kompensasi gaji JURI Bun."
@@ -144,13 +143,13 @@ export function PositionsView() {
             <Button
               variant="outline"
               onClick={() => setFormState({ type: "division", mode: "create" })}
-              className="gap-1.5 rounded-xl font-semibold"
+              className="gap-1.5 rounded-xl font-semibold text-xs"
             >
               <Plus className="size-4 text-primary" /> Tambah Divisi
             </Button>
             <Button
               onClick={() => setFormState({ type: "position", mode: "create" })}
-              className="gap-1.5 rounded-xl font-semibold shadow-xs"
+              className="gap-1.5 rounded-xl font-semibold text-xs"
             >
               <Plus className="size-4" /> Tambah Posisi
             </Button>
@@ -158,67 +157,59 @@ export function PositionsView() {
         }
       />
 
-      {/* Modern KPI Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/15 text-primary shrink-0">
-              <Briefcase className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total Posisi Aktif</p>
-              <p className="text-xl font-bold tracking-tight text-foreground">{activePositionsCount} Jabatan</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <Briefcase className="size-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Total Posisi Aktif</p>
+            <p className="text-xl font-bold tracking-tight text-foreground">{activePositionsCount} Jabatan</p>
+          </div>
+        </div>
 
-        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-info/15 text-info shrink-0">
-              <Building2 className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Total Divisi &amp; HQ</p>
-              <p className="text-xl font-bold tracking-tight text-foreground">{activeDivisionsCount} Divisi</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-info/10 text-info shrink-0">
+            <Building2 className="size-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Total Divisi &amp; HQ</p>
+            <p className="text-xl font-bold tracking-tight text-foreground">{activeDivisionsCount} Divisi</p>
+          </div>
+        </div>
 
-        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-success/15 text-success shrink-0">
-              <Users className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Jabatan Kategori Outlet</p>
-              <p className="text-xl font-bold tracking-tight text-foreground">{outletPositionsCount} Posisi</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-success/10 text-success shrink-0">
+            <Users className="size-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Jabatan Kategori Outlet</p>
+            <p className="text-xl font-bold tracking-tight text-foreground">{outletPositionsCount} Posisi</p>
+          </div>
+        </div>
 
-        <Card className="border-border/80 shadow-xs rounded-2xl bg-card/60 backdrop-blur-xs">
-          <CardContent className="p-4 flex items-center gap-3.5">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 shrink-0">
-              <Banknote className="size-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Karyawan Terdistribusi</p>
-              <p className="text-xl font-bold tracking-tight text-foreground">{employees.length} Anggota</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
+            <Banknote className="size-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Karyawan Terdistribusi</p>
+            <p className="text-xl font-bold tracking-tight text-foreground">{employees.length} Anggota</p>
+          </div>
+        </div>
       </div>
 
-      {/* Segmented Tab Switcher (Apple / Google Style) */}
-      <div className="flex items-center justify-between border-b border-border/60 pb-3">
-        <div className="inline-flex rounded-2xl bg-muted/60 p-1.5 text-xs font-semibold">
+      {/* Segmented Tab Switcher */}
+      <div className="flex items-center justify-between border-b border-border/40 pb-3">
+        <div className="inline-flex rounded-xl bg-muted/50 p-1 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab("positions")}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              "flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-150",
               activeTab === "positions"
-                ? "bg-background text-foreground shadow-sm font-bold"
+                ? "bg-background text-foreground font-bold border border-border/60"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -233,9 +224,9 @@ export function PositionsView() {
             type="button"
             onClick={() => setActiveTab("divisions")}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              "flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-150",
               activeTab === "divisions"
-                ? "bg-background text-foreground shadow-sm font-bold"
+                ? "bg-background text-foreground font-bold border border-border/60"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -248,7 +239,6 @@ export function PositionsView() {
         </div>
       </div>
 
-      {/* Full-Width Table Render depending on tab */}
       {activeTab === "positions" ? (
         <PositionsTableSection
           positions={positions}
@@ -342,7 +332,7 @@ export function PositionsView() {
 }
 
 // ------------------------------------------------------------
-// Full Table Section for Positions
+// Positions Table
 // ------------------------------------------------------------
 function PositionsTableSection({
   positions,
@@ -370,11 +360,11 @@ function PositionsTableSection({
       header: "Nama Posisi / Jabatan",
       cell: ({ row }) => (
         <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-primary shrink-0 font-bold">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
             <Briefcase className="size-4" />
           </div>
           <div>
-            <p className="font-bold text-sm text-foreground">{row.original.name}</p>
+            <p className="font-semibold text-sm text-foreground">{row.original.name}</p>
             {row.original.note && (
               <p className="text-[11px] text-muted-foreground truncate max-w-[220px]">{row.original.note}</p>
             )}
@@ -423,7 +413,7 @@ function PositionsTableSection({
       id: "empCount",
       header: "Jumlah Karyawan",
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-1.5 tabular-nums font-bold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
+        <span className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
           <Users className="size-3.5 text-primary" />
           {empCount.get(row.original.id) ?? 0} Anggota
         </span>
@@ -469,9 +459,9 @@ function PositionsTableSection({
   ];
 
   return (
-    <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
-      <CardHeader className="pb-3 border-b border-border/60">
-        <CardTitle className="text-base font-bold text-foreground">Daftar Lengkap Posisi &amp; Jabatan</CardTitle>
+    <Card className="rounded-2xl border border-border/60 overflow-hidden">
+      <CardHeader className="pb-2 border-b border-border/40">
+        <CardTitle className="text-sm font-semibold">Daftar Lengkap Posisi &amp; Jabatan</CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
         <DataTable
@@ -490,7 +480,7 @@ function PositionsTableSection({
 }
 
 // ------------------------------------------------------------
-// Full Table Section for Divisions
+// Divisions Table
 // ------------------------------------------------------------
 function DivisionsTableSection({
   divisions,
@@ -518,11 +508,11 @@ function DivisionsTableSection({
       header: "Nama Divisi / Departemen",
       cell: ({ row }) => (
         <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-xl bg-info/15 text-info shrink-0 font-bold">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-info/10 text-info shrink-0">
             <Building2 className="size-4" />
           </div>
           <div>
-            <p className="font-bold text-sm text-foreground">{row.original.name}</p>
+            <p className="font-semibold text-sm text-foreground">{row.original.name}</p>
             {row.original.note && (
               <p className="text-[11px] text-muted-foreground truncate max-w-[240px]">{row.original.note}</p>
             )}
@@ -558,7 +548,7 @@ function DivisionsTableSection({
       id: "empCount",
       header: "Jumlah Anggota",
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-1.5 tabular-nums font-bold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
+        <span className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/50">
           <Users className="size-3.5 text-info" />
           {empCount.get(row.original.id) ?? 0} Karyawan
         </span>
@@ -604,9 +594,9 @@ function DivisionsTableSection({
   ];
 
   return (
-    <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
-      <CardHeader className="pb-3 border-b border-border/60">
-        <CardTitle className="text-base font-bold text-foreground">Daftar Lengkap Divisi &amp; Departemen</CardTitle>
+    <Card className="rounded-2xl border border-border/60 overflow-hidden">
+      <CardHeader className="pb-2 border-b border-border/40">
+        <CardTitle className="text-sm font-semibold">Daftar Lengkap Divisi &amp; Departemen</CardTitle>
       </CardHeader>
       <CardContent className="pt-4">
         <DataTable
@@ -625,7 +615,7 @@ function DivisionsTableSection({
 }
 
 // ------------------------------------------------------------
-// Full-Page Position Form Component (ERPNext Architecture)
+// Full-Page Position Form
 // ------------------------------------------------------------
 function PositionFormPage({
   mode,
@@ -677,8 +667,7 @@ function PositionFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      {/* Top Header Navigation */}
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -695,10 +684,10 @@ function PositionFormPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+          <Button variant="outline" type="button" onClick={onBack} className="gap-1.5 rounded-xl font-semibold text-xs">
             Batal
           </Button>
-          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5 text-xs">
             <Save className="size-4" />
             {mode === "edit" ? "Simpan Perubahan" : "Simpan Posisi"}
           </Button>
@@ -713,9 +702,9 @@ function PositionFormPage({
       )}
 
       <div className="max-w-4xl space-y-6">
-        <Card className="border-border/80 shadow-xs rounded-2xl">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="text-base font-bold text-foreground">1. Identitas Posisi &amp; Kategori</CardTitle>
+        <Card className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="text-sm font-semibold">1. Identitas Posisi &amp; Kategori</CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <FormRow>
@@ -753,9 +742,9 @@ function PositionFormPage({
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 shadow-xs rounded-2xl">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="text-base font-bold text-foreground">2. Acuan Kompensasi &amp; Catatan</CardTitle>
+        <Card className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="text-sm font-semibold">2. Acuan Kompensasi &amp; Catatan</CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <FormRow>
@@ -778,7 +767,7 @@ function PositionFormPage({
 }
 
 // ------------------------------------------------------------
-// Full-Page Division Form Component (ERPNext Architecture)
+// Full-Page Division Form
 // ------------------------------------------------------------
 function DivisionFormPage({
   mode,
@@ -829,8 +818,7 @@ function DivisionFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      {/* Top Header Navigation */}
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -847,10 +835,10 @@ function DivisionFormPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+          <Button variant="outline" type="button" onClick={onBack} className="gap-1.5 rounded-xl font-semibold text-xs">
             Batal
           </Button>
-          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5 text-xs">
             <Save className="size-4" />
             {mode === "edit" ? "Simpan Perubahan" : "Simpan Divisi"}
           </Button>
@@ -865,9 +853,9 @@ function DivisionFormPage({
       )}
 
       <div className="max-w-4xl space-y-6">
-        <Card className="border-border/80 shadow-xs rounded-2xl">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="text-base font-bold text-foreground">Identitas Divisi &amp; Struktural</CardTitle>
+        <Card className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="text-sm font-semibold">Identitas Divisi &amp; Struktural</CardTitle>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             <FormRow>

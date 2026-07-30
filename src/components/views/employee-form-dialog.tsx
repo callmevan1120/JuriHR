@@ -91,13 +91,11 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
   const [supervisorId, setSupervisorId] = React.useState(data?.supervisorId ?? "");
   const [note, setNote] = React.useState(data?.note ?? "");
   
-  // Data Bank & Rekening + Custom Bank Support
   const [selectedBank, setSelectedBank] = React.useState(data?.bankName ?? "BCA");
   const [customBankName, setCustomBankName] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState(data?.accountNumber ?? "");
   const [accountHolderName, setAccountHolderName] = React.useState(data?.accountHolderName ?? "");
   
-  // Kontrak & Domisili + Koordinat LU/LT (Lintang & Bujur)
   const [contractType, setContractType] = React.useState(data?.contractType ?? "PKWT");
   const [contractDurationMonths, setContractDurationMonths] = React.useState(String(data?.contractDurationMonths ?? 12));
   const [contractEndDate, setContractEndDate] = React.useState(
@@ -138,7 +136,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setSupervisorId(data?.supervisorId ?? "");
     setNote(data?.note ?? "");
 
-    // Cek apakah bank terdaftar atau custom bank
     const b = data?.bankName ?? "BCA";
     if (standardBanks.includes(b)) {
       setSelectedBank(b);
@@ -162,7 +159,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     setError(undefined);
   }, [open, data]);
 
-  // Otomatis hitung tanggal berakhir kontrak jika durasi / tanggal mulai berubah
   const handleDurationChange = (durStr: string) => {
     setContractDurationMonths(durStr);
     const months = Number(durStr);
@@ -181,7 +177,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     }
   };
 
-  // Otomatis mengekstrak Koordinat (LU/LT) saat link Google Maps diinput
   const handleMapsUrlChange = (url: string) => {
     setMapsUrl(url);
     const coords = parseGoogleMapsCoordinates(url);
@@ -195,7 +190,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
 
   const handleRawCoordsChange = (text: string) => {
     setRawCoords(text);
-    // Regex memisahkan Latitude (-7.592203) dan Longitude (110.649421)
     const match = text.match(/(-?\d+\.\d+)\s*[%2C,\s]\s*(-?\d+\.\d+)/);
     if (match) {
       const parsedLat = match[1];
@@ -239,7 +233,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       return;
     }
     
-    // Cek NIK unik
     const dup = employees.find((e) => e.nik === nik.trim() && e.id !== data?.id);
     if (dup) {
       setError(`NIK "${nik.trim()}" sudah digunakan oleh ${dup.fullName}.`);
@@ -255,7 +248,6 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
     const latNum = Number(latitude) || -6.2088;
     const lonNum = Number(longitude) || 106.8456;
 
-    // Generasi link maps otomatis bila link kosong tapi lat/lon diisi
     let finalMapsUrl = mapsUrl.trim();
     if (!finalMapsUrl && (latitude || longitude)) {
       finalMapsUrl = `https://maps.google.com/?q=${latNum},${lonNum}`;
@@ -312,7 +304,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[700px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[700px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <User className="size-5 text-primary" />
@@ -323,9 +315,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-2">
-          {/* Info Callout Login Credential Versi 2 */}
-          <div className="flex items-start gap-2.5 rounded-xl border border-info/30 bg-info/10 p-3 text-xs text-info dark:text-info-foreground">
+        <div className="space-y-5 py-2">
+          {/* Info Callout */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-info/30 bg-info/5 p-3 text-xs text-info dark:text-info-foreground">
             <KeyRound className="size-4 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">Info Kredensial Akun (Persiapan Versi 2):</span>
@@ -335,10 +327,10 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </div>
           </div>
 
-          {/* Section 1: Kategori & Penempatan Lokasi */}
-          <section className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          {/* Section 1: Kategori & Penempatan */}
+          <section className="space-y-3 rounded-xl border border-border/60 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
-              <Building2 className="size-4" /> Kategori &amp; Lokasi Penempatan
+              <Building2 className="size-4" /> Kategori & Lokasi Penempatan
             </h3>
             
             <FormRow>
@@ -391,7 +383,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 </Select>
               </Field>
             ) : (
-              <div className="rounded-lg bg-background/90 border border-border/80 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
+              <div className="rounded-lg bg-background border border-border/60 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
                 <span>Penempatan Lokasi Kerja:</span>
                 <span className="font-semibold text-foreground">
                   {category === "PH_KLATEN" && "Pabrik Produksi PH Klaten"}
@@ -402,10 +394,10 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             )}
           </section>
 
-          {/* Section 2: Identitas Diri & Kredensial Login v2 */}
+          {/* Section 2: Identitas Diri */}
           <section className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Identitas Diri &amp; Kontak
+              Identitas Diri & Kontak
             </h3>
             <FormRow>
               <Field label="NIK" required>
@@ -510,7 +502,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 3: Data Bank Payroll (+ Support Tambah Bank Custom) */}
+          {/* Section 3: Data Bank Payroll */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
               <CreditCard className="size-4 text-primary" /> Data Rekening Bank (Payroll)
@@ -575,10 +567,10 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 4: Detail Kontrak Kerja & Gaji */}
+          {/* Section 4: Kontrak & Gaji */}
           <section className="space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <FileText className="size-4 text-primary" /> Kontrak Kerja &amp; Kompensasi
+              <FileText className="size-4 text-primary" /> Kontrak Kerja & Kompensasi
             </h3>
             <FormRow>
               <Field label="Tipe Kontrak">
@@ -618,7 +610,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                 />
               </Field>
               <Field label="Status Jatuh Tempo Kontrak">
-                <div className="flex h-9 items-center rounded-md border border-border bg-muted/40 px-3 text-xs font-medium text-foreground">
+                <div className="flex h-9 items-center rounded-md border border-border px-3 text-xs font-medium text-foreground">
                   {contractEndDate ? (
                     <span className="text-primary font-semibold">
                       Berakhir: {formatDateLong(contractEndDate)}
@@ -650,10 +642,10 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </Field>
           </section>
 
-          {/* Section 5: Domisili & Peta Lokasi + Pratinjau Peta Interaktif Langsung */}
-          <section className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-4">
+          {/* Section 5: Domisili & Peta */}
+          <section className="space-y-3 rounded-xl border border-border/60 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wide text-foreground flex items-center gap-1.5">
-              <MapPin className="size-4 text-primary" /> Alamat Domisili &amp; Peta Lokasi
+              <MapPin className="size-4 text-primary" /> Alamat Domisili & Peta Lokasi
             </h3>
 
             <Field label="Alamat Rumah Lengkap">
@@ -715,7 +707,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
               </Field>
             </FormRow>
 
-            {/* Pratinjau Peta Interaktif Langsung */}
+            {/* Pratinjau Peta */}
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between text-[11px] font-semibold text-foreground">
                 <span>Pratinjau Peta Domisili Karyawan (Real-time):</span>
@@ -723,7 +715,7 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
                   Lat: {Number(latitude).toFixed(5)}, Lon: {Number(longitude).toFixed(5)}
                 </span>
               </div>
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+              <div className="overflow-hidden rounded-xl border border-border">
                 <EmployeeMiniMap
                   lat={Number(latitude) || -6.2088}
                   lon={Number(longitude) || 106.8456}
@@ -742,9 +734,9 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
             </div>
           </section>
 
-          {/* Section 6: Shift & Libur & Catatan */}
+          {/* Section 6: Shift & Libur */}
           <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Shift, Libur &amp; Catatan</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Shift, Libur & Catatan</h3>
             <FormRow>
               <Field label="Shift Group">
                 <Select value={shiftGroupId} onValueChange={setShiftGroupId}>
@@ -781,8 +773,8 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-          <Button onClick={submit}>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs font-semibold">Batal</Button>
+          <Button size="sm" onClick={submit} className="rounded-xl text-xs font-semibold gap-1.5">
             {mode === "edit" ? "Simpan Perubahan" : "Tambah Karyawan"}
           </Button>
         </DialogFooter>

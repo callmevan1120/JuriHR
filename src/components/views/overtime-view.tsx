@@ -91,13 +91,13 @@ export function OvertimeView() {
   return (
     <Tabs defaultValue="planning" className="space-y-4">
       <TabsList className="bg-muted/40 p-1">
-        <TabsTrigger value="planning" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="planning" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:">
           <Clock className="size-3.5" /> Planning
         </TabsTrigger>
-        <TabsTrigger value="actual" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="actual" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:">
           <CheckCircle2 className="size-3.5" /> Actual &amp; Verifikasi
         </TabsTrigger>
-        <TabsTrigger value="anomali" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="anomali" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:">
           <AlertTriangle className="size-3.5" /> Anomali
         </TabsTrigger>
       </TabsList>
@@ -186,7 +186,7 @@ function PlanningCard({ plan, onReview }: { plan: OvertimePlanning; onReview: ()
   const divName = plan.divisionId ? lookupService.divisionName(plan.divisionId) : undefined;
 
   return (
-    <Card className="group border-border shadow-soft transition-all hover:shadow-soft-md">
+    <Card className="group border-border transition-all hover:border-primary/40">
       <CardContent className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
@@ -542,7 +542,7 @@ function ActualCard({ actual, onEdit }: { actual: OvertimeActual; onEdit: () => 
   };
 
   return (
-    <Card className="group border-border shadow-soft transition-all hover:shadow-soft-md">
+    <Card className="group border-border transition-all hover:border-primary/40">
       <CardContent className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">

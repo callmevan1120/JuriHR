@@ -95,7 +95,7 @@ export function SettingsView() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Tampilan */}
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Monitor className="size-4 text-primary" /> Tampilan
@@ -123,7 +123,7 @@ export function SettingsView() {
         </Card>
 
         {/* Manajemen Data */}
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Database className="size-4 text-primary" /> Manajemen Data
@@ -164,7 +164,7 @@ export function SettingsView() {
       </div>
 
       {/* Statistik Data */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <HardDrive className="size-4 text-primary" /> Statistik Data
@@ -202,7 +202,7 @@ export function SettingsView() {
 
       {/* Informasi Sistem */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Info className="size-4 text-primary" /> Informasi Sistem
@@ -218,7 +218,7 @@ export function SettingsView() {
           </CardContent>
         </Card>
 
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Layers className="size-4 text-primary" /> Teknologi
@@ -236,7 +236,7 @@ export function SettingsView() {
       </div>
 
       {/* Quick Links */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <ExternalLink className="size-4 text-primary" /> Tautan Cepat

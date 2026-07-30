@@ -114,7 +114,7 @@ export function DomicileEditor({ employee, editing, onClose, onEdit }: Props) {
 
       {/* Jarak ke outlet utama */}
       {primaryOutlet ? (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
           <div className="flex size-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
             <Navigation className="size-4" />
           </div>
@@ -271,8 +271,8 @@ function DomicileForm({
   return (
     <div className="space-y-4">
       {/* Address search */}
-      <div className="rounded-lg border border-border bg-muted/30 p-3">
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
+      <div className="rounded-xl border border-border/60 p-3">
+        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
           <Search className="size-3.5" /> Cari Alamat (OpenStreetMap Nominatim)
         </p>
         <div className="flex gap-2">
@@ -282,7 +282,7 @@ function DomicileForm({
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Cth: Jl. Sudirman, Jakarta"
           />
-          <Button onClick={handleSearch} disabled={searching} size="sm">
+          <Button onClick={handleSearch} disabled={searching} size="sm" className="rounded-xl gap-1.5 font-semibold text-xs">
             {searching ? <RefreshCw className="size-4 animate-spin" /> : <Search className="size-4" />}
             Cari
           </Button>
@@ -348,7 +348,7 @@ function DomicileForm({
       </div>
 
       {primaryOutlet ? (
-        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-card p-3">
           <span className="text-xs text-muted-foreground">Jarak ke {primaryOutlet.name}:</span>
           <span className="text-sm font-bold tabular-nums text-primary">
             {formatDistance(haversineKm(latNum, lonNum, primaryOutlet.latitude, primaryOutlet.longitude))}
@@ -363,11 +363,11 @@ function DomicileForm({
       {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
-          <X className="size-4" /> Batal
+        <Button variant="outline" onClick={onClose} className="rounded-xl gap-1.5 font-semibold text-xs">
+          <X className="size-3.5" /> Batal
         </Button>
-        <Button onClick={submit}>
-          <Save className="size-4" /> Simpan
+        <Button onClick={submit} className="rounded-xl gap-1.5 font-semibold text-xs">
+          <Save className="size-3.5" /> Simpan
         </Button>
       </div>
     </div>

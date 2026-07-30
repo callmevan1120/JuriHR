@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -32,8 +31,6 @@ import {
 } from "@/lib/utils";
 import type { Outlet } from "@/lib/types";
 import {
-  MapPin,
-  Store,
   Users,
   Navigation,
   Search,
@@ -130,7 +127,7 @@ export function DomicileView() {
       />
 
       {/* Filter bar */}
-      <Card className="border-border shadow-soft">
+      <Card className="rounded-2xl border border-border/60">
         <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Filter className="size-4" /> Filter
@@ -161,7 +158,7 @@ export function DomicileView() {
               ))}
             </SelectContent>
           </Select>
-          <Badge variant="outline" className="ml-auto">
+          <Badge variant="outline" className="ml-auto rounded-lg text-xs">
             <Users className="size-3" /> {points.length} karyawan
           </Badge>
         </CardContent>
@@ -169,8 +166,8 @@ export function DomicileView() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Map */}
-        <Card className="border-border shadow-soft lg:col-span-2">
-          <CardContent className="p-2">
+        <Card className="rounded-2xl border border-border/60 lg:col-span-2">
+          <CardContent className="p-1.5">
             <div style={{ height: 520 }} className="overflow-hidden rounded-lg">
               <MapContainer
                 center={[centerLat || -6.2, centerLon || 106.8]}
@@ -244,12 +241,11 @@ export function DomicileView() {
         </Card>
 
         {/* Side panel: list karyawan + jarak */}
-        <Card className="border-border shadow-soft">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
               <Navigation className="size-4 text-primary" /> Jarak ke Outlet
             </CardTitle>
-            <CardDescription className="text-xs">Diurutkan dari terdekat</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="max-h-[460px] divide-y divide-border overflow-y-auto">

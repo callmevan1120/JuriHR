@@ -118,7 +118,7 @@ export function ReportsView() {
       />
 
       {/* Filter bar */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center">
           <div className="flex items-center gap-2">
             <CalendarDays className="size-4 text-muted-foreground" />
@@ -174,7 +174,7 @@ function WorkforceReport({ summary }: { summary: ReturnType<typeof reportService
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-2"><CardTitle className="text-base">Distribusi Kehadiran</CardTitle></CardHeader>
           <CardContent>
             <PieChartDist data={[
@@ -185,7 +185,7 @@ function WorkforceReport({ summary }: { summary: ReturnType<typeof reportService
             ]} />
           </CardContent>
         </Card>
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-2"><CardTitle className="text-base">Potongan & Lembur</CardTitle></CardHeader>
           <CardContent className="space-y-3 pt-2">
             <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-3">
@@ -216,7 +216,7 @@ function EmployeeReport({ state, filterOutlet }: { state: any; filterOutlet: str
     return true;
   });
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="border-border ">
       <CardHeader className="pb-3"><CardTitle className="text-base">Data Karyawan ({filtered.length})</CardTitle><CardDescription className="text-xs">Filter: {filterOutlet === "all" ? "Semua Outlet" : state.outlets.find((o: any) => o.id === filterOutlet)?.name}</CardDescription></CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -262,7 +262,7 @@ function DistributionReport({ state }: { state: any }) {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-2"><CardTitle className="text-base">Distribusi per Outlet</CardTitle></CardHeader>
         <CardContent>
           <ChartContainer config={config} className="h-[280px] w-full">
@@ -276,7 +276,7 @@ function DistributionReport({ state }: { state: any }) {
           </ChartContainer>
         </CardContent>
       </Card>
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-2"><CardTitle className="text-base">Distribusi per Divisi</CardTitle></CardHeader>
         <CardContent>
           <PieChartDist data={divDistribution.map((d: any, i: number) => ({ name: d.name, value: d.count, color: ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"][i % 5] }))} />
@@ -311,7 +311,7 @@ function AttendanceReport({ state, fromDate, toDate, filterOutlet }: { state: an
   });
 
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="border-border ">
       <CardHeader className="pb-3"><CardTitle className="text-base">Laporan Kehadiran ({data.length} karyawan)</CardTitle><CardDescription className="text-xs">{formatDateMed(fromDate)} — {formatDateMed(toDate)}</CardDescription></CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -370,7 +370,7 @@ function LateReport({ state, fromDate, toDate, filterOutlet }: { state: any; fro
         <SummaryCard label="Rata-rata Telat" value={`${avgLate}m`} icon={Clock} color="text-info" bg="bg-info/10" />
         <SummaryCard label="Total Potongan" value={formatRupiah(totalDeduction)} icon={Wallet} color="text-destructive" bg="bg-destructive/10" />
       </div>
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3"><CardTitle className="text-base">Daftar Keterlambatan</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
@@ -405,7 +405,7 @@ function LeaveReport({ state, fromDate, toDate, filterOutlet }: { state: any; fr
   });
 
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="border-border ">
       <CardHeader className="pb-3"><CardTitle className="text-base">Laporan Cuti & Izin ({filtered.length})</CardTitle><CardDescription className="text-xs">{formatDateMed(fromDate)} — {formatDateMed(toDate)}</CardDescription></CardHeader>
       <CardContent className="p-0">
         <div className="divide-y divide-border">
@@ -449,7 +449,7 @@ function OvertimeReport({ state, fromDate, toDate }: { state: any; fromDate: str
         <SummaryCard label="Total Jam Actual" value={formatDuration(totalActualMin)} icon={Clock} color="text-primary" bg="bg-primary/10" />
         <SummaryCard label="Total Nominal" value={formatRupiah(totalAmount)} icon={Wallet} color="text-success" bg="bg-success/10" />
       </div>
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-2"><CardTitle className="text-base">Planning vs Actual (jam)</CardTitle></CardHeader>
         <CardContent>
           <ChartContainer config={{ planning: { label: "Planning", color: "var(--chart-4)" }, actual: { label: "Actual", color: "var(--chart-1)" } }} className="h-[260px] w-full">
@@ -480,7 +480,7 @@ function ContractReport({ state }: { state: any }) {
   }).sort((a: any, b: any) => a.endDate.localeCompare(b.endDate));
 
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="border-border ">
       <CardHeader className="pb-3"><CardTitle className="text-base">Kontrak Akan Berakhir ({expiring.length})</CardTitle><CardDescription className="text-xs">Jatuh tempo ≤ 90 hari</CardDescription></CardHeader>
       <CardContent className="p-0">
         <div className="divide-y divide-border">
@@ -525,7 +525,7 @@ function PayrollReport({ state }: { state: any }) {
         <SummaryCard label="Draft" value={String(draft)} icon={FileText} color="text-muted-foreground" bg="bg-muted/50" />
         <SummaryCard label="Grand Total" value={formatRupiah(total)} icon={TrendingUp} color="text-success" bg="bg-success/10" />
       </div>
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3"><CardTitle className="text-base">Payroll Preview — {monthLabel(period)}</CardTitle></CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -567,7 +567,7 @@ function PayrollReport({ state }: { state: any }) {
 // ------------------------------------------------------------
 function SummaryCard({ label, value, icon: Icon, color, bg }: { label: string; value: string; icon: typeof Users; color: string; bg: string }) {
   return (
-    <Card className="border-border p-4 shadow-soft">
+    <Card className="border-border p-4 ">
       <div className="flex items-center gap-3">
         <div className={cn("flex size-9 items-center justify-center rounded-lg", bg, color)}><Icon className="size-4" /></div>
         <div className="min-w-0"><p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="truncate text-lg font-bold tabular-nums text-foreground">{value}</p></div>

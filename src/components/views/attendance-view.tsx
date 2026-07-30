@@ -100,13 +100,13 @@ export function AttendanceView() {
   return (
     <Tabs defaultValue="harian" className="space-y-4">
       <TabsList className="bg-muted/40 p-1">
-        <TabsTrigger value="harian" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="harian" className="gap-1.5 data-[state=active]:bg-card">
           <CalendarDays className="size-3.5" /> Harian
         </TabsTrigger>
-        <TabsTrigger value="bulanan" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="bulanan" className="gap-1.5 data-[state=active]:bg-card">
           <Calendar className="size-3.5" /> Bulanan
         </TabsTrigger>
-        <TabsTrigger value="rekap" className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+        <TabsTrigger value="rekap" className="gap-1.5 data-[state=active]:bg-card">
           <ClipboardCheck className="size-3.5" /> Rekap &amp; Laporan
         </TabsTrigger>
       </TabsList>
@@ -208,7 +208,7 @@ function DailyTab() {
       </div>
 
       {/* Date navigation + filter */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center">
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="size-8" onClick={() => navigateDay(-1)}>
@@ -250,7 +250,7 @@ function DailyTab() {
       </Card>
 
       {/* Attendance list */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="p-0">
           <div className="divide-y divide-border">
             {filteredEmps.length === 0 ? (
@@ -606,7 +606,7 @@ function MonthlyTab() {
         }
       />
 
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex items-center gap-3 py-3">
           <CalendarDays className="size-5 text-primary" />
           <Input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-[160px]" />
@@ -619,7 +619,7 @@ function MonthlyTab() {
         </CardContent>
       </Card>
 
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="pt-4">
           <DataTable
             columns={columns}
@@ -692,7 +692,7 @@ function RecapTab() {
         actions={<Button variant="outline" size="sm" onClick={handleExport}><Download className="size-4" /> Export CSV</Button>}
       />
 
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
           <Filter className="size-4 text-muted-foreground" />
           <Field label="Dari"><Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></Field>
@@ -707,7 +707,7 @@ function RecapTab() {
         </CardContent>
       </Card>
 
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Rekap per Karyawan</CardTitle>
           <CardDescription className="text-xs">{empStats.length} karyawan · {records.length} record</CardDescription>

@@ -120,7 +120,7 @@ export function PayrollView() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {/* Period list sidebar */}
-        <Card className="border-border shadow-soft lg:col-span-1">
+        <Card className="border-border  lg:col-span-1">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm">
               <CalendarDays className="size-4 text-primary" /> Periode Payroll
@@ -159,7 +159,7 @@ export function PayrollView() {
               onEntryClick={setDetailTarget}
             />
           ) : (
-            <Card className="border-border shadow-soft">
+            <Card className="border-border ">
               <CardContent className="py-12 text-center text-sm text-muted-foreground">
                 Pilih atau buat periode payroll untuk memulai.
               </CardContent>
@@ -273,7 +273,7 @@ function PeriodDetail({
   return (
     <div className="space-y-4">
       {/* Period info bar */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -317,7 +317,7 @@ function PeriodDetail({
 
       {/* Table */}
       {isGenerated ? (
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardContent className="pt-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Select value={filterOutlet} onValueChange={setFilterOutlet}>
@@ -441,7 +441,7 @@ function DashboardCards({
 
       {/* Status & per outlet */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Status Entry</CardTitle>
           </CardHeader>
@@ -457,7 +457,7 @@ function DashboardCards({
             ) : null}
           </CardContent>
         </Card>
-        <Card className="border-border shadow-soft">
+        <Card className="border-border ">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total per Outlet</CardTitle>
           </CardHeader>
@@ -492,7 +492,7 @@ function Card3D({
   iconBg: string;
 }) {
   return (
-    <div className={cn("relative overflow-hidden rounded-xl border border-border bg-gradient-to-br p-4 shadow-soft-md", gradient)}>
+    <div className={cn("relative overflow-hidden rounded-xl border border-border bg-gradient-to-br p-4", gradient)}>
       <div className="absolute -right-4 -top-4 size-20 rounded-full bg-white/20 blur-2xl" />
       <div className="relative flex items-start justify-between">
         <div className="min-w-0">
@@ -509,7 +509,7 @@ function Card3D({
 
 function MiniCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Wallet; color: string }) {
   return (
-    <Card className="border-border p-3 shadow-soft">
+    <Card className="border-border p-3 ">
       <div className="flex items-center gap-2">
         <Icon className={cn("size-4", color)} />
         <div className="min-w-0">

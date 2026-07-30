@@ -156,7 +156,7 @@ export function HolidayView() {
                   onClick={handleGenerateNationalHolidays}
                   className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
                 >
-                  <span>🇮🇩 Auto-Populate Libur Nasional ID</span>
+                  <Globe className="size-3.5" /> Auto-Populate Libur Nasional ID
                 </Button>
               )}
             </div>
@@ -220,7 +220,7 @@ export function HolidayView() {
               onClick={handleGenerateNationalHolidays}
               className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
             >
-              <span>🇮🇩 Auto-Populate Libur ID</span>
+              <Globe className="size-3.5" /> Auto-Populate Libur ID
             </Button>
           )}
         </div>
@@ -389,7 +389,7 @@ function HolidayGroupsSection({
         const activeMembers = employees.filter((e) => group.memberIds.includes(e.id) && e.status === "AKTIF").length;
 
         return (
-          <Card key={group.id} className="group border-border/80 shadow-xs rounded-2xl transition-all hover:border-primary/40">
+          <Card key={group.id} className="group rounded-2xl border border-border/60 transition-all hover:border-primary/40">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -575,7 +575,7 @@ function HolidaySwapsSection({
         cell: ({ row }) => {
           const outletIds = (row.original as any).outletIds as string[] | undefined;
           if (!outletIds || outletIds.length === 0) {
-            return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px]">🌐 Seluruh Outlet (Global)</Badge>;
+            return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px]"><Globe className="size-2.5 mr-1" />Seluruh Outlet (Global)</Badge>;
           }
           const names = outletIds.map((id) => outlets.find((o) => o.id === id)?.name.replace("JURI Bun — ", "")).filter(Boolean);
           return (
@@ -691,7 +691,7 @@ function HolidayGroupFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -722,7 +722,7 @@ function HolidayGroupFormPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl">
+          <Card className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-base font-bold text-foreground">1. Profil Holiday Group &amp; Scope Lokasi</CardTitle>
             </CardHeader>
@@ -794,7 +794,7 @@ function HolidayGroupFormPage({
         </div>
 
         <div className="space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl">
+          <Card className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
                 <span>Anggota Karyawan</span>
@@ -880,7 +880,7 @@ function HolidayFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -909,7 +909,7 @@ function HolidayFormPage({
         </div>
       )}
 
-      <Card className="max-w-2xl border-border/80 shadow-xs rounded-2xl">
+      <Card className="max-w-2xl rounded-2xl border border-border/60">
         <CardHeader className="pb-3 border-b border-border/60">
           <CardTitle className="text-base font-bold text-foreground">Informasi Hari Libur &amp; Negara Target</CardTitle>
         </CardHeader>
@@ -926,10 +926,10 @@ function HolidayFormPage({
               <Select value={type} onValueChange={(v) => setType(v as HolidayType)}>
                 <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NASIONAL">🔴 Nasional</SelectItem>
-                  <SelectItem value="KEAGAMAAN">🔵 Keagamaan</SelectItem>
-                  <SelectItem value="PERUSAHAAN">🟡 Perusahaan</SelectItem>
-                  <SelectItem value="ADDITIONAL">⚪ Tambahan</SelectItem>
+                  <SelectItem value="NASIONAL">Nasional</SelectItem>
+                  <SelectItem value="KEAGAMAAN">Keagamaan</SelectItem>
+                  <SelectItem value="PERUSAHAAN">Perusahaan</SelectItem>
+                  <SelectItem value="ADDITIONAL">Tambahan</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -1027,7 +1027,7 @@ function HolidaySwapFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -1056,7 +1056,7 @@ function HolidaySwapFormPage({
         </div>
       )}
 
-      <Card className="max-w-2xl border-border/80 shadow-xs rounded-2xl">
+      <Card className="max-w-2xl rounded-2xl border border-border/60">
         <CardHeader className="pb-3 border-b border-border/60">
           <CardTitle className="text-base font-bold text-foreground">Detail Penyesuaian Tanggal &amp; Target Outlet</CardTitle>
         </CardHeader>
@@ -1103,8 +1103,8 @@ function HolidaySwapFormPage({
             <Select value={scopeType} onValueChange={(v) => setScopeType(v as any)}>
               <SelectTrigger className="rounded-xl font-semibold"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="GLOBAL">🌐 Seluruh Outlet &amp; HQ (Global)</SelectItem>
-                <SelectItem value="MULTI_OUTLET">🏪 Outlet Cabang Spesifik</SelectItem>
+                <SelectItem value="GLOBAL"><Globe className="inline size-3 mr-1" />Seluruh Outlet &amp; HQ (Global)</SelectItem>
+                <SelectItem value="MULTI_OUTLET"><Store className="inline size-3 mr-1" />Outlet Cabang Spesifik</SelectItem>
               </SelectContent>
             </Select>
           </Field>

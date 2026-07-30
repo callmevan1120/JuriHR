@@ -11,7 +11,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Sun, Moon, Search } from "lucide-react";
+import { Sun, Moon, Search, Menu } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "next-themes";
 import { AppBreadcrumb } from "./app-breadcrumb";
 import { NotificationPopover } from "./notification-popover";
@@ -41,6 +42,7 @@ export function AppTopbar() {
   return (
     <>
       <header className="sticky top-0 z-40 shrink-0 flex h-14 items-center gap-2 border-b border-border/60 bg-background/85 px-3 backdrop-blur-lg supports-[backdrop-filter]:bg-background/70 sm:h-14 sm:px-5 lg:px-6">
+        <SidebarTrigger className="size-8 shrink-0 md:hidden rounded-lg" />
         <AppBreadcrumb />
 
         <div className="ml-auto flex items-center gap-1">

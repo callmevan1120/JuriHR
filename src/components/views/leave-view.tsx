@@ -202,7 +202,7 @@ function LeaveCard({ leave, onReview, onCancel }: { leave: Leave; onReview: () =
   const conflict = leave.status === "PENDING" ? leaveService.checkConflict(leave.employeeId, leave.startDate, leave.endDate, leave.id) : undefined;
 
   return (
-    <Card className="group border-border shadow-soft transition-all hover:shadow-soft-md">
+    <Card className="group border-border transition-all hover:border-primary/40">
       <CardContent className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">

@@ -111,7 +111,7 @@ export function NotificationView() {
       />
 
       {/* Category filter */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="py-3">
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <Filter className="size-4 shrink-0 text-muted-foreground" />
@@ -134,7 +134,7 @@ export function NotificationView() {
       </Card>
 
       {/* Notification list */}
-      <Card className="border-border shadow-soft">
+      <Card className="border-border ">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
             <EmptyState

@@ -88,11 +88,9 @@ export function EmployeesView() {
   const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; name: string } | null>(null);
   const [selected, setSelected] = React.useState<Employee[]>([]);
 
-  // Dialog State ERPNext Style
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  // Render Dedicated Full-Page Form ERPNext Style
   if (formOpen) {
     return (
       <EmployeeFormPage
@@ -103,7 +101,6 @@ export function EmployeesView() {
     );
   }
 
-  // Detail view jika ada ?id=
   if (selectedId) {
     const emp = employees.find((e) => e.id === selectedId);
     if (emp) {
@@ -247,7 +244,6 @@ export function EmployeesView() {
         const active = e.status === "AKTIF";
         return (
           <div className="flex items-center justify-end gap-1" onClick={(ev) => ev.stopPropagation()}>
-            {/* REVISI ITEM 3: Fix Preview Cepat Trigger Click */}
             <EmployeeQuickView employee={e}>
               <div
                 role="button"
@@ -297,40 +293,36 @@ export function EmployeesView() {
     },
   ];
 
-  // Stats
   const totalActive = employees.filter((e) => e.status === "AKTIF").length;
   const totalInactive = employees.filter((e) => e.status === "NONAKTIF").length;
   const totalResign = employees.filter((e) => e.status === "RESIGN").length;
 
   return (
-    <div className="space-y-5">
-      {/* Header dengan Responsive & Collapsible Buttons */}
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
         title="Data Karyawan"
         description="Kelola data karyawan lengkap dengan penempatan cabang/pabrik/gudang, rekening bank, serta histori."
         actions={
           <div className="flex items-center gap-2">
-            {/* Tampilan Desktop */}
             <div className="hidden sm:flex items-center gap-2">
-              <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <Upload className="size-3.5 text-primary" /> Import Data
               </Button>
-              <Button variant="outline" onClick={() => setExportOpen(true)} className="gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <Download className="size-3.5 text-primary" /> Export Data
               </Button>
-              <Button onClick={() => setFormOpen({ mode: "create" })} className="gap-1.5 text-xs">
+              <Button size="sm" onClick={() => setFormOpen({ mode: "create" })} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <Plus className="size-3.5" /> Tambah Karyawan
               </Button>
             </div>
 
-            {/* Tampilan Mobile Collapsible Menu */}
             <div className="flex sm:hidden items-center gap-2">
-              <Button size="sm" onClick={() => setFormOpen({ mode: "create" })} className="gap-1 text-xs">
+              <Button size="sm" onClick={() => setFormOpen({ mode: "create" })} className="gap-1 rounded-xl text-xs font-semibold">
                 <Plus className="size-3.5" /> Tambah
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="size-8">
+                  <Button variant="outline" size="icon" className="size-8 rounded-xl">
                     <MoreVertical className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -348,15 +340,15 @@ export function EmployeesView() {
         }
       />
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatPill icon={Users} label="Total Karyawan" value={employees.length} color="text-foreground" bg="bg-muted" />
-        <StatPill icon={UserCheck} label="Karyawan Aktif" value={totalActive} color="text-success" bg="bg-success/10" />
-        <StatPill icon={UserX} label="Nonaktif" value={totalInactive} color="text-warning" bg="bg-warning/10" />
-        <StatPill icon={UserMinus} label="Resign" value={totalResign} color="text-destructive" bg="bg-destructive/10" />
+      {/* Compact stats row */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-border/60 px-5 py-3">
+        <StatItem icon={Users} label="Total Karyawan" value={employees.length} color="text-foreground" />
+        <StatItem icon={UserCheck} label="Aktif" value={totalActive} color="text-success" />
+        <StatItem icon={UserX} label="Nonaktif" value={totalInactive} color="text-warning" />
+        <StatItem icon={UserMinus} label="Resign" value={totalResign} color="text-destructive" />
       </div>
 
-      <Card className="border-border shadow-soft">
+      <Card className="border-border/60 rounded-2xl">
         <CardContent className="pt-4">
           <DataTable
             tableKey="employees"
@@ -369,7 +361,7 @@ export function EmployeesView() {
             toolbar={
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-                  <SelectTrigger className="h-9 w-[160px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Outlet</SelectItem>
                     {outlets.map((o) => (
@@ -378,7 +370,7 @@ export function EmployeesView() {
                   </SelectContent>
                 </Select>
                 <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="h-9 w-[170px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Kategori</SelectItem>
                     <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
@@ -388,7 +380,7 @@ export function EmployeesView() {
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="h-9 w-[130px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Status</SelectItem>
                     <SelectItem value="AKTIF">Aktif</SelectItem>
@@ -403,6 +395,7 @@ export function EmployeesView() {
                 <Button
                   size="sm"
                   variant="outline"
+                  className="rounded-xl"
                   onClick={() => {
                     const count = employeeService.bulkUpdate(
                       rows.map((r) => r.id),
@@ -454,7 +447,6 @@ export function EmployeesView() {
         }}
       />
 
-      {/* Universal Import & Export Dialogs with Font Color Coding */}
       <UniversalImportDialog
         moduleTitle="Data Karyawan"
         open={importOpen}
@@ -538,30 +530,22 @@ export function EmployeesView() {
   );
 }
 
-function StatPill({
+function StatItem({
   icon: Icon,
   label,
   value,
   color,
-  bg,
 }: {
   icon: typeof Users;
   label: string;
   value: number;
   color: string;
-  bg: string;
 }) {
   return (
-    <Card className="border-border p-4 shadow-soft">
-      <div className="flex items-center gap-3">
-        <div className={cn("flex size-9 items-center justify-center rounded-lg", bg, color)}>
-          <Icon className="size-4" />
-        </div>
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="text-xl font-bold tabular-nums text-foreground">{value}</p>
-        </div>
-      </div>
-    </Card>
+    <div className="flex items-center gap-2">
+      <Icon className={cn("size-3.5 shrink-0", color)} />
+      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      <span className="text-xl font-bold tabular-nums text-foreground">{value}</span>
+    </div>
   );
 }

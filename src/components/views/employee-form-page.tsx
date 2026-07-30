@@ -36,7 +36,6 @@ import {
   ArrowLeft,
   Save,
   CheckCircle2,
-  Sparkles,
   Users,
   ChevronRight,
   ChevronLeft,
@@ -72,7 +71,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
   const [activeTab, setActiveTab] = React.useState<SectionTab>("penempatan");
 
-  // State Form Fields
   const [nik, setNik] = React.useState(data?.nik ?? "");
   const [fullName, setFullName] = React.useState(data?.fullName ?? "");
   const [gender, setGender] = React.useState<Gender>(data?.gender ?? "LAKILAKI");
@@ -95,13 +93,11 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
   const [supervisorId, setSupervisorId] = React.useState(data?.supervisorId ?? "");
   const [note, setNote] = React.useState(data?.note ?? "");
   
-  // Data Bank & Rekening + Custom Bank Support
   const [selectedBank, setSelectedBank] = React.useState(data?.bankName ?? "BCA");
   const [customBankName, setCustomBankName] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState(data?.accountNumber ?? "");
   const [accountHolderName, setAccountHolderName] = React.useState(data?.accountHolderName ?? "");
   
-  // Kontrak & Domisili + Koordinat LU/LT
   const [contractType, setContractType] = React.useState(data?.contractType ?? "PKWT");
   const [contractDurationMonths, setContractDurationMonths] = React.useState(String(data?.contractDurationMonths ?? 12));
   const [contractEndDate, setContractEndDate] = React.useState(
@@ -164,7 +160,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
     setError(undefined);
   }, [data]);
 
-  // Handler hitung tanggal akhir kontrak
   const handleDurationChange = (durStr: string) => {
     setContractDurationMonths(durStr);
     const months = Number(durStr);
@@ -213,7 +208,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
     }
   };
 
-  // Handler Google Maps URL & Raw Coords Regex Parser
   const handleMapsUrlChange = (url: string) => {
     setMapsUrl(url);
     const coords = parseGoogleMapsCoordinates(url);
@@ -366,9 +360,9 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 pb-12">
-      {/* Top Header Bar & Actions (Apple / Google Minimalist Style) */}
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
+    <form onSubmit={handleSubmit} className="space-y-5 pb-12">
+      {/* Top Header Bar */}
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/60 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -376,7 +370,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
               <Users className="size-5 text-primary" />
-              {mode === "edit" ? `Edit Data Karyawan — ${data?.fullName}` : "Tambah Karyawan Baru"}
+              {mode === "edit" ? `Edit Data Karyawan \u2014 ${data?.fullName}` : "Tambah Karyawan Baru"}
             </h1>
             <p className="text-xs text-muted-foreground">
               Formulir manajemen data karyawan JURI HR.
@@ -385,10 +379,10 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+          <Button variant="outline" type="button" size="sm" onClick={onBack} className="rounded-xl text-xs font-semibold">
             Batal
           </Button>
-          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+          <Button type="submit" size="sm" className="gap-1.5 font-semibold rounded-xl">
             <Save className="size-4" />
             {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
           </Button>
@@ -397,26 +391,26 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
 
       {/* Error Callout */}
       {error && (
-        <div className="mx-4 sm:mx-0 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+        <div className="mx-4 sm:mx-0 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
           <AlertCircle className="size-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Segmented Control Category Tab Bar (Google / Apple Style) */}
+      {/* Segmented Control */}
       <div className="px-1">
-        <div className="flex overflow-x-auto rounded-2xl bg-muted/60 p-1.5 border border-border/60 max-w-full">
+        <div className="flex overflow-x-auto rounded-2xl bg-muted/40 p-1 border border-border/60 max-w-full">
           <button
             type="button"
             onClick={() => setActiveTab("penempatan")}
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
               activeTab === "penempatan"
-                ? "bg-card text-foreground shadow-xs"
+                ? "bg-card text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/40"
             )}
           >
-            <Building2 className="size-3.5 text-primary" /> 1. Penempatan &amp; Status
+            <Building2 className="size-3.5 text-primary" /> 1. Penempatan & Status
           </button>
           <button
             type="button"
@@ -424,11 +418,11 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
               activeTab === "identitas"
-                ? "bg-card text-foreground shadow-xs"
+                ? "bg-card text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/40"
             )}
           >
-            <User className="size-3.5 text-primary" /> 2. Identitas &amp; Masa Kerja
+            <User className="size-3.5 text-primary" /> 2. Identitas & Masa Kerja
           </button>
           <button
             type="button"
@@ -436,11 +430,11 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
               activeTab === "kontrak"
-                ? "bg-card text-foreground shadow-xs"
+                ? "bg-card text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/40"
             )}
           >
-            <FileText className="size-3.5 text-primary" /> 3. Kontrak &amp; Gaji
+            <FileText className="size-3.5 text-primary" /> 3. Kontrak & Gaji
           </button>
           <button
             type="button"
@@ -448,7 +442,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
               activeTab === "rekening"
-                ? "bg-card text-foreground shadow-xs"
+                ? "bg-card text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/40"
             )}
           >
@@ -460,22 +454,22 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap",
               activeTab === "domisili"
-                ? "bg-card text-foreground shadow-xs"
+                ? "bg-card text-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/40"
             )}
           >
-            <MapPin className="size-3.5 text-primary" /> 5. Domisili &amp; Peta
+            <MapPin className="size-3.5 text-primary" /> 5. Domisili & Peta
           </button>
         </div>
       </div>
 
-      <div className="space-y-6 px-1">
-        {/* SECTION 1: Penempatan & Status Kepegawaian */}
+      <div className="space-y-5 px-1">
+        {/* SECTION 1: Penempatan */}
         {activeTab === "penempatan" && (
-          <Card id="section-penempatan" className="border-border shadow-soft">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-                <Building2 className="size-4" /> 1. Penempatan Lokasi &amp; Status Kepegawaian
+          <Card id="section-penempatan" className="rounded-2xl border border-border/60">
+            <CardHeader className="pb-3 border-b border-border/40">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <Building2 className="size-4" /> 1. Penempatan Lokasi & Status Kepegawaian
               </CardTitle>
               <CardDescription className="text-xs">
                 Pilih kategori unit penempatan kerja (Outlet, Pabrik PH Klaten, Gudang Jakarta, atau HQ).
@@ -510,7 +504,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               </FormRow>
 
               {category === "OUTLET" ? (
-                <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan (Shift &amp; Holiday Group terhubung otomatis)">
+                <Field label="Penempatan Outlet Cabang" required hint="Pilih cabang outlet JURI Bun tempat karyawan ditugaskan (Shift & Holiday Group terhubung otomatis)">
                   <Select value={primaryOutletId} onValueChange={handleOutletChange}>
                     <SelectTrigger className="bg-background font-medium">
                       <SelectValue placeholder="Pilih cabang outlet..." />
@@ -536,20 +530,20 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               )}
 
               <div className="flex items-center justify-end border-t border-border pt-4 mt-6">
-                <Button type="button" onClick={() => setActiveTab("identitas")} className="gap-1.5 font-semibold">
-                  Langkah 2: Identitas &amp; Masa Kerja <ChevronRight className="size-4" />
+                <Button type="button" size="sm" onClick={() => setActiveTab("identitas")} className="gap-1.5 font-semibold rounded-xl text-xs">
+                  Langkah 2: Identitas & Masa Kerja <ChevronRight className="size-4" />
                 </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* SECTION 2: Identitas Diri, Kontak & Masa Kerja */}
+        {/* SECTION 2: Identitas */}
         {activeTab === "identitas" && (
-          <Card id="section-identitas" className="border-border shadow-soft">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-                <User className="size-4" /> 2. Identitas Diri, Kontak &amp; Masa Kerja
+          <Card id="section-identitas" className="rounded-2xl border border-border/60">
+            <CardHeader className="pb-3 border-b border-border/40">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <User className="size-4" /> 2. Identitas Diri, Kontak & Masa Kerja
               </CardTitle>
               <CardDescription className="text-xs">
                 Lengkapi ID Karyawan, NIK, Nama Lengkap, Jenis Kelamin, Tanggal Bergabung, dan Tanggal Berakhir Masa Kerja.
@@ -657,7 +651,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
                   <SelectTrigger><SelectValue placeholder="Tanpa atasan langsung" /></SelectTrigger>
                   <SelectContent>
                     {supervisorCandidates.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.fullName} — {e.nik}</SelectItem>
+                      <SelectItem key={e.id} value={e.id}>{e.fullName} \u2014 {e.nik}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -665,26 +659,26 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </FormRow>
 
             <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("penempatan")} className="gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab("penempatan")} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <ChevronLeft className="size-4" /> Sebelumnya
               </Button>
-              <Button type="button" onClick={() => setActiveTab("kontrak")} className="gap-1.5 font-semibold">
-                Langkah 3: Kontrak &amp; Gaji <ChevronRight className="size-4" />
+              <Button type="button" size="sm" onClick={() => setActiveTab("kontrak")} className="gap-1.5 rounded-xl text-xs font-semibold">
+                Langkah 3: Kontrak & Gaji <ChevronRight className="size-4" />
               </Button>
             </div>
           </CardContent>
         </Card>
         )}
 
-        {/* SECTION 3: Kontrak Kerja & Gaji */}
+        {/* SECTION 3: Kontrak & Gaji */}
         {activeTab === "kontrak" && (
-        <Card id="section-kontrak" className="border-border shadow-soft">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-              <FileText className="size-4" /> 3. Detail Kontrak Kerja &amp; Kompensasi Gaji
+        <Card id="section-kontrak" className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-3 border-b border-border/40">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <FileText className="size-4" /> 3. Detail Kontrak Kerja & Kompensasi Gaji
             </CardTitle>
             <CardDescription className="text-xs">
-              Atur tipe kontrak, durasi bulan, skema gaji &amp; saldo cuti.
+              Atur tipe kontrak, durasi bulan, skema gaji & saldo cuti.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
@@ -736,10 +730,10 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </Field>
 
             <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("identitas")} className="gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab("identitas")} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <ChevronLeft className="size-4" /> Sebelumnya
               </Button>
-              <Button type="button" onClick={() => setActiveTab("rekening")} className="gap-1.5 font-semibold">
+              <Button type="button" size="sm" onClick={() => setActiveTab("rekening")} className="gap-1.5 rounded-xl text-xs font-semibold">
                 Langkah 4: Rekening Bank <ChevronRight className="size-4" />
               </Button>
             </div>
@@ -747,11 +741,11 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
         </Card>
         )}
 
-        {/* SECTION 4: Data Rekening Bank */}
+        {/* SECTION 4: Rekening */}
         {activeTab === "rekening" && (
-        <Card id="section-rekening" className="border-border shadow-soft">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
+        <Card id="section-rekening" className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-3 border-b border-border/40">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
               <CreditCard className="size-4" /> 4. Data Rekening Bank (Payroll)
             </CardTitle>
             <CardDescription className="text-xs">
@@ -818,23 +812,23 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </Field>
 
             <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("kontrak")} className="gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab("kontrak")} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <ChevronLeft className="size-4" /> Sebelumnya
               </Button>
-              <Button type="button" onClick={() => setActiveTab("domisili")} className="gap-1.5 font-semibold">
-                Langkah 5: Domisili &amp; Peta <ChevronRight className="size-4" />
+              <Button type="button" size="sm" onClick={() => setActiveTab("domisili")} className="gap-1.5 rounded-xl text-xs font-semibold">
+                Langkah 5: Domisili & Peta <ChevronRight className="size-4" />
               </Button>
             </div>
           </CardContent>
         </Card>
         )}
 
-        {/* SECTION 5: Domisili & Peta Lokasi Rumah */}
+        {/* SECTION 5: Domisili */}
         {activeTab === "domisili" && (
-        <Card id="section-domisili" className="border-border shadow-soft">
-          <CardHeader className="pb-3 border-b border-border/60">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-primary">
-              <MapPin className="size-4" /> 5. Alamat Domisili &amp; Peta Lokasi Rumah (Leaflet Real-time)
+        <Card id="section-domisili" className="rounded-2xl border border-border/60">
+          <CardHeader className="pb-3 border-b border-border/40">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <MapPin className="size-4" /> 5. Alamat Domisili & Peta Lokasi Rumah (Leaflet Real-time)
             </CardTitle>
             <CardDescription className="text-xs">
               Input alamat rumah, tautan peta Google Maps, atau pasang pasangan koordinat mentah dengan parser Regex.
@@ -850,7 +844,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               />
             </Field>
 
-            <Field label="Link Google Maps" hint="Tempel link Google Maps (semua format link &amp; titik koordinat otomatis terhubung ke peta)">
+            <Field label="Link Google Maps" hint="Tempel link Google Maps (semua format link & titik koordinat otomatis terhubung ke peta)">
               <Input
                 value={mapsUrl}
                 onChange={(e) => handleMapsUrlChange(e.target.value)}
@@ -900,7 +894,7 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
               </Field>
             </FormRow>
 
-            {/* Pratinjau Peta Interaktif Leaflet Real-time */}
+            {/* Pratinjau Peta */}
             <div className="space-y-1.5 pt-2">
               <div className="flex items-center justify-between text-xs font-semibold text-foreground">
                 <span>Pratinjau Peta Lokasi Rumah Karyawan (Real-time):</span>
@@ -934,10 +928,10 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </Field>
 
             <div className="flex items-center justify-between border-t border-border pt-4 mt-6">
-              <Button type="button" variant="outline" onClick={() => setActiveTab("rekening")} className="gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={() => setActiveTab("rekening")} className="gap-1.5 rounded-xl text-xs font-semibold">
                 <ChevronLeft className="size-4" /> Sebelumnya
               </Button>
-              <Button type="submit" className="gap-2 font-bold px-6">
+              <Button type="submit" size="sm" className="gap-2 font-bold rounded-xl text-xs">
                 <Save className="size-4" />
                 {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Karyawan"}
               </Button>

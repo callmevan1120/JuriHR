@@ -226,14 +226,14 @@ export function ShiftGroupsView() {
             return (
               <Card
                 key={shift.id}
-                className="group relative overflow-hidden border-border/80 shadow-xs rounded-2xl transition-all hover:-translate-y-0.5"
+                className="group relative overflow-hidden rounded-2xl border border-border/60 transition-all hover:-translate-y-0.5"
               >
                 <div className="h-1.5 w-full" style={{ background: shift.color }} />
                 <CardContent className="space-y-3 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5">
                       <div
-                        className="flex size-10 items-center justify-center rounded-xl text-white shadow-xs"
+                        className="flex size-10 items-center justify-center rounded-xl text-white"
                         style={{ background: shift.color }}
                       >
                         {shift.crossesMidnight ? <Moon className="size-5" /> : <Sun className="size-5" />}
@@ -274,12 +274,12 @@ export function ShiftGroupsView() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-border/60 px-2.5 py-1.5">
                       <AlarmClock className="size-3.5 text-muted-foreground" />
                       <span className="text-muted-foreground">Toleransi</span>
                       <span className="ml-auto font-semibold text-foreground">{shift.toleranceLateMinutes}m</span>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2.5 py-1.5">
+                    <div className="flex items-center gap-1.5 rounded-xl border border-border/60 px-2.5 py-1.5">
                       <Clock className="size-3.5 text-muted-foreground" />
                       <span className="text-muted-foreground">Durasi</span>
                       <span className="ml-auto font-semibold text-foreground">{formatDuration(duration)}</span>
@@ -422,7 +422,7 @@ function ShiftGroupCard({
   const targetDivisionNames = (group.divisionIds ?? []).map((id) => divisions.find((d) => d.id === id)?.name).filter(Boolean);
 
   return (
-    <Card className="group border-border/80 shadow-xs rounded-2xl transition-all hover:border-primary/40">
+    <Card className="group rounded-2xl border border-border/60 transition-all hover:border-primary/40">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -480,7 +480,7 @@ function ShiftGroupCard({
               >
                 <span className="text-[10px] font-bold text-muted-foreground">{label}</span>
                 <div
-                  className="mt-1 flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-white shadow-xs"
+                  className="mt-1 flex size-5 items-center justify-center rounded-full text-[9px] font-bold text-white"
                   style={{ background: color }}
                 >
                   {isOff ? "L" : shiftName.charAt(0)}
@@ -615,7 +615,7 @@ function ShiftGroupFormPage({
 
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -651,7 +651,7 @@ function ShiftGroupFormPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl">
+          <Card className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-base font-bold text-foreground">1. Profil Group &amp; Scope Multi-Outlet / Divisi</CardTitle>
             </CardHeader>
@@ -704,7 +704,7 @@ function ShiftGroupFormPage({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 shadow-xs rounded-2xl">
+          <Card className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-base font-bold text-foreground">2. Pola Jam Kerja Mingguan (Senin – Minggu)</CardTitle>
             </CardHeader>
@@ -745,7 +745,7 @@ function ShiftGroupFormPage({
         </div>
 
         <div className="space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl">
+          <Card className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
                 <span>Anggota Karyawan</span>

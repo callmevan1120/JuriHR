@@ -121,7 +121,6 @@ export function OutletView() {
     );
   }
 
-  // Detail view jika ada ?id= (REVISI: Reset state dialog saat Kembali)
   if (selectedId) {
     const outlet = outlets.find((o) => o.id === selectedId);
     if (outlet) {
@@ -238,7 +237,7 @@ export function OutletView() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
         title="Outlet Cabang"
         description="Master outlet dengan geofence, kepala outlet, dan statistik karyawan."
@@ -265,7 +264,7 @@ export function OutletView() {
         }
       />
 
-      <Card className="border-border shadow-soft">
+      <Card className="rounded-2xl border border-border/60">
         <CardContent className="pt-4">
           <DataTable
             columns={columns}
@@ -279,8 +278,6 @@ export function OutletView() {
           />
         </CardContent>
       </Card>
-
-
 
       <ConfirmDialog
         open={!!confirm}
@@ -346,7 +343,7 @@ export function OutletView() {
 }
 
 // ------------------------------------------------------------
-// Outlet Detail (REVISI: Mandiri mengelola dialog edit lokal)
+// Outlet Detail
 // ------------------------------------------------------------
 function OutletDetail({
   outlet,
@@ -373,7 +370,7 @@ function OutletDetail({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="outline" size="icon" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
           <ArrowLeft className="size-4" />
@@ -386,13 +383,13 @@ function OutletDetail({
         description={outlet.address}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
+            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5 rounded-xl font-semibold text-xs">
               <Pencil className="size-4 text-primary" /> Edit Outlet
             </Button>
             <Button
               variant="outline"
               onClick={() => setDeleteConfirm(true)}
-              className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+              className="gap-1.5 rounded-xl font-semibold text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
             >
               <Trash2 className="size-4" /> Hapus Outlet
             </Button>
@@ -401,18 +398,18 @@ function OutletDetail({
       />
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         <MiniStat icon={Users} label="Total Karyawan" value={String(stats.totalEmployees)} accent="primary" />
         <MiniStat icon={Navigation} label="Rata-rata Jarak" value={stats.avgDistanceKm > 0 ? formatDistance(stats.avgDistanceKm) : "—"} accent="info" />
         <MiniStat icon={Ruler} label="Radius Geofence" value={`${outlet.geofenceRadiusMeters} m`} accent="warning" />
         <MiniStat icon={Building2} label="Klasifikasi" value={CLASSIFICATION_LABEL[outlet.classification]} accent="neutral" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
         {/* Info outlet */}
-        <Card className="border-border shadow-soft lg:col-span-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="rounded-2xl border border-border/60 lg:col-span-1">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Building2 className="size-4 text-primary" /> Informasi Outlet
             </CardTitle>
           </CardHeader>
@@ -443,9 +440,9 @@ function OutletDetail({
         </Card>
 
         {/* Distribusi posisi + jarak */}
-        <Card className="border-border shadow-soft lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
+        <Card className="rounded-2xl border border-border/60 lg:col-span-2">
+          <CardHeader className="pb-2 border-b border-border/40">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Users className="size-4 text-primary" /> Karyawan per Posisi
             </CardTitle>
             <CardDescription className="text-xs">Distribusi &amp; jarak domisili terdekat/terjauh</CardDescription>
@@ -456,7 +453,7 @@ function OutletDetail({
             ) : (
               <div className="space-y-2">
                 {stats.byPosition.map((p) => (
-                  <div key={p.name} className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2">
+                  <div key={p.name} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
                     <span className="text-sm font-medium text-foreground">{p.name}</span>
                     <Badge className="bg-primary/15 text-primary-foreground border-primary/30">{p.count} orang</Badge>
                   </div>
@@ -464,7 +461,7 @@ function OutletDetail({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 pt-2">
               <div className="rounded-lg border border-success/30 bg-success/5 p-3">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-success">Terdekat</p>
                 {stats.nearest ? (
@@ -489,10 +486,10 @@ function OutletDetail({
       </div>
 
       {/* Peta Lokasi Outlet & Geofence Card */}
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-2 border-b border-border/40">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <MapPin className="size-4 text-primary" /> Peta Lokasi Cabang &amp; Radius Geofence Presensi
             </CardTitle>
             <a
@@ -523,9 +520,9 @@ function OutletDetail({
       </Card>
 
       {/* Daftar karyawan outlet */}
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-2 border-b border-border/40">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
             <Crown className="size-4 text-primary" /> Daftar Karyawan
           </CardTitle>
           <CardDescription className="text-xs">{outletEmps.length} karyawan di outlet ini</CardDescription>
@@ -540,7 +537,7 @@ function OutletDetail({
               return (
                 <div
                   key={e.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-muted/30"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-border/60 bg-card p-3 transition-colors hover:border-primary/40"
                   onClick={() => (window.location.hash = `#/karyawan?id=${e.id}`)}
                 >
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary-foreground">
@@ -565,8 +562,6 @@ function OutletDetail({
           ) : null}
         </CardContent>
       </Card>
-
-
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -604,7 +599,7 @@ function MiniStat({
     neutral: "bg-muted text-muted-foreground",
   };
   return (
-    <Card className="border-border p-4 shadow-soft">
+    <div className="rounded-2xl border border-border/60 p-4">
       <div className="flex items-center gap-3">
         <div className={cn("flex size-9 items-center justify-center rounded-lg", styles[accent])}>
           <Icon className="size-4" />
@@ -614,12 +609,12 @@ function MiniStat({
           <p className="truncate text-lg font-bold text-foreground">{value}</p>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
 // ------------------------------------------------------------
-// Full-Page Outlet Form Page (ERPNext Full Page Architecture)
+// Full-Page Outlet Form Page
 // ------------------------------------------------------------
 function OutletFormPage({
   mode,
@@ -704,7 +699,7 @@ function OutletFormPage({
   return (
     <form onSubmit={submit} className="space-y-6 pb-12">
       {/* Top Bar Navigation */}
-      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
             <ArrowLeft className="size-4" />
@@ -721,10 +716,10 @@ function OutletFormPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
+          <Button variant="outline" type="button" onClick={onBack} className="gap-1.5 rounded-xl font-semibold text-xs">
             Batal
           </Button>
-          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5 text-xs">
             <Save className="size-4" />
             {mode === "edit" ? "Simpan Perubahan" : "Simpan Data Outlet"}
           </Button>
@@ -741,9 +736,9 @@ function OutletFormPage({
       {/* Main Full-Page Form Cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">1. Identitas &amp; Klasifikasi Outlet</CardTitle>
+          <Card className="rounded-2xl border border-border/60">
+            <CardHeader className="pb-2 border-b border-border/40">
+              <CardTitle className="text-sm font-semibold">1. Identitas &amp; Klasifikasi Outlet</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <FormRow>
@@ -785,9 +780,9 @@ function OutletFormPage({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 shadow-xs rounded-2xl">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">2. Alamat, Link Maps &amp; Koordinat Regex</CardTitle>
+          <Card className="rounded-2xl border border-border/60">
+            <CardHeader className="pb-2 border-b border-border/40">
+              <CardTitle className="text-sm font-semibold">2. Alamat, Link Maps &amp; Koordinat Regex</CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
               <Field label="Link Google Maps (Opsional)" hint="Tempel link peta untuk mengekstrak koordinat otomatis">
@@ -828,9 +823,9 @@ function OutletFormPage({
 
         {/* Map Preview Column */}
         <div className="space-y-6">
-          <Card className="border-border/80 shadow-xs rounded-2xl overflow-hidden">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground flex items-center justify-between">
+          <Card className="rounded-2xl border border-border/60 overflow-hidden">
+            <CardHeader className="pb-2 border-b border-border/40">
+              <CardTitle className="text-sm font-semibold flex items-center justify-between">
                 <span>Pratinjau Peta Lokasi</span>
                 <span className="font-mono text-[10px] text-muted-foreground font-normal">
                   Lat: {Number(lat).toFixed(4)}, Lon: {Number(lon).toFixed(4)}
@@ -854,9 +849,9 @@ function OutletFormPage({
             </CardContent>
           </Card>
 
-          <Card className="border-border/80 shadow-xs rounded-2xl">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">Catatan Internal</CardTitle>
+          <Card className="rounded-2xl border border-border/60">
+            <CardHeader className="pb-2 border-b border-border/40">
+              <CardTitle className="text-sm font-semibold">Catatan Internal</CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="Catatan fasilitas, area parkir, atau operasional outlet..." />

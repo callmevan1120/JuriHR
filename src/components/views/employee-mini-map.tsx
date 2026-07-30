@@ -7,7 +7,6 @@ import "leaflet/dist/leaflet.css";
 import type { Outlet } from "@/lib/types";
 import { formatDistance, haversineKm } from "@/lib/utils";
 
-// Fix default marker icons (Leaflet bundling issue)
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -15,7 +14,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// Custom gold marker for employee domicile
 const employeeIcon = L.divIcon({
   html: `<div style="background:#FCBA0C;width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #3A2518;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
   className: "employee-marker",
@@ -23,7 +21,6 @@ const employeeIcon = L.divIcon({
   iconAnchor: [9, 18],
 });
 
-// Outlet marker (store icon)
 const outletIcon = L.divIcon({
   html: `<div style="background:#3A2518;width:20px;height:20px;border-radius:4px;border:2px solid #FCBA0C;display:flex;align-items:center;justify-content:center;color:#FCBA0C;font-size:11px;font-weight:bold;">O</div>`,
   className: "outlet-marker",
@@ -41,12 +38,10 @@ interface Props {
   height?: number;
 }
 
-/** Recenter map when lat/lon changes externally. */
 function Recenter({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap();
   React.useEffect(() => {
     if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      // Invalidate container size for modal dialogs and recenter
       const timer = setTimeout(() => {
         try {
           map.invalidateSize();
@@ -61,7 +56,6 @@ function Recenter({ lat, lon }: { lat: number; lon: number }) {
   return null;
 }
 
-/** Click handler for editable maps. */
 function ClickHandler({ onPick }: { onPick?: (lat: number, lon: number) => void }) {
   useMapEvents({
     click(e) {
@@ -142,7 +136,7 @@ export function EmployeeMiniMap({
         </p>
       ) : outlet ? (
         <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-          Marker kuning = domisili · Marker coklat = outlet utama · Jarak {formatDistance(haversineKm(validLat, validLon, outlet.latitude, outlet.longitude))}
+          Marker kuning = domisili, Marker coklat = outlet utama, Jarak {formatDistance(haversineKm(validLat, validLon, outlet.latitude, outlet.longitude))}
         </p>
       ) : null}
     </div>

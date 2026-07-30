@@ -99,7 +99,7 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="outline" size="icon" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
           <ArrowLeft className="size-4" />
@@ -107,17 +107,17 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         <span className="font-medium text-foreground">Detail Karyawan</span>
       </div>
 
-      {/* Header card dengan info utama */}
-      <Card className="overflow-hidden border-border shadow-soft">
+      {/* Profile header */}
+      <Card className="rounded-2xl border border-border/60">
         <CardContent className="p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-xl font-bold shadow-sm">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold">
                 {initials(employee.fullName)}
               </div>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-semibold tracking-tight text-foreground">{employee.fullName}</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-foreground">{employee.fullName}</h2>
                   <StatusBadge status={employee.status} />
                   <Badge
                     className={cn(
@@ -148,17 +148,17 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
               </div>
             </div>
             
-            {/* Action Buttons: Edit & Hapus */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5">
-                <Pencil className="size-4 text-primary" /> Edit Data Karyawan
+              <Button variant="outline" size="sm" onClick={handleOpenEdit} className="gap-1.5 rounded-xl text-xs font-semibold">
+                <Pencil className="size-3.5 text-primary" /> Edit Data Karyawan
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setDeleteConfirm(true)}
-                className="gap-1.5 text-destructive hover:bg-destructive/10 border-destructive/30"
+                className="gap-1.5 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive/10 border-destructive/30"
               >
-                <Trash2 className="size-4" /> Hapus Karyawan
+                <Trash2 className="size-3.5" /> Hapus Karyawan
               </Button>
             </div>
           </div>
@@ -191,7 +191,6 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         <TabsContent value="histori"><HistoriTab employee={employee} /></TabsContent>
       </Tabs>
 
-      {/* Edit Form Dialog */}
       <EmployeeFormDialog
         open={editOpen}
         onOpenChange={setEditOpen}
@@ -199,7 +198,6 @@ export function EmployeeDetail({ employee, onEdit, onBack }: Props) {
         data={employee}
       />
 
-      {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteConfirm}
         onOpenChange={setDeleteConfirm}
@@ -227,7 +225,7 @@ function TabTrigger({
   label: string;
 }) {
   return (
-    <TabsTrigger value={value} className="gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-soft">
+    <TabsTrigger value={value} className="gap-1.5 data-[state=active]:bg-card">
       <Icon className="size-3.5" />
       {label}
     </TabsTrigger>
@@ -235,7 +233,7 @@ function TabTrigger({
 }
 
 // ------------------------------------------------------------
-// Tab Profil (REVISI ITEM 5: Flow Vertikal Turun ke Bawah 1 Kolom)
+// Tab Profil
 // ------------------------------------------------------------
 function ProfilTab({ employee }: { employee: Employee }) {
   const categoryLabels: Record<string, string> = {
@@ -246,16 +244,13 @@ function ProfilTab({ employee }: { employee: Employee }) {
   };
 
   return (
-    <Card className="border-border shadow-soft overflow-hidden">
-      <CardHeader className="border-b border-border/60 bg-muted/20 pb-3">
+    <Card className="rounded-2xl border border-border/60">
+      <CardHeader className="border-b border-border/40 pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+            <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               <User className="size-4 text-primary" /> Profil Karyawan Terintegrasi
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              Rangkuman identitas diri, penempatan kerja, rekening payroll, serta kontrak dalam alur vertikal yang rapi.
-            </CardDescription>
           </div>
           <Badge variant="outline" className="font-mono text-xs">
             {employee.nik}
@@ -263,8 +258,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
         </div>
       </CardHeader>
 
-      <CardContent className="p-6 space-y-6">
-        {/* Callout Info Kredensial Login v2 */}
+      <CardContent className="p-5 space-y-5">
         <div className="flex items-center gap-3 rounded-xl border border-info/30 bg-info/5 p-3.5 text-xs text-info dark:text-info-foreground">
           <KeyRound className="size-4 shrink-0 text-info" />
           <span>
@@ -272,12 +266,12 @@ function ProfilTab({ employee }: { employee: Employee }) {
           </span>
         </div>
 
-        {/* Section Vertikal 1: Identitas Diri & Kredensial Login */}
+        {/* 1. Identitas Diri */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
-            <User className="size-3.5" /> 1. Identitas Diri &amp; Kontak Karyawan
+            <User className="size-3.5" /> 1. Identitas Diri & Kontak Karyawan
           </h4>
-          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+          <div className="divide-y divide-border/60 text-xs rounded-xl border border-border/60 px-4">
             <InfoRow label="NIK (Nomor Induk)" value={<span className="font-mono font-bold text-foreground">{employee.nik}</span>} />
             <InfoRow label="Nama Lengkap" value={employee.fullName} />
             <InfoRow
@@ -349,12 +343,12 @@ function ProfilTab({ employee }: { employee: Employee }) {
           </div>
         </div>
 
-        {/* Section Vertikal 2: Penempatan & Struktur Organisasi */}
+        {/* 2. Penempatan & Struktur */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b border-border pb-1.5 flex items-center gap-1.5">
-            <Building2 className="size-3.5" /> 2. Penempatan &amp; Struktur Organisasi
+            <Building2 className="size-3.5" /> 2. Penempatan & Struktur Organisasi
           </h4>
-          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+          <div className="divide-y divide-border/60 text-xs rounded-xl border border-border/60 px-4">
             <InfoRow
               label="Kategori Karyawan"
               value={
@@ -382,12 +376,12 @@ function ProfilTab({ employee }: { employee: Employee }) {
           </div>
         </div>
 
-        {/* Section Vertikal 3: Rekening Bank Payroll */}
+        {/* 3. Rekening Bank */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
             <CreditCard className="size-3.5 text-primary" /> 3. Data Rekening Bank (Payroll)
           </h4>
-          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+          <div className="divide-y divide-border/60 text-xs rounded-xl border border-border/60 px-4">
             <InfoRow label="Nama Bank Payroll" value={<span className="font-semibold text-foreground">{employee.bankName || "—"}</span>} />
             <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "—"}</span>} />
             <InfoRow label="Atas Nama Rekening" value={employee.accountHolderName || employee.fullName} />
@@ -404,12 +398,12 @@ function ProfilTab({ employee }: { employee: Employee }) {
           </div>
         </div>
 
-        {/* Section Vertikal 4: Kontrak Kerja & Domisili Rumah */}
+        {/* 4. Kontrak & Domisili */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1.5 flex items-center gap-1.5">
-            <ScrollText className="size-3.5 text-primary" /> 4. Detail Kontrak Kerja &amp; Lokasi Rumah
+            <ScrollText className="size-3.5 text-primary" /> 4. Detail Kontrak Kerja & Lokasi Rumah
           </h4>
-          <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
+          <div className="divide-y divide-border/60 text-xs rounded-xl border border-border/60 px-4">
             <InfoRow label="Jenis / Tipe Kontrak" value={<Badge variant="outline">{employee.contractType || "PKWT"}</Badge>} />
             <InfoRow label="Durasi Kontrak" value={`${employee.contractDurationMonths || 12} Bulan`} />
             <InfoRow
@@ -460,13 +454,13 @@ function ProfilTab({ employee }: { employee: Employee }) {
           </div>
         </div>
 
-        {/* Section Vertikal 5: Catatan Internal HRD & Metadata */}
-        <div className="rounded-xl border border-border/80 bg-muted/20 p-4 space-y-2">
+        {/* Catatan HRD */}
+        <div className="rounded-xl border border-border/60 p-4 space-y-2">
           <h4 className="text-xs font-semibold text-foreground">Catatan Internal HRD:</h4>
           <p className="text-xs text-muted-foreground">
             {employee.note ? employee.note : "Tidak ada catatan khusus untuk karyawan ini."}
           </p>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border/60 pt-2.5 text-[11px] text-muted-foreground">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border pt-2.5 text-[11px] text-muted-foreground">
             <div>
               <span>Dibuat pada: </span>
               <span className="font-medium text-foreground">{formatDateMed(employee.createdAt)}</span>
@@ -489,14 +483,14 @@ function DomicileTab({ employee }: { employee: Employee }) {
   const [editing, setEditing] = React.useState(false);
   return (
     <div className="space-y-4">
-      <Card className="border-border shadow-soft overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/15 px-6 py-4">
-          <CardTitle className="text-base font-semibold">Alamat Domisili &amp; Pemetaan Lokasi</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1.5">
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 px-5 py-3.5">
+          <CardTitle className="text-sm font-semibold">Alamat Domisili & Pemetaan Lokasi</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1.5 rounded-xl text-xs font-semibold">
             <Pencil className="size-3.5" /> Edit Domisili
           </Button>
         </CardHeader>
-        <div className="p-6">
+        <div className="p-5">
           <DomicileEditor employee={employee} editing={editing} onClose={() => setEditing(false)} onEdit={() => setEditing(true)} />
         </div>
       </Card>
@@ -518,7 +512,7 @@ function KontrakTab({ employee }: { employee: Employee }) {
         const reminder = contractService.reminderCategory(c.endDate);
         const isLatest = i === 0;
         return (
-          <Card key={c.id} className={cn("border-border shadow-soft", isLatest && "border-primary/40 ring-1 ring-primary/20")}>
+          <Card key={c.id} className={cn("rounded-2xl border-border/60", isLatest && "border-primary/40 ring-1 ring-primary/20")}>
             <CardContent className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -549,7 +543,7 @@ function KontrakTab({ employee }: { employee: Employee }) {
               </div>
               {c.note ? <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">{c.note}</p> : null}
               {c.previousContractId ? (
-                <p className="mt-2 text-[11px] text-muted-foreground">↳ Perpanjangan dari kontrak sebelumnya.</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">Perpanjangan dari kontrak sebelumnya.</p>
               ) : null}
             </CardContent>
           </Card>
@@ -569,10 +563,10 @@ function JadwalTab({ employee }: { employee: Employee }) {
     return <EmptyState title="Belum ada jadwal" description="Karyawan ini belum memiliki jadwal." />;
   }
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="rounded-2xl border border-border/60">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Jadwal 7 Hari Terakhir</CardTitle>
-        <CardDescription className="text-xs">Sumber: shift group &amp; jadwal manual</CardDescription>
+        <CardTitle className="text-sm font-semibold">Jadwal 7 Hari Terakhir</CardTitle>
+        <CardDescription className="text-xs">Sumber: shift group & jadwal manual</CardDescription>
       </CardHeader>
       <CardContent className="divide-y divide-border">
         {schedules.map((sc) => {
@@ -614,9 +608,9 @@ function AbsensiTab({ employee }: { employee: Employee }) {
     return <EmptyState title="Belum ada absensi" description="Karyawan ini belum memiliki record absensi." />;
   }
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="rounded-2xl border border-border/60">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Riwayat Absensi</CardTitle>
+        <CardTitle className="text-sm font-semibold">Riwayat Absensi</CardTitle>
       </CardHeader>
       <CardContent className="divide-y divide-border">
         {attendances.map((a) => (
@@ -629,8 +623,8 @@ function AbsensiTab({ employee }: { employee: Employee }) {
               <div>
                 <p className="text-sm font-medium text-foreground">{formatDateMed(a.date)}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {a.checkIn ? `In: ${a.checkIn.slice(11, 16)}` : "—"} {a.checkOut ? `· Out: ${a.checkOut.slice(11, 16)}` : ""}
-                  {a.lateMinutes > 0 ? ` · Telat ${a.lateMinutes}m` : ""}
+                  {a.checkIn ? `In: ${a.checkIn.slice(11, 16)}` : "—"} {a.checkOut ? `Out: ${a.checkOut.slice(11, 16)}` : ""}
+                  {a.lateMinutes > 0 ? ` Telat ${a.lateMinutes}m` : ""}
                 </p>
               </div>
             </div>
@@ -654,9 +648,9 @@ function CutiTab({ employee }: { employee: Employee }) {
     return <EmptyState title="Belum ada pengajuan cuti" description="Karyawan ini belum pernah mengajukan cuti/izin/sakit." />;
   }
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="rounded-2xl border border-border/60">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Riwayat Cuti / Izin / Sakit</CardTitle>
+        <CardTitle className="text-sm font-semibold">Riwayat Cuti / Izin / Sakit</CardTitle>
         <Badge className="bg-primary/15 text-primary-foreground border-primary/30">Saldo: {employee.leaveBalanceDays} hari</Badge>
       </CardHeader>
       <CardContent className="divide-y divide-border">
@@ -689,8 +683,8 @@ function LemburTab({ employee }: { employee: Employee }) {
   }
   return (
     <div className="space-y-4">
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3"><CardTitle className="text-base">Planning Lembur</CardTitle></CardHeader>
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Planning Lembur</CardTitle></CardHeader>
         <CardContent className="divide-y divide-border">
           {plannings.map((p) => (
             <div key={p.id} className="py-2.5">
@@ -698,15 +692,15 @@ function LemburTab({ employee }: { employee: Employee }) {
                 <span className="font-mono text-xs font-medium text-foreground">{p.requestNo}</span>
                 <StatusBadge status={p.status} />
               </div>
-              <p className="mt-1 text-sm text-foreground">{formatDateMed(p.date)} · {p.startTime}–{p.endTime} ({formatDuration(p.durationMinutes)})</p>
+              <p className="mt-1 text-sm text-foreground">{formatDateMed(p.date)} {p.startTime}–{p.endTime} ({formatDuration(p.durationMinutes)})</p>
               <p className="text-[11px] text-muted-foreground">{p.reason}</p>
             </div>
           ))}
           {plannings.length === 0 ? <p className="py-3 text-center text-xs text-muted-foreground">Tidak ada planning.</p> : null}
         </CardContent>
       </Card>
-      <Card className="border-border shadow-soft">
-        <CardHeader className="pb-3"><CardTitle className="text-base">Actual Lembur</CardTitle></CardHeader>
+      <Card className="rounded-2xl border border-border/60">
+        <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Actual Lembur</CardTitle></CardHeader>
         <CardContent className="divide-y divide-border">
           {actuals.map((a) => (
             <div key={a.id} className="py-2.5">
@@ -716,9 +710,9 @@ function LemburTab({ employee }: { employee: Employee }) {
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {a.actualStart && a.actualEnd ? `${a.actualStart.slice(11, 16)}–${a.actualEnd.slice(11, 16)}` : "Belum diisi"}
-                {a.actualDurationMinutes ? ` · ${formatDuration(a.actualDurationMinutes)}` : ""}
-                {!a.planningId ? " · ⚠ Tanpa planning" : ""}
-                {a.estimatedNominal > 0 ? ` · ${formatRupiah(a.estimatedNominal)}` : ""}
+                {a.actualDurationMinutes ? ` ${formatDuration(a.actualDurationMinutes)}` : ""}
+                {!a.planningId ? " Tanpa planning" : ""}
+                {a.estimatedNominal > 0 ? ` ${formatRupiah(a.estimatedNominal)}` : ""}
               </p>
             </div>
           ))}
@@ -743,9 +737,9 @@ function PayrollTab({ employee }: { employee: Employee }) {
       {payrolls.map((p) => {
         const period = periods.find((pp) => pp.id === p.periodId);
         return (
-          <Card key={p.id} className="border-border shadow-soft">
+          <Card key={p.id} className="rounded-2xl border border-border/60">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Periode {period?.period ?? p.periodId}</CardTitle>
+              <CardTitle className="text-sm font-semibold">Periode {period?.period ?? p.periodId}</CardTitle>
               <StatusBadge status={p.status} />
             </CardHeader>
             <CardContent>
@@ -798,9 +792,9 @@ function HistoriTab({ employee }: { employee: Employee }) {
     supervisorId: "Atasan",
   };
   return (
-    <Card className="border-border shadow-soft">
+    <Card className="rounded-2xl border border-border/60">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <History className="size-4 text-primary" /> Histori Perubahan
         </CardTitle>
       </CardHeader>
@@ -821,7 +815,7 @@ function HistoriTab({ employee }: { employee: Employee }) {
                   {h.oldValue ? <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-destructive line-through">{h.oldValue}</span> : null}
                   {h.newValue ? <span className="rounded bg-success/10 px-1.5 py-0.5 text-success">{h.newValue}</span> : null}
                 </div>
-                <p className="text-[11px] text-muted-foreground">Oleh: {h.changedBy}{h.reason ? ` · ${h.reason}` : ""}</p>
+                <p className="text-[11px] text-muted-foreground">Oleh: {h.changedBy}{h.reason ? ` ${h.reason}` : ""}</p>
               </div>
             </div>
           ))}
