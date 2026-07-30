@@ -212,31 +212,29 @@ export function DataTable<TData, TValue>({
   const hiddenCols = table.getAllColumns().filter((c) => c.getCanHide() && !c.getIsVisible());
 
   return (
-    <div className={cn("space-y-3", className)}>
-      {/* Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="relative w-full max-w-xs">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className={cn("space-y-2.5", className)}>
+      {/* Toolbar — compact, mobile-first */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-wrap items-center gap-1.5">
+          <div className="relative w-full sm:max-w-[220px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
               placeholder={searchPlaceholder}
-              className="pl-8"
+              className="h-9 pl-8 text-xs rounded-xl"
             />
           </div>
           {toolbar}
 
-          {/* ERPNext Configure Columns Gear Icon Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setConfigDialogOpen(true)}
-            className="h-9 gap-1.5 text-xs font-semibold rounded-xl border-border/80 hover:bg-muted/50"
-            title="Configure Columns (Pengaturan Kolom Tabel)"
+            className="h-9 gap-1.5 text-xs font-semibold rounded-xl border-border/60 hover:bg-muted/40"
           >
-            <Settings className="size-4 text-primary" />
-            <span>Pengaturan Kolom</span>
+            <Settings className="size-3.5 text-muted-foreground" />
+            <span className="hidden sm:inline">Kolom</span>
           </Button>
 
           {/* ERPNext Configure Columns Dialog (Matching User Image) */}
@@ -377,22 +375,69 @@ export function DataTable<TData, TValue>({
         </div>
 
         {hasSelection && bulkActions ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5">
-            <span className="text-xs font-medium text-foreground">
-              {selectedRows.length} dipilih
-            </span>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs">
+            <span className="font-medium">{selectedRows.length} dipilih</span>
             {bulkActions(selectedRows)}
           </div>
         ) : null}
       </div>
 
-      {/* Main Table */}
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+      {/* Mobile card list (under md) */}
+      <div className="block md:hidden">
+        {table.getRowModel().rows.length ? (
+          <div className="space-y-2">
+            {table.getRowModel().rows.map((row) => {
+              const cells = row.getVisibleCells();
+              const onClick = onRowClick ? () => onRowClick(row.original) : undefined;
+              return (
+                <div
+                  key={row.id}
+                  onClick={onClick}
+                  className={cn(
+                    "rounded-xl border border-border/60 bg-card px-3.5 py-3",
+                    onClick && "cursor-pointer active:scale-[0.99]",
+                  )}
+                >
+                  <div className="space-y-1.5">
+                    {cells.map((cell, i) => {
+                      const col = cell.column.columnDef;
+                      const header = typeof col.header === "string" ? col.header : col.id;
+                      if (i === 0) {
+                        return (
+                          <div key={cell.id} className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground shrink-0">{header}</span>
+                            <span className="text-xs font-bold text-foreground truncate">
+                              {flexRender(col.cell, cell.getContext())}
+                            </span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={cell.id} className="flex items-center gap-2 text-[11px]">
+                          <span className="text-muted-foreground shrink-0">{header}</span>
+                          <span className="text-foreground truncate">
+                            {flexRender(col.cell, cell.getContext())}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-16 text-center text-xs text-muted-foreground">{emptyMessage}</div>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-border/60 bg-card">
         <div className="overflow-x-auto data-table-wrapper">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border/60">
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border/50">
                   {headerGroup.headers.map((header) => {
                     const isSorted = header.column.getIsSorted();
                     const isSticky = !!stickyColumns[header.column.id];
@@ -497,78 +542,23 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Tampilkan</span>
-          <Select
-            value={String(currentLimit)}
-            onValueChange={(val) => table.setPageSize(Number(val))}
-          >
-            <SelectTrigger className="h-8 w-16 text-xs">
-              <SelectValue />
-            </SelectTrigger>
+      {/* Pagination */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-0.5">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Select value={String(currentLimit)} onValueChange={(val) => table.setPageSize(Number(val))}>
+            <SelectTrigger className="h-8 w-14 text-[11px] rounded-lg"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {[5, 10, 20, 50, 100].map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size}
-                </SelectItem>
-              ))}
+              {[5, 10, 20, 50, 100].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
             </SelectContent>
           </Select>
-          <span>
-            {totalRows > 0
-              ? `Menampilkan ${startRow}–${endRow} dari ${totalRows} data`
-              : "0 data"}
-          </span>
+          <span className="hidden sm:inline">{totalRows > 0 ? `${startRow}\u2013${endRow} dari ${totalRows}` : "0 data"}</span>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            title="Halaman Pertama"
-          >
-            <ChevronsLeft className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            title="Halaman Sebelumnya"
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-
-          <span className="px-2 text-xs font-medium text-foreground">
-            Halaman {pageIndex + 1} dari {table.getPageCount() || 1}
-          </span>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            title="Halaman Selanjutnya"
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-            title="Halaman Terakhir"
-          >
-            <ChevronsRight className="size-4" />
-          </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" className="size-8 hidden sm:flex" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeft className="size-3.5" /></Button>
+          <Button variant="outline" size="icon" className="size-8" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeft className="size-3.5" /></Button>
+          <span className="px-1.5 text-[11px] font-medium text-foreground tabular-nums">{pageIndex + 1}/{table.getPageCount() || 1}</span>
+          <Button variant="outline" size="icon" className="size-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}><ChevronRight className="size-3.5" /></Button>
+          <Button variant="outline" size="icon" className="size-8 hidden sm:flex" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRight className="size-3.5" /></Button>
         </div>
       </div>
     </div>

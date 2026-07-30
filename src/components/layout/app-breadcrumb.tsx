@@ -19,45 +19,42 @@ export function AppBreadcrumb() {
   const isDashboard = route.path === "#/" || route.path === "#" || !route.path;
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList className="text-xs sm:text-sm font-medium">
-        {/* Home / Dashboard link */}
-        <BreadcrumbItem>
+    <Breadcrumb className="min-w-0 flex-1">
+      <BreadcrumbList className="text-xs font-medium flex-nowrap overflow-hidden">
+        <BreadcrumbItem className="shrink-0">
           {isDashboard ? (
-            <BreadcrumbPage className="font-bold text-foreground flex items-center gap-1.5">
-              <Home className="size-3.5 text-primary" /> Dashboard
+            <BreadcrumbPage className="font-semibold text-foreground flex items-center gap-1">
+              <Home className="size-3.5 text-primary shrink-0" /> Dashboard
             </BreadcrumbPage>
           ) : (
             <BreadcrumbLink
-              className="cursor-pointer hover:text-foreground flex items-center gap-1.5 transition-colors text-muted-foreground"
+              className="cursor-pointer hover:text-foreground flex items-center gap-1 transition-colors text-muted-foreground shrink-0"
               onClick={() => navigate("#/")}
             >
-              <Home className="size-3.5" /> Dashboard
+              <Home className="size-3.5 shrink-0" />
             </BreadcrumbLink>
           )}
         </BreadcrumbItem>
 
-        {/* Group Name (e.g. Master Data) */}
-        {!isDashboard && group && group.label !== "Utama" ? (
+        {!isDashboard && group && group.label !== "Utama" && (
           <>
             <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <span className="text-muted-foreground text-xs sm:text-sm">{group.label}</span>
+            <BreadcrumbItem className="hidden sm:flex shrink-0">
+              <span className="text-muted-foreground">{group.label}</span>
             </BreadcrumbItem>
           </>
-        ) : null}
+        )}
 
-        {/* Active Feature Name (Bold ERPNext style) */}
-        {!isDashboard ? (
+        {!isDashboard && (
           <>
             <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-bold text-foreground text-xs sm:text-sm">
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="font-semibold text-foreground truncate">
                 {item?.label ?? "Halaman"}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </>
-        ) : null}
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );
