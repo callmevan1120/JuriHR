@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/common/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,10 +55,6 @@ import {
   PowerOff,
   Upload,
   Download,
-  Users,
-  UserCheck,
-  UserX,
-  UserMinus,
   Eye,
   FileSpreadsheet,
   FileText,
@@ -293,10 +289,6 @@ export function EmployeesView() {
     },
   ];
 
-  const totalActive = employees.filter((e) => e.status === "AKTIF").length;
-  const totalInactive = employees.filter((e) => e.status === "NONAKTIF").length;
-  const totalResign = employees.filter((e) => e.status === "RESIGN").length;
-
   return (
     <div className="space-y-4 sm:space-y-5">
       <PageHeader
@@ -340,78 +332,66 @@ export function EmployeesView() {
         }
       />
 
-      {/* Compact stats row */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-border/60 px-5 py-3">
-        <StatItem icon={Users} label="Total Karyawan" value={employees.length} color="text-foreground" />
-        <StatItem icon={UserCheck} label="Aktif" value={totalActive} color="text-success" />
-        <StatItem icon={UserX} label="Nonaktif" value={totalInactive} color="text-warning" />
-        <StatItem icon={UserMinus} label="Resign" value={totalResign} color="text-destructive" />
-      </div>
-
-      <Card className="border-border/60 rounded-2xl">
-        <CardContent className="pt-4">
-          <DataTable
-            tableKey="employees"
-            columns={[selectionColumn<Employee>(), ...columns] as ColumnDef<Employee>[]}
-            data={filtered}
-            searchPlaceholder="Cari nama atau NIK..."
-            pageSize={10}
-            onRowClick={(e) => (window.location.hash = `#/karyawan?id=${e.id}`)}
-            globalFilterFn={(row, q) => (row.fullName + " " + row.nik).toLowerCase().includes(q.toLowerCase())}
-            toolbar={
-              <div className="flex flex-wrap items-center gap-2">
-                <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-                  <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Outlet</SelectItem>
-                    {outlets.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Kategori</SelectItem>
-                    <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
-                    <SelectItem value="PH_KLATEN">Karyawan PH Klaten</SelectItem>
-                    <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
-                    <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="AKTIF">Aktif</SelectItem>
-                    <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
-                    <SelectItem value="RESIGN">Resign</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            }
-            bulkActions={(rows) => (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    const count = employeeService.bulkUpdate(
-                      rows.map((r) => r.id),
-                      { status: "NONAKTIF" },
-                    );
-                    toast.success(`${count} karyawan dinonaktifkan`);
-                    setSelected([]);
-                  }}
-                >
-                  <PowerOff className="size-3.5" /> Nonaktifkan
-                </Button>
-              </>
-            )}
-          />
-        </CardContent>
-      </Card>
+      <DataTable
+        tableKey="employees"
+        columns={[selectionColumn<Employee>(), ...columns] as ColumnDef<Employee>[]}
+        data={filtered}
+        searchPlaceholder="Cari nama atau NIK..."
+        pageSize={10}
+        onRowClick={(e) => (window.location.hash = `#/karyawan?id=${e.id}`)}
+        globalFilterFn={(row, q) => (row.fullName + " " + row.nik).toLowerCase().includes(q.toLowerCase())}
+        toolbar={
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={filterOutlet} onValueChange={setFilterOutlet}>
+              <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Outlet</SelectItem>
+                {outlets.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Kategori</SelectItem>
+                <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
+                <SelectItem value="PH_KLATEN">Karyawan PH Klaten</SelectItem>
+                <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
+                <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="AKTIF">Aktif</SelectItem>
+                <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
+                <SelectItem value="RESIGN">Resign</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+        bulkActions={(rows) => (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => {
+                const count = employeeService.bulkUpdate(
+                  rows.map((r) => r.id),
+                  { status: "NONAKTIF" },
+                );
+                toast.success(`${count} karyawan dinonaktifkan`);
+                setSelected([]);
+              }}
+            >
+              <PowerOff className="size-3.5" /> Nonaktifkan
+            </Button>
+          </>
+        )}
+      />
 
       <ConfirmDialog
         open={!!confirm}
@@ -530,22 +510,3 @@ export function EmployeesView() {
   );
 }
 
-function StatItem({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: typeof Users;
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Icon className={cn("size-3.5 shrink-0", color)} />
-      <span className="text-xs text-muted-foreground font-medium">{label}</span>
-      <span className="text-xl font-bold tabular-nums text-foreground">{value}</span>
-    </div>
-  );
-}

@@ -2,12 +2,6 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -276,8 +270,8 @@ export function ContractsView() {
         }
       />
 
-      {/* Modern KPI Reminder Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      {/* Simple horizontal stat row */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
         {REMINDER_BUCKETS.map((b) => {
           const count = b.key === "all" ? contracts.length : bucketCounts.get(b.key) ?? 0;
           const active = filterBucket === b.key;
@@ -287,75 +281,73 @@ export function ContractsView() {
               type="button"
               onClick={() => setFilterBucket(b.key)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition-all",
-                active ? "border-primary ring-1 ring-primary/20" : "border-border/60 hover:border-border",
+                "inline-flex items-center gap-1.5 transition-colors hover:text-foreground",
+                active ? "font-bold text-foreground" : "text-muted-foreground",
               )}
             >
-              <span className={cn("inline-flex size-6 items-center justify-center rounded-lg text-[11px] font-bold", b.color)}>
+              <span className={cn("inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[11px] font-bold", b.color)}>
                 {count}
               </span>
-              <span className="text-[11px] font-semibold text-muted-foreground">{b.label}</span>
+              {b.label}
             </button>
           );
         })}
       </div>
 
       {/* Main Table */}
-      <Card className="rounded-2xl border border-border/60">
-        <CardHeader className="pb-2 border-b border-border/40 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm font-semibold">Daftar Kontrak Kerja</CardTitle>
+      <div className="border border-border rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">Daftar Kontrak Kerja</h3>
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
               <FilterX className="size-3.5" /> Reset Semua Filter
             </Button>
           )}
-        </CardHeader>
-        <CardContent className="pt-4">
-          <DataTable
-            tableKey="contracts"
-            columns={columns}
-            data={filteredContracts}
-            searchPlaceholder="Cari nomor kontrak, NIK, atau nama karyawan..."
-            pageSize={10}
-            globalFilterFn={(row, q) => {
-              const emp = employees.find((e) => e.id === row.employeeId);
-              return (row.contractNo + (emp?.fullName ?? "") + (emp?.nik ?? "")).toLowerCase().includes(q.toLowerCase());
-            }}
-            toolbar={
-              <div className="flex items-center gap-2">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
-                    <SelectValue placeholder="Status Kontrak" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="AKTIF">Aktif</SelectItem>
-                    <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
-                    <SelectItem value="BERAKHIR">Berakhir</SelectItem>
-                    <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                  </SelectContent>
-                </Select>
+        </div>
+        <DataTable
+          tableKey="contracts"
+          columns={columns}
+          data={filteredContracts}
+          searchPlaceholder="Cari nomor kontrak, NIK, atau nama karyawan..."
+          pageSize={10}
+          globalFilterFn={(row, q) => {
+            const emp = employees.find((e) => e.id === row.employeeId);
+            return (row.contractNo + (emp?.fullName ?? "") + (emp?.nik ?? "")).toLowerCase().includes(q.toLowerCase());
+          }}
+          toolbar={
+            <div className="flex items-center gap-2">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
+                  <SelectValue placeholder="Status Kontrak" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="AKTIF">Aktif</SelectItem>
+                  <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
+                  <SelectItem value="BERAKHIR">Berakhir</SelectItem>
+                  <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                </SelectContent>
+              </Select>
 
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
-                    <SelectValue placeholder="Jenis Kontrak" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Jenis</SelectItem>
-                    <SelectItem value="PKWT">PKWT</SelectItem>
-                    <SelectItem value="PKWTT">PKWTT</SelectItem>
-                    <SelectItem value="PROBATION">Probation</SelectItem>
-                    <SelectItem value="MAGANG">Magang</SelectItem>
-                    <SelectItem value="HARIAN">Harian</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            }
-            emptyMessage="Tidak ada kontrak yang sesuai dengan filter pencarian."
-          />
-        </CardContent>
-      </Card>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
+                  <SelectValue placeholder="Jenis Kontrak" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Jenis</SelectItem>
+                  <SelectItem value="PKWT">PKWT</SelectItem>
+                  <SelectItem value="PKWTT">PKWTT</SelectItem>
+                  <SelectItem value="PROBATION">Probation</SelectItem>
+                  <SelectItem value="MAGANG">Magang</SelectItem>
+                  <SelectItem value="HARIAN">Harian</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+          emptyMessage="Tidak ada kontrak yang sesuai dengan filter pencarian."
+        />
+      </div>
 
       {extendTarget ? (
         <ExtendDialog

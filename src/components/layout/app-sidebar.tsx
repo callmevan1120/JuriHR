@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -44,9 +43,9 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="gap-1 px-2">
+      <SidebarContent className="gap-0.5 px-2 flex-1">
         {NAV_GROUPS.map((group) => (
-          <SidebarGroup key={group.label} className="px-0 py-0">
+          <SidebarGroup key={group.label} className="px-0 py-0.5">
             <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/35 px-2 pb-1">
               {group.label}
             </SidebarGroupLabel>
@@ -61,9 +60,7 @@ export function AppSidebar() {
                         onClick={() => navigate(item.path)}
                         isActive={isActive}
                         tooltip={item.label}
-                        className={cn(
-                          "rounded-lg transition-all duration-150 cursor-pointer",
-                        )}
+                        className="rounded-lg transition-all duration-150 cursor-pointer"
                       >
                         <Icon className="size-4" />
                         <span className="text-[13px]">{item.label}</span>
@@ -77,14 +74,6 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="px-3 pb-3 pt-1">
-        <div className="rounded-xl border border-sidebar-border/40 px-3 py-2.5 group-data-[collapsible=icon]:hidden">
-          <p className="text-[11px] font-semibold text-sidebar-foreground/80">JURI HR v1.0</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground leading-relaxed">
-            Sistem Manajemen HR Multi-Outlet
-          </p>
-        </div>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

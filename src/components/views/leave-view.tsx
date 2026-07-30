@@ -2,13 +2,6 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -202,9 +195,8 @@ function LeaveCard({ leave, onReview, onCancel }: { leave: Leave; onReview: () =
   const conflict = leave.status === "PENDING" ? leaveService.checkConflict(leave.employeeId, leave.startDate, leave.endDate, leave.id) : undefined;
 
   return (
-    <Card className="group border-border transition-all hover:border-primary/40">
-      <CardContent className="p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
+    <div className="group border border-border rounded-lg p-4 transition-all hover:border-primary/40">
+      <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className={cn("flex size-10 items-center justify-center rounded-xl bg-muted", meta.color)}>
               <Icon className="size-5" />
@@ -249,8 +241,7 @@ function LeaveCard({ leave, onReview, onCancel }: { leave: Leave; onReview: () =
             </Button>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
   );
 }
 

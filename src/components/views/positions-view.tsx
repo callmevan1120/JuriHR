@@ -48,7 +48,6 @@ import {
   ArrowLeft,
   Save,
   AlertCircle,
-  Banknote,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -157,48 +156,10 @@ export function PositionsView() {
         }
       />
 
-      {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-            <Briefcase className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Total Posisi Aktif</p>
-            <p className="text-xl font-bold tracking-tight text-foreground">{activePositionsCount} Jabatan</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-info/10 text-info shrink-0">
-            <Building2 className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Total Divisi &amp; HQ</p>
-            <p className="text-xl font-bold tracking-tight text-foreground">{activeDivisionsCount} Divisi</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-success/10 text-success shrink-0">
-            <Users className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Jabatan Kategori Outlet</p>
-            <p className="text-xl font-bold tracking-tight text-foreground">{outletPositionsCount} Posisi</p>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-border/60 p-4 flex items-center gap-3.5">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 shrink-0">
-            <Banknote className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Karyawan Terdistribusi</p>
-            <p className="text-xl font-bold tracking-tight text-foreground">{employees.length} Anggota</p>
-          </div>
-        </div>
-      </div>
+      {/* Simple summary line */}
+      <p className="text-xs text-muted-foreground">
+        {activePositionsCount} jabatan aktif, {activeDivisionsCount} divisi, {outletPositionsCount} posisi outlet, total {employees.length} karyawan.
+      </p>
 
       {/* Segmented Tab Switcher */}
       <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -459,11 +420,8 @@ function PositionsTableSection({
   ];
 
   return (
-    <Card className="rounded-2xl border border-border/60 overflow-hidden">
-      <CardHeader className="pb-2 border-b border-border/40">
-        <CardTitle className="text-sm font-semibold">Daftar Lengkap Posisi &amp; Jabatan</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-4">
+      <div className="border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-3">Daftar Lengkap Posisi & Jabatan</h3>
         <DataTable
           tableKey="positions"
           columns={[selectionColumn<Position>(), ...columns] as ColumnDef<Position>[]}
@@ -474,8 +432,7 @@ function PositionsTableSection({
             (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
           }
         />
-      </CardContent>
-    </Card>
+      </div>
   );
 }
 
@@ -594,11 +551,8 @@ function DivisionsTableSection({
   ];
 
   return (
-    <Card className="rounded-2xl border border-border/60 overflow-hidden">
-      <CardHeader className="pb-2 border-b border-border/40">
-        <CardTitle className="text-sm font-semibold">Daftar Lengkap Divisi &amp; Departemen</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-4">
+      <div className="border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold mb-3">Daftar Lengkap Divisi & Departemen</h3>
         <DataTable
           tableKey="divisions"
           columns={[selectionColumn<Division>(), ...columns] as ColumnDef<Division>[]}
@@ -609,8 +563,7 @@ function DivisionsTableSection({
             (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
           }
         />
-      </CardContent>
-    </Card>
+      </div>
   );
 }
 

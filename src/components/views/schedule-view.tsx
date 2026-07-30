@@ -2,13 +2,6 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -195,9 +188,8 @@ function CalendarTab() {
       />
 
       {/* Toolbar */}
-      <Card className="rounded-2xl border border-border/60">
-        <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between border border-border rounded-lg px-4">
+        <div className="flex flex-wrap items-center gap-2">
             {/* Mode switcher */}
              <div className="flex items-center gap-1 rounded-xl border border-border/60 p-0.5">
               {(["harian", "mingguan", "bulanan"] as ViewMode[]).map((m) => (
@@ -263,11 +255,10 @@ function CalendarTab() {
               <Users className="size-3 mr-1" /> {filteredEmps.length} karyawan
             </Badge>
           </div>
-        </CardContent>
 
         {/* Collapsible Filter Panel */}
         {filterOpen && (
-          <div className="border-t border-border/60 bg-muted/20 p-3 flex flex-wrap items-center gap-2 animate-in fade-in-50 duration-200">
+          <div className="border-t border-border/60 p-3 flex flex-wrap items-center gap-2 animate-in fade-in-50 duration-200">
             <span className="text-xs font-bold text-foreground mr-1 flex items-center gap-1">
               <Filter className="size-3 text-primary" /> Filter:
             </span>
@@ -312,20 +303,18 @@ function CalendarTab() {
             )}
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Calendar grid */}
-      <Card className="rounded-2xl border border-border/60">
-        <CardContent className="p-0">
-          {mode === "harian" ? (
-            <DailyView date={range.from} employees={filteredEmps} onAssign={setAssignTarget} />
-          ) : mode === "mingguan" ? (
-            <WeeklyView dates={range.dates} employees={filteredEmps} onAssign={setAssignTarget} />
-          ) : (
-            <MonthlyView dates={range.dates} employees={filteredEmps} anchorDate={anchorDate} onAssign={setAssignTarget} />
-          )}
-        </CardContent>
-      </Card>
+      <div className="border border-border rounded-lg overflow-hidden">
+        {mode === "harian" ? (
+          <DailyView date={range.from} employees={filteredEmps} onAssign={setAssignTarget} />
+        ) : mode === "mingguan" ? (
+          <WeeklyView dates={range.dates} employees={filteredEmps} onAssign={setAssignTarget} />
+        ) : (
+          <MonthlyView dates={range.dates} employees={filteredEmps} anchorDate={anchorDate} onAssign={setAssignTarget} />
+        )}
+      </div>
 
       {/* Lock toggle for range */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-xs text-muted-foreground">
@@ -607,16 +596,14 @@ function MonthlyView({
         </div>
       </div>
       {/* Side panel: detail tanggal terpilih */}
-      <Card className="rounded-2xl border border-border/60">
-        <CardHeader className="pb-2 border-b border-border/40">
-          <CardTitle className="text-sm font-semibold">
-            {selectedDate ? formatDateLong(selectedDate) : `Detail ${monthLabel(format(anchorDate, "yyyy-MM"))}`}
-          </CardTitle>
-          <CardDescription className="text-xs">
-            {selectedDate ? `${selectedDayScheds.length} jadwal · ${noScheduleEmps.length} tanpa jadwal` : "Pilih tanggal untuk lihat detail"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="border border-border rounded-lg p-4">
+        <h3 className="text-sm font-semibold">
+          {selectedDate ? formatDateLong(selectedDate) : `Detail ${monthLabel(format(anchorDate, "yyyy-MM"))}`}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {selectedDate ? `${selectedDayScheds.length} jadwal · ${noScheduleEmps.length} tanpa jadwal` : "Pilih tanggal untuk lihat detail"}
+        </p>
+        <div className="mt-3">
           {selectedDate ? (
             <div className="space-y-2">
               {selectedDayScheds.length === 0 ? (
@@ -673,8 +660,8 @@ function MonthlyView({
           ) : (
             <p className="py-8 text-center text-xs text-muted-foreground">Klik tanggal pada kalender.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -993,9 +980,8 @@ function SwapCard({ swap, onReview }: { swap: any; onReview: () => void }) {
   };
 
   return (
-    <Card className="rounded-2xl border border-border/60 transition-all">
-      <CardContent className="p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
+    <div className="border border-border rounded-lg p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <ArrowLeftRight className="size-4" />
@@ -1030,8 +1016,7 @@ function SwapCard({ swap, onReview }: { swap: any; onReview: () => void }) {
             <Button size="sm" onClick={onReview}>Review</Button>
           </div>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
   );
 }
 
