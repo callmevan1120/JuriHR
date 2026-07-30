@@ -387,12 +387,12 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Main Table */}
-      <div className="overflow-hidden rounded-2xl border border-border shadow-xs bg-card">
-        <div className="overflow-x-auto">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+        <div className="overflow-x-auto data-table-wrapper">
           <Table>
-            <TableHeader className="bg-muted/60">
+            <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border/60">
                   {headerGroup.headers.map((header) => {
                     const isSorted = header.column.getIsSorted();
                     const isSticky = !!stickyColumns[header.column.id];

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   label: string;
@@ -12,16 +12,24 @@ interface StatCardProps {
   actionLabel?: string;
   onAction?: () => void;
   accent?: "primary" | "warning" | "destructive" | "info" | "success" | "neutral";
-  trend?: { direction: "up" | "down" | "neutral"; value: string };
 }
 
 const ACCENT_BG: Record<NonNullable<StatCardProps["accent"]>, string> = {
-  primary: "bg-primary/15",
-  warning: "bg-warning/10",
-  destructive: "bg-destructive/10",
-  info: "bg-info/10",
-  success: "bg-success/10",
-  neutral: "bg-muted/50",
+  primary: "bg-primary/10 dark:bg-primary/15",
+  warning: "bg-warning/10 dark:bg-warning/15",
+  destructive: "bg-destructive/8 dark:bg-destructive/12",
+  info: "bg-info/10 dark:bg-info/15",
+  success: "bg-success/10 dark:bg-success/15",
+  neutral: "bg-muted/60 dark:bg-muted/40",
+};
+
+const ACCENT_DOT: Record<NonNullable<StatCardProps["accent"]>, string> = {
+  primary: "bg-primary",
+  warning: "bg-warning",
+  destructive: "bg-destructive",
+  info: "bg-info",
+  success: "bg-success",
+  neutral: "bg-muted-foreground/40",
 };
 
 const ACCENT_ICON: Record<NonNullable<StatCardProps["accent"]>, string> = {
@@ -38,10 +46,8 @@ export function StatCard({
   value,
   icon: Icon,
   hint,
-  actionLabel,
   onAction,
   accent = "neutral",
-  trend,
 }: StatCardProps) {
   const clickable = Boolean(onAction);
 
@@ -56,29 +62,22 @@ export function StatCard({
           : undefined
       }
       className={cn(
-        "flex items-center gap-3 rounded-2xl p-3.5 transition-all duration-200",
+        "group relative flex items-center gap-3 overflow-hidden rounded-2xl px-3.5 py-3 transition-all duration-200",
         ACCENT_BG[accent],
-        clickable && "cursor-pointer active:scale-[0.97] hover:brightness-95",
+        clickable && "cursor-pointer active:scale-[0.98]",
       )}
     >
-      <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", ACCENT_ICON[accent], "bg-background/80")}>
-        <Icon className="size-5" />
+      <div className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/90", ACCENT_ICON[accent])}>
+        <Icon className="size-[18px]" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-medium text-muted-foreground leading-tight">{label}</p>
-        <p className="text-lg font-bold tracking-tight text-foreground tabular-nums leading-tight">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">{label}</p>
+        <p className="text-xl font-bold tracking-tight text-foreground tabular-nums leading-tight">
           {value}
         </p>
-        {hint && <p className="text-[10px] text-muted-foreground/70 leading-tight mt-0.5">{hint}</p>}
-        {trend && (
-          <p className={cn("text-[10px] font-medium mt-0.5", trend.direction === "up" && "text-success", trend.direction === "down" && "text-destructive")}>
-            {trend.value}
-          </p>
-        )}
+        {hint && <p className="text-[10px] text-muted-foreground/60 leading-tight mt-0.5">{hint}</p>}
       </div>
-      {actionLabel && (
-        <ArrowUpRight className={cn("size-4 shrink-0 text-muted-foreground/50", !clickable && "hidden")} />
-      )}
+      <div className={cn("size-1.5 shrink-0 rounded-full", ACCENT_DOT[accent])} />
     </div>
   );
 }

@@ -64,14 +64,14 @@ export function AttendanceTrendChart() {
   const data = computeAttendanceTrend(state, mode);
 
   return (
-    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
-      <CardHeader className="pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 bg-muted/10">
+    <Card className="border-border/60 h-full flex flex-col overflow-hidden rounded-2xl">
+      <CardHeader className="pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40">
         <div>
-          <CardTitle className="text-base font-semibold text-foreground">Tren Kehadiran Karyawan</CardTitle>
-          <CardDescription className="text-xs text-muted-foreground mt-0.5">
-            {mode === "daily" && "7 hari terakhir — pemantauan tingkat presensi harian"}
-            {mode === "weekly" && "4 minggu terakhir — agregasi mingguan staf"}
-            {mode === "monthly" && "6 bulan terakhir — rekapitulasi bulanan (skala 500+ karyawan)"}
+          <CardTitle className="text-sm font-semibold text-foreground">Tren Kehadiran Karyawan</CardTitle>
+          <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
+            {mode === "daily" && "7 hari terakhir"}
+            {mode === "weekly" && "4 minggu terakhir"}
+            {mode === "monthly" && "6 bulan terakhir"}
           </CardDescription>
         </div>
 
@@ -165,13 +165,13 @@ export function AttendanceTrendChart() {
 }
 
 const CONTRACT_COLORS: Record<string, string> = {
-  AKTIF: "#22c55e", // Green
-  AKAN_BERAKHIR: "#eab308", // Yellow
-  BERAKHIR: "#ef4444", // Red
-  DIPERPANJANG: "#3b82f6", // Blue
-  DRAFT: "#94a3b8", // Slate
-  DITOLAK: "#f43f5e", // Rose
-  DIBATALKAN: "#64748b", // Gray
+  AKTIF: "#8B6F47",
+  AKAN_BERAKHIR: "#FCBA0C",
+  BERAKHIR: "#C0392B",
+  DIPERPANJANG: "#4A6FA5",
+  DRAFT: "#C4B39A",
+  DITOLAK: "#E74C3C",
+  DIBATALKAN: "#A0A0A0",
 };
 
 const CONTRACT_CONFIG: ChartConfig = {
@@ -190,11 +190,11 @@ export function ContractStatusChart() {
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
-    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
-      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
-        <CardTitle className="text-base font-semibold text-foreground">Status Kontrak Kerja</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground mt-0.5">
-          Distribusi status seluruh kontrak aktif & berakhir
+    <Card className="border-border/60 h-full flex flex-col overflow-hidden rounded-2xl">
+      <CardHeader className="pb-2 border-b border-border/40">
+        <CardTitle className="text-sm font-semibold text-foreground">Status Kontrak Kerja</CardTitle>
+        <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
+          Distribusi status seluruh kontrak
         </CardDescription>
       </CardHeader>
 
@@ -291,10 +291,10 @@ export function PositionDistributionChart() {
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
-    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
-      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
-        <CardTitle className="text-base font-semibold text-foreground">Distribusi Posisi Karyawan</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground mt-0.5">
+    <Card className="border-border/60 h-full flex flex-col overflow-hidden rounded-2xl">
+      <CardHeader className="pb-2 border-b border-border/40">
+        <CardTitle className="text-sm font-semibold text-foreground">Distribusi Posisi Karyawan</CardTitle>
+        <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
           Komposisi peran staf aktif per jabatan
         </CardDescription>
       </CardHeader>
@@ -389,10 +389,10 @@ export function OvertimePlanVsActualChart() {
   const loading = useChartLoading(500);
   const data = computeOvertimePlanVsActual(state);
   return (
-    <Card className="border-border shadow-soft h-full flex flex-col justify-between overflow-hidden">
-      <CardHeader className="pb-2 border-b border-border/40 bg-muted/10">
-        <CardTitle className="text-base font-semibold text-foreground">Planning vs Actual Lembur</CardTitle>
-        <CardDescription className="text-xs text-muted-foreground mt-0.5">
+    <Card className="border-border/60 h-full flex flex-col overflow-hidden rounded-2xl">
+      <CardHeader className="pb-2 border-b border-border/40">
+        <CardTitle className="text-sm font-semibold text-foreground">Planning vs Actual Lembur</CardTitle>
+        <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
           Perbandingan jam planning & aktual 7 hari terakhir
         </CardDescription>
       </CardHeader>

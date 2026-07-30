@@ -10,7 +10,7 @@ import { OutletEmployeeDistribution } from "@/components/dashboard/outlet-employ
 import { useDataState } from "@/hooks/use-store";
 import { computeDashboardStats } from "@/lib/services/dashboard";
 import { navigate } from "@/lib/router/use-route";
-import { todayISODate, formatDateLong, cn } from "@/lib/utils";
+import { todayISODate, formatDateLong } from "@/lib/utils";
 import {
   Users,
   UserCheck,
@@ -20,19 +20,19 @@ import {
   CalendarDays,
   Umbrella,
   Receipt,
-  Map,
   FileText,
+  Map,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
-  { icon: Users, label: "Karyawan", href: "#/karyawan", color: "bg-primary/15 text-primary" },
-  { icon: Store, label: "Outlet", href: "#/outlet", color: "bg-info/15 text-info" },
-  { icon: UserCheck, label: "Absensi", href: "#/absensi", color: "bg-success/15 text-success" },
-  { icon: Umbrella, label: "Cuti", href: "#/cuti", color: "bg-warning/15 text-warning" },
-  { icon: CalendarDays, label: "Jadwal", href: "#/jadwal", color: "bg-primary/15 text-primary" },
-  { icon: Receipt, label: "Payroll", href: "#/payroll", color: "bg-info/15 text-info" },
-  { icon: FileText, label: "Kontrak", href: "#/kontrak", color: "bg-destructive/10 text-destructive" },
-  { icon: Map, label: "Domisili", href: "#/domisili", color: "bg-success/15 text-success" },
+  { icon: Users, label: "Karyawan", href: "#/karyawan", color: "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300" },
+  { icon: Store, label: "Outlet", href: "#/outlet", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300" },
+  { icon: UserCheck, label: "Absensi", href: "#/absensi", color: "bg-sky-100 text-sky-700 hover:bg-sky-200 dark:bg-sky-950/40 dark:text-sky-300" },
+  { icon: Umbrella, label: "Cuti", href: "#/cuti", color: "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-950/40 dark:text-purple-300" },
+  { icon: CalendarDays, label: "Jadwal", href: "#/jadwal", color: "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950/40 dark:text-rose-300" },
+  { icon: Receipt, label: "Payroll", href: "#/payroll", color: "bg-teal-100 text-teal-700 hover:bg-teal-200 dark:bg-teal-950/40 dark:text-teal-300" },
+  { icon: FileText, label: "Kontrak", href: "#/kontrak", color: "bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-950/40 dark:text-orange-300" },
+  { icon: Map, label: "Domisili", href: "#/domisili", color: "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300" },
 ];
 
 export function DashboardView() {
@@ -45,71 +45,30 @@ export function DashboardView() {
   }).format(new Date());
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Welcome Header */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg sm:text-xl font-bold text-foreground">
-            Selamat Datang, <span className="text-primary">HRD Admin</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {weekday}, {formatDateLong(today)}
-          </p>
-        </div>
+    <div className="space-y-4 sm:space-y-5">
+      {/* Header */}
+      <div className="flex flex-col gap-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          {weekday} · {formatDateLong(today)}
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Selamat Datang, <span className="text-primary">HRD Admin</span>
+        </h1>
       </div>
 
-      {/* Quick Stats Row (compact GoPay-style) */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <StatCard
-          label="Karyawan Aktif"
-          value={stats.totalActiveEmployees}
-          icon={Users}
-          accent="primary"
-          actionLabel="Lihat"
-          onAction={() => navigate("#/karyawan")}
-        />
-        <StatCard
-          label="Hadir Hari Ini"
-          value={stats.presentToday}
-          icon={UserCheck}
-          accent="success"
-          actionLabel="Lihat"
-          onAction={() => navigate("#/absensi")}
-        />
-        <StatCard
-          label="Terlambat"
-          value={stats.lateToday}
-          icon={Clock}
-          accent="warning"
-          actionLabel="Lihat"
-          onAction={() => navigate("#/absensi?filter=terlambat")}
-        />
-        <StatCard
-          label="Menunggu Review"
-          value={stats.pendingSubmissions}
-          icon={ClipboardList}
-          accent="info"
-          actionLabel="Lihat"
-          onAction={() => navigate("#/cuti?filter=pending")}
-        />
-      </div>
-
-      {/* Quick Actions Grid (GoPay/ShopeePay style icon grid) */}
-      <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-soft">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Akses Cepat
-        </h3>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-8">
+      {/* Quick Actions Bento Row */}
+      <div className="rounded-2xl border border-border/60 bg-card p-2.5 sm:p-3">
+        <div className="grid grid-cols-4 gap-1 sm:grid-cols-4 md:grid-cols-8">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.href}
               onClick={() => navigate(action.href)}
-              className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 transition-all active:scale-95 hover:bg-muted/50"
+              className="flex flex-col items-center gap-2 rounded-xl px-2 py-2.5 transition-all active:scale-95"
             >
-              <div className={cn("flex size-10 items-center justify-center rounded-2xl", action.color)}>
+              <div className={`flex size-11 items-center justify-center rounded-2xl transition-colors duration-200 ${action.color}`}>
                 <action.icon className="size-5" />
               </div>
-              <span className="text-[10px] font-medium text-foreground text-center leading-tight">
+              <span className="text-[10px] font-semibold text-muted-foreground leading-tight">
                 {action.label}
               </span>
             </button>
@@ -117,24 +76,55 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      {/* Stats Row — 4 compact metric cards */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <StatCard
+          label="Karyawan Aktif"
+          value={stats.totalActiveEmployees}
+          icon={Users}
+          accent="primary"
+          onAction={() => navigate("#/karyawan")}
+        />
+        <StatCard
+          label="Hadir Hari Ini"
+          value={stats.presentToday}
+          icon={UserCheck}
+          accent="success"
+          onAction={() => navigate("#/absensi")}
+        />
+        <StatCard
+          label="Terlambat"
+          value={stats.lateToday}
+          icon={Clock}
+          accent="warning"
+          onAction={() => navigate("#/absensi?filter=terlambat")}
+        />
+        <StatCard
+          label="Pending Review"
+          value={stats.pendingSubmissions}
+          icon={ClipboardList}
+          accent="info"
+          onAction={() => navigate("#/cuti?filter=pending")}
+        />
+      </div>
+
+      {/* Charts Bento Grid */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
           <AttendanceTrendChart />
         </div>
-        <div>
+        <div className="lg:col-span-2">
           <ContractStatusChart />
         </div>
       </div>
 
-      {/* Additional Stats (compact cards below) */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      {/* Secondary Stats */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
-          label="Outlets"
+          label="Outlet Aktif"
           value={stats.totalOutlets}
           icon={Store}
           accent="neutral"
-          hint="Lokasi aktif"
           onAction={() => navigate("#/outlet")}
         />
         <StatCard
@@ -142,7 +132,6 @@ export function DashboardView() {
           value={stats.notPresentYet}
           icon={Clock}
           accent="destructive"
-          hint="Dijadwalkan"
           onAction={() => navigate("#/absensi")}
         />
         <StatCard
@@ -150,7 +139,6 @@ export function DashboardView() {
           value={stats.expiringContracts}
           icon={FileText}
           accent="warning"
-          hint="≤ 90 hari"
           onAction={() => navigate("#/kontrak")}
         />
         <StatCard
@@ -158,7 +146,6 @@ export function DashboardView() {
           value={stats.overtimeAwaitingReview}
           icon={ClipboardList}
           accent="primary"
-          hint="Perlu verifikasi"
           onAction={() => navigate("#/lembur")}
         />
         <StatCard
@@ -166,12 +153,11 @@ export function DashboardView() {
           value={stats.payrollNeedsReview}
           icon={Receipt}
           accent="info"
-          hint="Belum final"
           onAction={() => navigate("#/payroll")}
         />
       </div>
 
-      {/* Outlet Distribution Bottom */}
+      {/* Outlet Spotlight */}
       <OutletEmployeeDistribution />
     </div>
   );

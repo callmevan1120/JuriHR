@@ -16,9 +16,9 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --sidebar-width: 16rem;
+  --sidebar-width: 15rem;
   --sidebar-width-mobile: 18rem;
-  --sidebar-width-icon: 3.5rem;
+  --sidebar-width-icon: 3.25rem;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -46,38 +46,27 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ============================================================
-   JURI HR — Design System
-   Brand: Bakery & Coffee Bun multi-outlet HR
-   Primary: #FCBA0C (golden), Dark brown: #3A2518,
-   Cream: #FFF8E7, Surface: #FFFDF8, Muted: #74665D, Border: #EADFCB
-   ============================================================ */
 :root {
-  --radius: 0.75rem; /* 12px — soft but professional */
+  --radius: 0.875rem;
 
-  /* Surfaces */
   --background: #FFFDF8;
-  --foreground: #3A2518;
+  --foreground: #2D1B0E;
   --card: #FFFFFF;
-  --card-foreground: #3A2518;
+  --card-foreground: #2D1B0E;
   --popover: #FFFFFF;
-  --popover-foreground: #3A2518;
+  --popover-foreground: #2D1B0E;
 
-  /* Primary = golden yellow accent */
   --primary: #FCBA0C;
-  --primary-foreground: #3A2518;
+  --primary-foreground: #2D1B0E;
 
-  /* Secondary = cream */
-  --secondary: #FFF8E7;
-  --secondary-foreground: #3A2518;
+  --secondary: #FBF3E3;
+  --secondary-foreground: #2D1B0E;
 
-  /* Muted */
-  --muted: #FBF3E3;
-  --muted-foreground: #74665D;
+  --muted: #F7F0E4;
+  --muted-foreground: #8B7355;
 
-  /* Accent = soft yellow tint */
-  --accent: #FFF1CC;
-  --accent-foreground: #3A2518;
+  --accent: #FFF4D6;
+  --accent-foreground: #2D1B0E;
 
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
@@ -86,80 +75,83 @@
   --success-foreground: #FFFFFF;
   --warning: #C2780C;
   --warning-foreground: #FFFFFF;
-  --info: #2B6CB0;
+  --info: #4A6FA5;
   --info-foreground: #FFFFFF;
 
-  --border: #EADFCB;
-  --input: #EADFCB;
+  --border: #EDE4D3;
+  --input: #EDE4D3;
   --ring: #FCBA0C;
 
-  /* Chart palette — warm bakery tones */
-  --chart-1: #FCBA0C; /* primary gold */
-  --chart-2: #3A2518; /* dark brown */
-  --chart-3: #74665D; /* muted */
-  --chart-4: #E8A604; /* deep gold */
-  --chart-5: #C2780C; /* amber */
+  --chart-1: #FCBA0C;
+  --chart-2: #2D1B0E;
+  --chart-3: #A68A5E;
+  --chart-4: #E8A604;
+  --chart-5: #C2780C;
 
-  /* Sidebar */
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #3A2518;
+  --sidebar: #FFFDF8;
+  --sidebar-foreground: #5C4033;
   --sidebar-primary: #FCBA0C;
-  --sidebar-primary-foreground: #3A2518;
-  --sidebar-accent: #FFF1CC;
-  --sidebar-accent-foreground: #3A2518;
-  --sidebar-border: #EADFCB;
+  --sidebar-primary-foreground: #2D1B0E;
+  --sidebar-accent: #FFF4D6;
+  --sidebar-accent-foreground: #2D1B0E;
+  --sidebar-border: #F0E6D5;
   --sidebar-ring: #FCBA0C;
 }
 
 .dark {
-  /* Warm dark — dark brown base */
-  --background: #1F1610;
-  --foreground: #FFF8E7;
-  --card: #2A1E15;
-  --card-foreground: #FFF8E7;
-  --popover: #2A1E15;
-  --popover-foreground: #FFF8E7;
+  --background: #1A130C;
+  --foreground: #F5EDE0;
+  --card: #241B12;
+  --card-foreground: #F5EDE0;
+  --popover: #241B12;
+  --popover-foreground: #F5EDE0;
 
   --primary: #FCBA0C;
-  --primary-foreground: #3A2518;
+  --primary-foreground: #1A130C;
 
-  --secondary: #3A2A1E;
-  --secondary-foreground: #FFF8E7;
+  --secondary: #2A2016;
+  --secondary-foreground: #F5EDE0;
 
-  --muted: #3A2A1E;
-  --muted-foreground: #C4B5A5;
+  --muted: #2A2016;
+  --muted-foreground: #A68A5E;
 
-  --accent: #4A3528;
-  --accent-foreground: #FFF8E7;
+  --accent: #332716;
+  --accent-foreground: #F5EDE0;
 
-  --destructive: #F87171;
-  --destructive-foreground: #1F1610;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
 
-  --success: #68D391;
-  --success-foreground: #1F1610;
-  --warning: #F6AD55;
-  --warning-foreground: #1F1610;
-  --info: #63B3ED;
-  --info-foreground: #1F1610;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --info: #60A5FA;
 
-  --border: #4A3528;
-  --input: #4A3528;
+  --border: #3A2D1F;
+  --input: #3A2D1F;
   --ring: #FCBA0C;
 
   --chart-1: #FCBA0C;
-  --chart-2: #FFF8E7;
-  --chart-3: #C4B5A5;
+  --chart-2: #F5EDE0;
+  --chart-3: #A68A5E;
   --chart-4: #E8A604;
-  --chart-5: #F6AD55;
+  --chart-5: #F59E0B;
 
-  --sidebar: #2A1E15;
-  --sidebar-foreground: #FFF8E7;
+  --sidebar: #1A130C;
+  --sidebar-foreground: #C4B39A;
   --sidebar-primary: #FCBA0C;
-  --sidebar-primary-foreground: #3A2518;
-  --sidebar-accent: #4A3528;
-  --sidebar-accent-foreground: #FFF8E7;
-  --sidebar-border: #4A3528;
+  --sidebar-primary-foreground: #1A130C;
+  --sidebar-accent: #332716;
+  --sidebar-accent-foreground: #F5EDE0;
+  --sidebar-border: #3A2D1F;
   --sidebar-ring: #FCBA0C;
+}
+
+@theme inline {
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
 }
 
 @layer base {
@@ -167,166 +159,44 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased;
   }
-  /* Pleasant scrollbar */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 9999px;
-    border: 2px solid var(--background);
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
-  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 }
 
 @layer utilities {
-  /* Tabular numbers for tables & metrics */
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
-  /* Subtle card shadow used across the app */
-  .shadow-soft {
-    box-shadow:
-      0 1px 2px 0 rgb(58 37 24 / 0.04),
-      0 1px 3px 0 rgb(58 37 24 / 0.06);
-  }
-  .shadow-soft-md {
-    box-shadow:
-      0 2px 4px -1px rgb(58 37 24 / 0.06),
-      0 4px 6px -1px rgb(58 37 24 / 0.08);
-  }
-  /* Animasi fade-in untuk konten view */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  .shadow-soft { box-shadow: 0 1px 3px rgba(45,27,14,0.04), 0 1px 2px rgba(45,27,14,0.03); }
+  .shadow-soft-md { box-shadow: 0 4px 6px -1px rgba(45,27,14,0.05), 0 2px 4px -2px rgba(45,27,14,0.04); }
+  .shadow-card { box-shadow: 0 1px 0 0 rgba(45,27,14,0.06); }
+  .shadow-card-hover { box-shadow: 0 4px 12px -2px rgba(45,27,14,0.08); }
+
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out;
+    animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  /* Animasi slide-in untuk card */
-  .animate-slide-in {
-    animation: slide-in 0.4s ease-out;
-  }
-  @keyframes slide-in {
-    from {
-      opacity: 0;
-      transform: translateX(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  /* Smooth focus ring */
-  .focus-ring {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-  /* Tab content transition */
-  [data-state="active"][role="tabpanel"] {
-    animation: tab-fade-in 0.25s ease-out;
-  }
-  @keyframes tab-fade-in {
-    from { opacity: 0; transform: translateY(6px); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  /* Focus visible untuk keyboard nav */
-  :focus-visible {
-    @apply outline-2 outline-offset-2 outline-primary;
+
+  .animate-slide-in {
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  /* Smooth popover/dialog enter */
-  [data-state="open"][role="dialog"],
-  [data-state="open"][role="menu"],
-  [data-state="open"][role="tooltip"] {
-    animation: popover-in 0.15s ease-out;
-  }
-  @keyframes popover-in {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
   }
 }
 
-/* ============================================================
-   Print Stylesheet — untuk laporan & payroll PDF
-   Hide sidebar, topbar, footer; optimasi A4.
-   ============================================================ */
-@media print {
-  /* Sembunyikan elemen non-esensial */
-  [data-slot="sidebar"],
-  [data-sidebar="sidebar"],
-  header.sticky,
-  footer,
-  [data-slot="sidebar-wrapper"] > aside,
-  .no-print {
-    display: none !important;
-  }
-
-  /* Layout print penuh */
-  body {
-    background: white !important;
-    color: black !important;
-    font-size: 11pt;
-  }
-
-  main {
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  /* Pastikan card tidak terpotong */
-  [data-slot="card"] {
-    break-inside: avoid;
-    box-shadow: none !important;
-    border: 1px solid #ddd !important;
-    page-break-inside: avoid;
-  }
-
-  /* Background putih untuk semua */
-  [data-slot="sidebar-inset"] {
-    background: white !important;
-  }
-
-  /* Heading lebih besar & hitam */
-  h1 { font-size: 18pt; color: black !important; }
-  h2 { font-size: 14pt; color: black !important; }
-  h3 { font-size: 12pt; color: black !important; }
-
-  /* Tabel: border tipis, hindari break baris */
-  table { width: 100% !important; font-size: 9pt; }
-  tr { page-break-inside: avoid; }
-  thead { display: table-header-group; }
-
-  /* Margin A4 */
-  @page {
-    size: A4;
-    margin: 1.5cm;
-  }
-}
-
-/* Responsive: touch-friendly tap targets on mobile */
 @media (max-width: 640px) {
-  [data-slot="sidebar-trigger"] {
-    width: 44px;
-    height: 44px;
-  }
+  [data-slot="sidebar-trigger"] { width: 44px; height: 44px; }
 }
 
-/* Horizontal scroll for tables on tablet */
 @media (max-width: 768px) {
   .data-table-wrapper {
     overflow-x: auto;
