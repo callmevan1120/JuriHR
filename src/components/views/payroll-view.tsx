@@ -1,14 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageHeader, FilterBar } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +21,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FormRow } from "@/components/common/field";
-import { StatusBadge } from "@/components/common/status-badge";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { DataTable, selectionColumn } from "@/components/common/data-table";
+import { StatCard } from "@/components/dashboard/stat-card";
 import { useStore } from "@/hooks/use-store";
 import { payrollService } from "@/lib/services/finance";
 import {
@@ -61,17 +54,12 @@ import {
   Lock,
   Eye,
   Plus,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Building2,
   AlertCircle,
   Upload,
-  ChevronRight,
   CalendarDays,
   RotateCcw,
   Flag,
-  Trash2,
+  Users,
 } from "lucide-react";
 
 const PERIOD_STATUS_LABEL: Record<PayrollPeriodStatus, string> = {
@@ -120,13 +108,12 @@ export function PayrollView() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
         {/* Period list sidebar */}
-        <Card className="border-border  lg:col-span-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <CalendarDays className="size-4 text-primary" /> Periode Payroll
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <div className="rounded-xl border border-border lg:col-span-1">
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+            <CalendarDays className="size-4 text-primary" />
+            <span className="text-sm font-semibold">Periode Payroll</span>
+          </div>
+          <div className="space-y-2 p-3">
             {periods.length === 0 ? (
               <p className="py-4 text-center text-xs text-muted-foreground">Belum ada periode.</p>
             ) : (
@@ -148,8 +135,8 @@ export function PayrollView() {
                 </button>
               ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Period detail */}
         <div className="space-y-4 lg:col-span-3">
@@ -159,11 +146,9 @@ export function PayrollView() {
               onEntryClick={setDetailTarget}
             />
           ) : (
-            <Card className="border-border ">
-              <CardContent className="py-12 text-center text-sm text-muted-foreground">
-                Pilih atau buat periode payroll untuk memulai.
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-border py-12 text-center text-sm text-muted-foreground">
+              Pilih atau buat periode payroll untuk memulai.
+            </div>
           )}
         </div>
       </div>
@@ -273,85 +258,90 @@ function PeriodDetail({
   return (
     <div className="space-y-4">
       {/* Period info bar */}
-      <Card className="border-border ">
-        <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Wallet className="size-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">{period.name}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {monthLabel(period.period)} · {formatDateMed(period.startDate)} — {formatDateMed(period.endDate)}
-                {period.generatedAt ? ` · Generated ${formatDateTimeMed(period.generatedAt)}` : ""}
-              </p>
-            </div>
+      <div className="flex flex-col gap-3 rounded-xl border border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Wallet className="size-5" />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={PERIOD_STATUS_STYLE[period.status]}>{PERIOD_STATUS_LABEL[period.status]}</Badge>
-            {!isGenerated ? (
-              <Button size="sm" onClick={() => setGenerateOpen(true)}><Wand2 className="size-4" /> Generate</Button>
-            ) : null}
-            {period.status === "GENERATED" ? (
-              <Button size="sm" variant="outline" onClick={() => setReviewConfirm(true)}><CheckCircle2 className="size-4" /> Review Semua</Button>
-            ) : null}
-            {period.status === "REVIEWED" ? (
-              <Button size="sm" onClick={() => setFinalizeConfirm(true)}><Lock className="size-4" /> Finalisasi</Button>
-            ) : null}
-            {isGenerated ? (
-              <>
-                <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}><Upload className="size-4" /> Import</Button>
-                <Button size="sm" variant="outline" onClick={handleExportCSV}><FileSpreadsheet className="size-4" /> Excel</Button>
-                <Button size="sm" variant="outline" onClick={handleExportPerOutlet}><Download className="size-4" /> Per Outlet</Button>
-                <Button size="sm" variant="outline" onClick={handlePrint}><FileText className="size-4" /> PDF</Button>
-              </>
-            ) : null}
+          <div>
+            <p className="text-sm font-semibold text-foreground">{period.name}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {monthLabel(period.period)} · {formatDateMed(period.startDate)} — {formatDateMed(period.endDate)}
+              {period.generatedAt ? ` · Generated ${formatDateTimeMed(period.generatedAt)}` : ""}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline" className={PERIOD_STATUS_STYLE[period.status]}>{PERIOD_STATUS_LABEL[period.status]}</Badge>
+          {!isGenerated ? (
+            <Button size="sm" onClick={() => setGenerateOpen(true)}><Wand2 className="size-4" /> Generate</Button>
+          ) : null}
+          {period.status === "GENERATED" ? (
+            <Button size="sm" variant="outline" onClick={() => setReviewConfirm(true)}><CheckCircle2 className="size-4" /> Review Semua</Button>
+          ) : null}
+          {period.status === "REVIEWED" ? (
+            <Button size="sm" onClick={() => setFinalizeConfirm(true)}><Lock className="size-4" /> Finalisasi</Button>
+          ) : null}
+          {isGenerated ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}><Upload className="size-4" /> Import</Button>
+              <Button size="sm" variant="outline" onClick={handleExportCSV}><FileSpreadsheet className="size-4" /> Excel</Button>
+              <Button size="sm" variant="outline" onClick={handleExportPerOutlet}><Download className="size-4" /> Per Outlet</Button>
+              <Button size="sm" variant="outline" onClick={handlePrint}><FileText className="size-4" /> PDF</Button>
+            </>
+          ) : null}
+        </div>
+      </div>
 
-      {/* Dashboard 3D cards */}
+      {/* Stats row */}
       {isGenerated ? (
-        <DashboardCards dash={dash} period={period} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Total Payroll" value={formatRupiah(dash.totalPayroll)} icon={Wallet} accent="primary" />
+          <StatCard label="Jumlah Karyawan" value={String(dash.employeeCount)} icon={Users} accent="info" />
+          <StatCard label="Total Gaji Dasar" value={formatRupiah(dash.totalBaseSalary)} icon={FileSpreadsheet} accent="success" />
+          <StatCard label="Total Potongan" value={formatRupiah(dash.totalDeductions)} icon={AlertCircle} accent="destructive" />
+          <StatCard label="Total Lembur" value={formatRupiah(dash.totalOvertime)} icon={CheckCircle2} accent="success" />
+          <StatCard label="Total PH" value={formatRupiah(dash.totalPH)} icon={Wallet} accent="info" />
+          <StatCard label="Total Bonus/Insentif" value={formatRupiah(dash.totalBonus)} icon={Plus} accent="warning" />
+          <StatCard label="Total Penambah" value={formatRupiah(dash.totalAdditions)} icon={Plus} accent="success" />
+        </div>
       ) : null}
 
       {/* Table */}
       {isGenerated ? (
-        <Card className="border-border ">
-          <CardContent className="pt-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Outlet" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Outlet</SelectItem>
-                  {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="REVIEWED">Reviewed</SelectItem>
-                  <SelectItem value="FINALIZED">Finalized</SelectItem>
-                </SelectContent>
-              </Select>
-              <Badge variant="outline" className="text-xs">{filtered.length} karyawan</Badge>
-              {dash.needsReviewCount > 0 ? (
-                <Badge className="bg-warning/15 text-warning border-warning/30"><Flag className="size-3" /> {dash.needsReviewCount} perlu review</Badge>
-              ) : null}
-            </div>
-            <DataTable
-              columns={[selectionColumn<PayrollEntry>(), ...columns] as ColumnDef<PayrollEntry>[]}
-              data={filtered}
-              searchPlaceholder="Cari karyawan..."
-              pageSize={15}
-              onRowClick={onEntryClick}
-              globalFilterFn={(row, q) => `${row.fullName} ${row.nik}`.toLowerCase().includes(q.toLowerCase())}
-              emptyMessage="Belum ada data. Klik Generate untuk membuat."
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <FilterBar>
+            <Select value={filterOutlet} onValueChange={setFilterOutlet}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Outlet" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Outlet</SelectItem>
+                {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="REVIEWED">Reviewed</SelectItem>
+                <SelectItem value="FINALIZED">Finalized</SelectItem>
+              </SelectContent>
+            </Select>
+            <Badge variant="outline" className="text-xs">{filtered.length} karyawan</Badge>
+            {dash.needsReviewCount > 0 ? (
+              <Badge className="bg-warning/15 text-warning border-warning/30"><Flag className="size-3" /> {dash.needsReviewCount} perlu review</Badge>
+            ) : null}
+          </FilterBar>
+          <DataTable
+            columns={[selectionColumn<PayrollEntry>(), ...columns] as ColumnDef<PayrollEntry>[]}
+            data={filtered}
+            searchPlaceholder="Cari karyawan..."
+            pageSize={15}
+            onRowClick={onEntryClick}
+            globalFilterFn={(row, q) => `${row.fullName} ${row.nik}`.toLowerCase().includes(q.toLowerCase())}
+            emptyMessage="Belum ada data. Klik Generate untuk membuat."
+          />
+        </div>
       ) : null}
 
       {generateOpen ? <GenerateDialog period={period} onClose={() => setGenerateOpen(false)} /> : null}
@@ -383,149 +373,6 @@ function PeriodDetail({
           }
         }}
       />
-    </div>
-  );
-}
-
-// ============================================================
-// Dashboard 3D Cards
-// ============================================================
-function DashboardCards({
-  dash,
-  period,
-}: {
-  dash: ReturnType<typeof payrollService.dashboard>;
-  period: PayrollPeriod;
-}) {
-  return (
-    <div className="space-y-3">
-      {/* Main metrics — 3D style cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card3D
-          label="Total Payroll"
-          value={formatRupiah(dash.totalPayroll)}
-          icon={Wallet}
-          gradient="from-primary/20 to-primary/5"
-          iconBg="bg-primary text-primary-foreground"
-        />
-        <Card3D
-          label="Jumlah Karyawan"
-          value={String(dash.employeeCount)}
-          icon={Users}
-          gradient="from-info/20 to-info/5"
-          iconBg="bg-info text-info-foreground"
-        />
-        <Card3D
-          label="Total Gaji Dasar"
-          value={formatRupiah(dash.totalBaseSalary)}
-          icon={TrendingUp}
-          gradient="from-success/20 to-success/5"
-          iconBg="bg-success text-success-foreground"
-        />
-        <Card3D
-          label="Total Potongan"
-          value={formatRupiah(dash.totalDeductions)}
-          icon={TrendingDown}
-          gradient="from-destructive/20 to-destructive/5"
-          iconBg="bg-destructive text-destructive-foreground"
-        />
-      </div>
-
-      {/* Secondary metrics */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <MiniCard label="Total Lembur" value={formatRupiah(dash.totalOvertime)} icon={TrendingUp} color="text-success" />
-        <MiniCard label="Total PH" value={formatRupiah(dash.totalPH)} icon={Wallet} color="text-info" />
-        <MiniCard label="Total Bonus/Insentif" value={formatRupiah(dash.totalBonus)} icon={TrendingUp} color="text-primary" />
-        <MiniCard label="Total Penambah" value={formatRupiah(dash.totalAdditions)} icon={Plus} color="text-success" />
-      </div>
-
-      {/* Status & per outlet */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card className="border-border ">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Status Entry</CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-3">
-            <StatusMini label="Draft" value={dash.draftCount} color="bg-muted text-muted-foreground" />
-            <StatusMini label="Reviewed" value={dash.reviewedCount} color="bg-info/15 text-info" />
-            <StatusMini label="Finalized" value={dash.finalizedCount} color="bg-success/15 text-success" />
-            {dash.needsReviewCount > 0 ? (
-              <div className="ml-auto flex items-center gap-1.5 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5">
-                <Flag className="size-3.5 text-warning" />
-                <span className="text-xs font-medium text-warning">{dash.needsReviewCount} perlu review</span>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card className="border-border ">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total per Outlet</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
-              {dash.perOutlet.map((p) => (
-                <div key={p.outlet.id} className="flex items-center justify-between text-xs">
-                  <span className="truncate text-muted-foreground">{p.outlet.name.replace("JURI Bun — ", "")}</span>
-                  <span className="ml-2 shrink-0 font-medium tabular-nums text-foreground">{formatRupiah(p.total)}</span>
-                </div>
-              ))}
-              {dash.perOutlet.length === 0 ? <p className="text-xs text-muted-foreground">Tidak ada data per outlet.</p> : null}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function Card3D({
-  label,
-  value,
-  icon: Icon,
-  gradient,
-  iconBg,
-}: {
-  label: string;
-  value: string;
-  icon: typeof Wallet;
-  gradient: string;
-  iconBg: string;
-}) {
-  return (
-    <div className={cn("relative overflow-hidden rounded-xl border border-border bg-gradient-to-br p-4", gradient)}>
-      <div className="absolute -right-4 -top-4 size-20 rounded-full bg-white/20 blur-2xl" />
-      <div className="relative flex items-start justify-between">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="mt-1 truncate text-lg font-bold tabular-nums text-foreground">{value}</p>
-        </div>
-        <div className={cn("flex size-10 items-center justify-center rounded-xl shadow-md", iconBg)}>
-          <Icon className="size-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MiniCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: typeof Wallet; color: string }) {
-  return (
-    <Card className="border-border p-3 ">
-      <div className="flex items-center gap-2">
-        <Icon className={cn("size-4", color)} />
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-          <p className="truncate text-sm font-bold tabular-nums text-foreground">{value}</p>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function StatusMini({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className={cn("flex size-9 items-center justify-center rounded-lg text-sm font-bold", color)}>{value}</span>
-      <span className="mt-1 text-[10px] text-muted-foreground">{label}</span>
     </div>
   );
 }

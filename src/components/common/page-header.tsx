@@ -4,27 +4,49 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
-  title?: string;
+  title: string;
   description?: string;
   actions?: React.ReactNode;
   badge?: React.ReactNode;
   className?: string;
 }
 
-/** ERPNext-style Action Bar: Renders action buttons directly above content without redundant header title text */
 export function PageHeader({
+  title,
+  description,
   actions,
+  badge,
   className,
 }: PageHeaderProps) {
-  if (!actions) return null;
   return (
-    <div
-      className={cn(
-        "no-print flex flex-wrap items-center justify-end gap-2 pb-2 transition-all",
-        className,
+    <div className={cn("flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between pb-2", className)}>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">{title}</h1>
+          {badge}
+        </div>
+        {description && (
+          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{description}</p>
+        )}
+      </div>
+      {actions && (
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">{actions}</div>
       )}
-    >
-      {actions}
+    </div>
+  );
+}
+
+/** Compact filter bar to place below PageHeader */
+export function FilterBar({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-1.5 pb-1", className)}>
+      {children}
     </div>
   );
 }

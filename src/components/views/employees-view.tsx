@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader } from "@/components/common/page-header";
+import { PageHeader, FilterBar } from "@/components/common/page-header";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -332,6 +332,37 @@ export function EmployeesView() {
         }
       />
 
+      <FilterBar>
+        <Select value={filterOutlet} onValueChange={setFilterOutlet}>
+          <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Outlet</SelectItem>
+            {outlets.map((o) => (
+              <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Kategori</SelectItem>
+            <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
+            <SelectItem value="PH_KLATEN">Karyawan PH Klaten</SelectItem>
+            <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
+            <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Status</SelectItem>
+            <SelectItem value="AKTIF">Aktif</SelectItem>
+            <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
+            <SelectItem value="RESIGN">Resign</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterBar>
+
       <DataTable
         tableKey="employees"
         columns={[selectionColumn<Employee>(), ...columns] as ColumnDef<Employee>[]}
@@ -340,38 +371,6 @@ export function EmployeesView() {
         pageSize={10}
         onRowClick={(e) => (window.location.hash = `#/karyawan?id=${e.id}`)}
         globalFilterFn={(row, q) => (row.fullName + " " + row.nik).toLowerCase().includes(q.toLowerCase())}
-        toolbar={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-              <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Outlet</SelectItem>
-                {outlets.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Kategori</SelectItem>
-                <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
-                <SelectItem value="PH_KLATEN">Karyawan PH Klaten</SelectItem>
-                <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
-                <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="AKTIF">Aktif</SelectItem>
-                <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
-                <SelectItem value="RESIGN">Resign</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        }
         bulkActions={(rows) => (
           <>
             <Button

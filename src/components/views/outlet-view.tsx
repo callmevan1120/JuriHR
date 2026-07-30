@@ -264,20 +264,16 @@ export function OutletView() {
         }
       />
 
-      <Card className="rounded-2xl border border-border/60">
-        <CardContent className="pt-4">
-          <DataTable
-            columns={columns}
-            data={outlets.filter((o) => o.status !== "archived")}
-            searchPlaceholder="Cari outlet..."
-            pageSize={10}
-            onRowClick={(o) => (window.location.hash = `#/outlet?id=${o.id}`)}
-            globalFilterFn={(row, q) =>
-              (row.name + row.code + row.address).toLowerCase().includes(q.toLowerCase())
-            }
-          />
-        </CardContent>
-      </Card>
+      <DataTable
+        columns={columns}
+        data={outlets.filter((o) => o.status !== "archived")}
+        searchPlaceholder="Cari outlet..."
+        pageSize={10}
+        onRowClick={(o) => (window.location.hash = `#/outlet?id=${o.id}`)}
+        globalFilterFn={(row, q) =>
+          (row.name + row.code + row.address).toLowerCase().includes(q.toLowerCase())
+        }
+      />
 
       <ConfirmDialog
         open={!!confirm}

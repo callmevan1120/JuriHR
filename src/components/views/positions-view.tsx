@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader } from "@/components/common/page-header";
+import { PageHeader, FilterBar } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
@@ -161,8 +161,7 @@ export function PositionsView() {
         {activePositionsCount} jabatan aktif, {activeDivisionsCount} divisi, {outletPositionsCount} posisi outlet, total {employees.length} karyawan.
       </p>
 
-      {/* Segmented Tab Switcher */}
-      <div className="flex items-center justify-between border-b border-border/40 pb-3">
+      <FilterBar>
         <div className="inline-flex rounded-xl bg-muted/50 p-1 text-xs font-semibold">
           <button
             type="button"
@@ -198,7 +197,7 @@ export function PositionsView() {
             </span>
           </button>
         </div>
-      </div>
+      </FilterBar>
 
       {activeTab === "positions" ? (
         <PositionsTableSection
@@ -420,19 +419,16 @@ function PositionsTableSection({
   ];
 
   return (
-      <div className="border border-border rounded-lg p-4">
-        <h3 className="text-sm font-semibold mb-3">Daftar Lengkap Posisi & Jabatan</h3>
-        <DataTable
-          tableKey="positions"
-          columns={[selectionColumn<Position>(), ...columns] as ColumnDef<Position>[]}
-          data={positions}
-          searchPlaceholder="Cari berdasarkan nama atau kode posisi..."
-          pageSize={10}
-          globalFilterFn={(row, q) =>
-            (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
-          }
-        />
-      </div>
+    <DataTable
+      tableKey="positions"
+      columns={[selectionColumn<Position>(), ...columns] as ColumnDef<Position>[]}
+      data={positions}
+      searchPlaceholder="Cari berdasarkan nama atau kode posisi..."
+      pageSize={10}
+      globalFilterFn={(row, q) =>
+        (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
+      }
+    />
   );
 }
 
@@ -551,19 +547,16 @@ function DivisionsTableSection({
   ];
 
   return (
-      <div className="border border-border rounded-lg p-4">
-        <h3 className="text-sm font-semibold mb-3">Daftar Lengkap Divisi & Departemen</h3>
-        <DataTable
-          tableKey="divisions"
-          columns={[selectionColumn<Division>(), ...columns] as ColumnDef<Division>[]}
-          data={divisions}
-          searchPlaceholder="Cari berdasarkan nama atau kode divisi..."
-          pageSize={10}
-          globalFilterFn={(row, q) =>
-            (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
-          }
-        />
-      </div>
+    <DataTable
+      tableKey="divisions"
+      columns={[selectionColumn<Division>(), ...columns] as ColumnDef<Division>[]}
+      data={divisions}
+      searchPlaceholder="Cari berdasarkan nama atau kode divisi..."
+      pageSize={10}
+      globalFilterFn={(row, q) =>
+        (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
+      }
+    />
   );
 }
 
