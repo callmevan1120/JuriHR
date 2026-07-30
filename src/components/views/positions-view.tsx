@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader, FilterBar } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
@@ -18,6 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Field, FormRow } from "@/components/common/field";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
@@ -48,7 +53,10 @@ import {
   ArrowLeft,
   Save,
   AlertCircle,
-  FileSpreadsheet,
+  Search,
+  Upload,
+  Download,
+  MoreVertical,
 } from "lucide-react";
 
 export function PositionsView() {
@@ -57,6 +65,7 @@ export function PositionsView() {
   const employees = useStore((s) => s.employees);
 
   const [activeTab, setActiveTab] = React.useState<"positions" | "divisions">("positions");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   const [formState, setFormState] = React.useState<{
     type: "position" | "division" | null;
@@ -107,7 +116,6 @@ export function PositionsView() {
 
   const activePositionsCount = positions.filter((p) => p.status === "active").length;
   const activeDivisionsCount = divisions.filter((d) => d.status === "active").length;
-  const outletPositionsCount = positions.filter((p) => p.category === "OUTLET").length;
 
   const positionImportFields: ImportExportField[] = [
     { key: "code", label: "Kode Posisi", priority: "wajib", defaultChecked: true, sampleValue: "BAR" },
@@ -118,97 +126,107 @@ export function PositionsView() {
     { key: "note", label: "Catatan Jabatan", priority: "opsional", defaultChecked: false, sampleValue: "Posisi operasional cabang" },
   ];
 
+  const filteredPositions = positions.filter((p) =>
+    (p.name + " " + p.code + " " + (p.note ?? "")).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredDivisions = divisions.filter((d) =>
+    (d.name + " " + d.code + " " + (d.note ?? "")).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <PageHeader
-        title="Posisi &amp; Divisi Karyawan"
-        description="Pengelolaan struktur jabatan, departemen divisi, dan acuan default kompensasi gaji JURI Bun."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-info" /> Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-primary" /> Export
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setFormState({ type: "division", mode: "create" })}
-              className="gap-1.5 rounded-xl font-semibold text-xs"
-            >
-              <Plus className="size-4 text-primary" /> Tambah Divisi
-            </Button>
-            <Button
-              onClick={() => setFormState({ type: "position", mode: "create" })}
-              className="gap-1.5 rounded-xl font-semibold text-xs"
-            >
-              <Plus className="size-4" /> Tambah Posisi
-            </Button>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="relative w-full sm:w-[200px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={activeTab === "positions" ? "Cari posisi..." : "Cari divisi..."}
+              className="h-8 pl-8 text-xs rounded-xl"
+            />
           </div>
-        }
-      />
+          <div className="inline-flex rounded-xl bg-muted/50 p-1 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveTab("positions")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all duration-150",
+                activeTab === "positions"
+                  ? "bg-background text-foreground font-bold border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Briefcase className="size-3.5 text-primary" />
+              <span>Posisi</span>
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] text-primary font-bold">
+                {positions.length}
+              </span>
+            </button>
 
-      {/* Simple summary line */}
-      <p className="text-xs text-muted-foreground">
-        {activePositionsCount} jabatan aktif, {activeDivisionsCount} divisi, {outletPositionsCount} posisi outlet, total {employees.length} karyawan.
-      </p>
-
-      <FilterBar>
-        <div className="inline-flex rounded-xl bg-muted/50 p-1 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveTab("positions")}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-150",
-              activeTab === "positions"
-                ? "bg-background text-foreground font-bold border border-border/60"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Briefcase className="size-4 text-primary" />
-            <span>Master Posisi &amp; Jabatan</span>
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary font-bold">
-              {positions.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("divisions")}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2 transition-all duration-150",
-              activeTab === "divisions"
-                ? "bg-background text-foreground font-bold border border-border/60"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Building2 className="size-4 text-info" />
-            <span>Master Divisi &amp; Departemen</span>
-            <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] text-info font-bold">
-              {divisions.length}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("divisions")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all duration-150",
+                activeTab === "divisions"
+                  ? "bg-background text-foreground font-bold border border-border/60"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Building2 className="size-3.5 text-info" />
+              <span>Divisi</span>
+              <span className="rounded-full bg-info/15 px-1.5 py-0.5 text-[10px] text-info font-bold">
+                {divisions.length}
+              </span>
+            </button>
+          </div>
         </div>
-      </FilterBar>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">{activePositionsCount} posisi aktif · {activeDivisionsCount} divisi</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFormState({ type: "division", mode: "create" })}
+            className="gap-1 rounded-xl text-xs font-semibold h-8"
+          >
+            <Plus className="size-3.5" /> Divisi
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setFormState({ type: "position", mode: "create" })}
+            className="gap-1 rounded-xl text-xs font-semibold h-8"
+          >
+            <Plus className="size-3.5" /> Posisi
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 rounded-xl">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImportOpen(true)} className="gap-2">
+                <Upload className="size-3.5" /> Import Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setExportOpen(true)} className="gap-2">
+                <Download className="size-3.5" /> Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       {activeTab === "positions" ? (
         <PositionsTableSection
-          positions={positions}
+          positions={filteredPositions}
           empCount={empCountByPosition}
           onEdit={(p) => setFormState({ type: "position", mode: "edit", data: p })}
           onArchive={(p) => setConfirm({ type: "position", id: p.id, name: p.name })}
         />
       ) : (
         <DivisionsTableSection
-          divisions={divisions}
+          divisions={filteredDivisions}
           empCount={empCountByDivision}
           onEdit={(d) => setFormState({ type: "division", mode: "edit", data: d })}
           onArchive={(d) => setConfirm({ type: "division", id: d.id, name: d.name })}
@@ -285,7 +303,7 @@ export function PositionsView() {
         open={exportOpen}
         onOpenChange={setExportOpen}
         fields={positionImportFields}
-        exportData={activeTab === "positions" ? positions : divisions}
+        exportData={activeTab === "positions" ? filteredPositions : filteredDivisions}
       />
     </div>
   );
@@ -386,7 +404,7 @@ function PositionsTableSection({
     },
     {
       id: "actions",
-      header: "",
+      header: "Aksi",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
           <Button
@@ -423,11 +441,7 @@ function PositionsTableSection({
       tableKey="positions"
       columns={[selectionColumn<Position>(), ...columns] as ColumnDef<Position>[]}
       data={positions}
-      searchPlaceholder="Cari berdasarkan nama atau kode posisi..."
-      pageSize={10}
-      globalFilterFn={(row, q) =>
-        (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
-      }
+      pageSize={15}
     />
   );
 }
@@ -514,7 +528,7 @@ function DivisionsTableSection({
     },
     {
       id: "actions",
-      header: "",
+      header: "Aksi",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
           <Button
@@ -551,11 +565,7 @@ function DivisionsTableSection({
       tableKey="divisions"
       columns={[selectionColumn<Division>(), ...columns] as ColumnDef<Division>[]}
       data={divisions}
-      searchPlaceholder="Cari berdasarkan nama atau kode divisi..."
-      pageSize={10}
-      globalFilterFn={(row, q) =>
-        (row.name + row.code + (row.note ?? "")).toLowerCase().includes(q.toLowerCase())
-      }
+      pageSize={15}
     />
   );
 }

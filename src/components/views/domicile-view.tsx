@@ -4,7 +4,6 @@ import * as React from "react";
 import { MapContainer, TileLayer, Marker, Circle, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { PageHeader } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
@@ -34,7 +33,6 @@ import {
   Users,
   Navigation,
   Search,
-  Filter,
   Layers,
 } from "lucide-react";
 
@@ -85,7 +83,7 @@ export function DomicileView() {
 
   const [filterOutlet, setFilterOutlet] = React.useState<string>("all");
   const [filterCategory, setFilterCategory] = React.useState<string>("all");
-  const [search, setSearch] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [obfuscate, setObfuscate] = React.useState(true);
   const [selectedEmp, setSelectedEmp] = React.useState<string | null>(null);
 
@@ -93,7 +91,7 @@ export function DomicileView() {
   const filtered = employees.filter((e) => {
     if (filterCategory !== "all" && e.category !== filterCategory) return false;
     if (filterOutlet !== "all" && e.primaryOutletId !== filterOutlet) return false;
-    if (search && !`${e.fullName} ${e.nik}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (searchQuery && !`${e.fullName} ${e.nik}`.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
@@ -111,38 +109,20 @@ export function DomicileView() {
   const centerLon = outlets.reduce((s, o) => s + o.longitude, 0) / (outlets.length || 1);
 
   return (
-    <div className="space-y-5">
-      <PageHeader
-        title="Domisili & Peta"
-        description="Peta persebaran domisili karyawan relatif terhadap outlet. Koordinat dapat disamarkan untuk privasi."
-        actions={
-          <Button
-            variant={obfuscate ? "default" : "outline"}
-            onClick={() => setObfuscate(!obfuscate)}
-          >
-            <Layers className="size-4" />
-            {obfuscate ? "Samarkan Koordinat: Aktif" : "Samarkan Koordinat: Nonaktif"}
-          </Button>
-        }
-      />
-
-      {/* Filter bar */}
-      <Card className="rounded-2xl border border-border/60">
-        <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Filter className="size-4" /> Filter
-          </div>
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="relative w-full sm:w-[200px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama/NIK..."
-              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama / NIK..."
+              className="h-8 pl-8 text-xs rounded-xl"
             />
           </div>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Kategori" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kategori</SelectItem>
               <SelectItem value="OUTLET">Outlet</SelectItem>
@@ -150,7 +130,7 @@ export function DomicileView() {
             </SelectContent>
           </Select>
           <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-            <SelectTrigger className="h-9 w-[170px]"><SelectValue placeholder="Outlet" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue placeholder="Semua Outlet" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Outlet</SelectItem>
               {outlets.map((o) => (
@@ -158,11 +138,22 @@ export function DomicileView() {
               ))}
             </SelectContent>
           </Select>
-          <Badge variant="outline" className="ml-auto rounded-lg text-xs">
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline" className="rounded-lg text-[10px] h-8">
             <Users className="size-3" /> {points.length} karyawan
           </Badge>
-        </CardContent>
-      </Card>
+          <Button
+            variant={obfuscate ? "default" : "outline"}
+            size="sm"
+            onClick={() => setObfuscate(!obfuscate)}
+            className="gap-1 rounded-xl text-xs font-semibold h-8"
+          >
+            <Layers className="size-3.5" />
+            {obfuscate ? "Samarkan: Aktif" : "Samarkan: Nonaktif"}
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Map */}

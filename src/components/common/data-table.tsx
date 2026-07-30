@@ -226,16 +226,6 @@ export function DataTable<TData, TValue>({
               {bulkActions(selectedRows)}
             </div>
           ) : null}
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setConfigDialogOpen(true)}
-            className="size-8 rounded-xl border-border/60 hover:bg-muted/40"
-            title="Configure Columns"
-          >
-            <Settings className="size-3.5 text-muted-foreground" />
-          </Button>
         </div>
 
           {/* ERPNext Configure Columns Dialog (Matching User Image) */}
@@ -425,7 +415,17 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-border/60 bg-card relative">
+        {/* Settings gear — pojok kanan atas dalam tabel */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setConfigDialogOpen(true)}
+          className="absolute top-1 right-1 z-20 size-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          title="Configure Columns"
+        >
+          <Settings className="size-3.5" />
+        </Button>
         <div className="overflow-x-auto data-table-wrapper">
           <Table>
             <TableHeader>

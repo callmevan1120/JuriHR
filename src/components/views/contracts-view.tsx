@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,7 +56,9 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  FileSpreadsheet,
+  Search,
+  Upload,
+  MoreVertical,
 } from "lucide-react";
 
   const REMINDER_BUCKETS = [
@@ -73,6 +80,7 @@ export function ContractsView() {
   const [filterBucket, setFilterBucket] = React.useState<string>("all");
   const [filterStatus, setFilterStatus] = React.useState<string>("all");
   const [filterType, setFilterType] = React.useState<string>("all");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   const [extendTarget, setExtendTarget] = React.useState<Contract | null>(null);
   const [editTarget, setEditTarget] = React.useState<Contract | null>(null);
@@ -91,21 +99,28 @@ export function ContractsView() {
 
   // Filter gabungan terpusat (tanpa kontrol ganda)
   const filteredContracts = React.useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return contracts.filter((c) => {
       const r = contractService.reminderCategory(c.endDate);
       if (filterBucket !== "all" && r.bucket !== filterBucket) return false;
       if (filterStatus !== "all" && c.status !== filterStatus) return false;
       if (filterType !== "all" && c.type !== filterType) return false;
+      if (q) {
+        const emp = employees.find((e) => e.id === c.employeeId);
+        const haystack = (c.contractNo + " " + (emp?.fullName ?? "") + " " + (emp?.nik ?? "")).toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
-  }, [contracts, filterBucket, filterStatus, filterType]);
+  }, [contracts, employees, filterBucket, filterStatus, filterType, searchQuery]);
 
-  const hasActiveFilters = filterBucket !== "all" || filterStatus !== "all" || filterType !== "all";
+  const hasActiveFilters = filterBucket !== "all" || filterStatus !== "all" || filterType !== "all" || searchQuery !== "";
 
   const resetFilters = () => {
     setFilterBucket("all");
     setFilterStatus("all");
     setFilterType("all");
+    setSearchQuery("");
   };
 
   const columns: ColumnDef<Contract>[] = [
@@ -180,7 +195,7 @@ export function ContractsView() {
     },
     {
       id: "actions",
-      header: "",
+      header: "Aksi",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
           <Button
@@ -246,29 +261,64 @@ export function ContractsView() {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Kontrak &amp; Monitoring Masa Kerja"
-        description="Pantau tanggal jatuh tempo kontrak kerja karyawan JURI Bun secara otomatis."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-info" /> Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-primary" /> Export
-            </Button>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="relative w-full sm:w-[200px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari kontrak / karyawan..."
+              className="h-8 pl-8 text-xs rounded-xl"
+            />
           </div>
-        }
-      />
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 text-xs w-[130px]">
+              <SelectValue placeholder="Semua Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="AKTIF">Aktif</SelectItem>
+              <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
+              <SelectItem value="BERAKHIR">Berakhir</SelectItem>
+              <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-8 text-xs w-[120px]">
+              <SelectValue placeholder="Semua Jenis" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Jenis</SelectItem>
+              <SelectItem value="PKWT">PKWT</SelectItem>
+              <SelectItem value="PKWTT">PKWTT</SelectItem>
+              <SelectItem value="PROBATION">Probation</SelectItem>
+              <SelectItem value="MAGANG">Magang</SelectItem>
+              <SelectItem value="HARIAN">Harian</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">{filteredContracts.length} kontrak tampil</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 rounded-xl">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImportOpen(true)} className="gap-2">
+                <Upload className="size-3.5" /> Import Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setExportOpen(true)} className="gap-2">
+                <Download className="size-3.5" /> Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       {/* Simple horizontal stat row */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
@@ -292,62 +342,20 @@ export function ContractsView() {
             </button>
           );
         })}
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={resetFilters} className="ml-auto gap-1.5 h-7 text-xs text-muted-foreground hover:text-foreground">
+            <FilterX className="size-3.5" /> Reset Filter
+          </Button>
+        )}
       </div>
 
-      {/* Main Table */}
-      <div className="border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">Daftar Kontrak Kerja</h3>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-              <FilterX className="size-3.5" /> Reset Semua Filter
-            </Button>
-          )}
-        </div>
-        <DataTable
-          tableKey="contracts"
-          columns={columns}
-          data={filteredContracts}
-          searchPlaceholder="Cari nomor kontrak, NIK, atau nama karyawan..."
-          pageSize={10}
-          globalFilterFn={(row, q) => {
-            const emp = employees.find((e) => e.id === row.employeeId);
-            return (row.contractNo + (emp?.fullName ?? "") + (emp?.nik ?? "")).toLowerCase().includes(q.toLowerCase());
-          }}
-          toolbar={
-            <div className="flex items-center gap-2">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
-                  <SelectValue placeholder="Status Kontrak" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="AKTIF">Aktif</SelectItem>
-                  <SelectItem value="AKAN_BERAKHIR">Akan Berakhir</SelectItem>
-                  <SelectItem value="BERAKHIR">Berakhir</SelectItem>
-                  <SelectItem value="DIPERPANJANG">Diperpanjang</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="h-9 min-w-[140px] text-xs rounded-xl">
-                  <SelectValue placeholder="Jenis Kontrak" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Jenis</SelectItem>
-                  <SelectItem value="PKWT">PKWT</SelectItem>
-                  <SelectItem value="PKWTT">PKWTT</SelectItem>
-                  <SelectItem value="PROBATION">Probation</SelectItem>
-                  <SelectItem value="MAGANG">Magang</SelectItem>
-                  <SelectItem value="HARIAN">Harian</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
-          emptyMessage="Tidak ada kontrak yang sesuai dengan filter pencarian."
-        />
-      </div>
+      <DataTable
+        tableKey="contracts"
+        columns={columns}
+        data={filteredContracts}
+        pageSize={15}
+        emptyMessage="Tidak ada kontrak yang sesuai dengan filter pencarian."
+      />
 
       {extendTarget ? (
         <ExtendDialog

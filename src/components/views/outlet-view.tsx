@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader } from "@/components/common/page-header";
 import {
   Card,
   CardContent,
@@ -27,6 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Field, FormRow } from "@/components/common/field";
 import { InfoRow } from "@/components/common/info-row";
@@ -83,9 +88,12 @@ import {
   Trash2,
   ArrowLeft,
   Save,
-  FileSpreadsheet,
   Phone,
   User,
+  Search,
+  Upload,
+  Download,
+  MoreVertical,
 } from "lucide-react";
 
 const CLASSIFICATION_LABEL: Record<OutletClassification, string> = {
@@ -110,6 +118,9 @@ export function OutletView() {
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [filterClassification, setFilterClassification] = React.useState<string>("all");
+  const [filterStatus, setFilterStatus] = React.useState<string>("all");
 
   if (dialog) {
     return (
@@ -195,7 +206,7 @@ export function OutletView() {
     },
     {
       id: "actions",
-      header: "",
+      header: "Aksi",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
           <Button
@@ -236,43 +247,79 @@ export function OutletView() {
     { key: "geofenceRadiusMeters", label: "Radius Geofence (Meter)", priority: "disarankan", defaultChecked: true, sampleValue: "100" },
   ];
 
+  const filtered = outlets.filter((o) => {
+    if (filterStatus === "all") {
+      if (o.status === "archived") return false;
+    } else if (o.status !== filterStatus) return false;
+    if (filterClassification !== "all" && o.classification !== filterClassification) return false;
+    return true;
+  });
+
+  const filteredData = filtered.filter((o) =>
+    (o.name + " " + o.code + " " + o.address).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <PageHeader
-        title="Outlet Cabang"
-        description="Master outlet dengan geofence, kepala outlet, dan statistik karyawan."
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-info" /> Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-primary" /> Export
-            </Button>
-            <Button onClick={() => setDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
-              <Plus className="size-4" /> Tambah Outlet
-            </Button>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5">
+          <div className="relative w-full sm:w-[200px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama / kode..."
+              className="h-8 pl-8 text-xs rounded-xl"
+            />
           </div>
-        }
-      />
+          <Select value={filterClassification} onValueChange={setFilterClassification}>
+            <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue placeholder="Semua Tipe" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Tipe</SelectItem>
+              <SelectItem value="FLAGSHIP">Flagship</SelectItem>
+              <SelectItem value="STANDARD">Standard</SelectItem>
+              <SelectItem value="EXPRESS">Express</SelectItem>
+              <SelectItem value="KIOSK">Kiosk</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="active">Aktif</SelectItem>
+              <SelectItem value="inactive">Nonaktif</SelectItem>
+              <SelectItem value="archived">Arsip</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">{filtered.length} outlet tampil</span>
+          <Button size="sm" onClick={() => setDialog({ mode: "create" })} className="gap-1 rounded-xl text-xs font-semibold h-8">
+            <Plus className="size-3.5" /> Tambah Outlet
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 rounded-xl">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImportOpen(true)} className="gap-2">
+                <Upload className="size-3.5" /> Import Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setExportOpen(true)} className="gap-2">
+                <Download className="size-3.5" /> Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <DataTable
         columns={columns}
-        data={outlets.filter((o) => o.status !== "archived")}
-        searchPlaceholder="Cari outlet..."
-        pageSize={10}
+        data={filteredData}
+        pageSize={15}
         onRowClick={(o) => (window.location.hash = `#/outlet?id=${o.id}`)}
-        globalFilterFn={(row, q) =>
-          (row.name + row.code + row.address).toLowerCase().includes(q.toLowerCase())
-        }
       />
 
       <ConfirmDialog
@@ -332,7 +379,7 @@ export function OutletView() {
         open={exportOpen}
         onOpenChange={setExportOpen}
         fields={outletImportFields}
-        exportData={outlets}
+        exportData={filtered}
       />
     </div>
   );
@@ -374,24 +421,24 @@ function OutletDetail({
         <span className="font-medium text-foreground">Detail Outlet</span>
       </div>
 
-      <PageHeader
-        title={outlet.name}
-        description={outlet.address}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5 rounded-xl font-semibold text-xs">
-              <Pencil className="size-4 text-primary" /> Edit Outlet
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteConfirm(true)}
-              className="gap-1.5 rounded-xl font-semibold text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
-            >
-              <Trash2 className="size-4" /> Hapus Outlet
-            </Button>
-          </div>
-        }
-      />
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between pb-2">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">{outlet.name}</h1>
+          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{outlet.address}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+          <Button variant="outline" onClick={handleOpenEdit} className="gap-1.5 rounded-xl font-semibold text-xs">
+            <Pencil className="size-4 text-primary" /> Edit Outlet
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setDeleteConfirm(true)}
+            className="gap-1.5 rounded-xl font-semibold text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
+          >
+            <Trash2 className="size-4" /> Hapus Outlet
+          </Button>
+        </div>
+      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
