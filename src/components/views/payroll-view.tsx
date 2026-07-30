@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader, FilterBar } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -56,8 +55,6 @@ import {
   Plus,
   AlertCircle,
   Upload,
-  CalendarDays,
-  RotateCcw,
   Flag,
   Users,
 } from "lucide-react";
@@ -95,63 +92,50 @@ export function PayrollView() {
   const selectedPeriod = periods.find((p) => p.id === selectedPeriodId);
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="Payroll"
-        description="Kelola periode payroll, generate, review, finalize, dan export."
-        actions={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="size-4" /> Buat Periode
-          </Button>
-        }
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        {/* Period list sidebar */}
-        <div className="rounded-xl border border-border lg:col-span-1">
-          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-            <CalendarDays className="size-4 text-primary" />
-            <span className="text-sm font-semibold">Periode Payroll</span>
-          </div>
-          <div className="space-y-2 p-3">
-            {periods.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted-foreground">Belum ada periode.</p>
-            ) : (
-              periods.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPeriodId(p.id)}
-                  className={cn(
-                    "flex w-full flex-col gap-1 rounded-lg border p-3 text-left transition-all",
-                    selectedPeriodId === p.id ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted/30",
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="truncate text-sm font-medium text-foreground">{p.name}</span>
-                    <Badge variant="outline" className={cn("text-[9px]", PERIOD_STATUS_STYLE[p.status])}>{PERIOD_STATUS_LABEL[p.status]}</Badge>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">{monthLabel(p.period)} · {formatDateMed(p.startDate)} — {formatDateMed(p.endDate)}</span>
-                  {p.scopeType !== "ALL" ? <span className="text-[10px] text-muted-foreground">Scope: {p.scopeType}</span> : null}
-                </button>
-              ))
-            )}
-          </div>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Wallet className="size-4 text-primary" />
+          <span className="text-sm font-semibold">Payroll</span>
+          <span className="text-[10px] text-muted-foreground">{periods.length} periode</span>
         </div>
-
-        {/* Period detail */}
-        <div className="space-y-4 lg:col-span-3">
-          {selectedPeriod ? (
-            <PeriodDetail
-              period={selectedPeriod}
-              onEntryClick={setDetailTarget}
-            />
-          ) : (
-            <div className="rounded-xl border border-border py-12 text-center text-sm text-muted-foreground">
-              Pilih atau buat periode payroll untuk memulai.
-            </div>
-          )}
-        </div>
+        <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1 rounded-xl text-xs font-semibold h-8">
+          <Plus className="size-3.5" /> Buat Periode
+        </Button>
       </div>
+
+      {/* Period selector — pills */}
+      {periods.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {periods.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPeriodId(p.id)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all",
+                selectedPeriodId === p.id
+                  ? "border-primary bg-primary/10 text-primary font-semibold"
+                  : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
+              )}
+            >
+              <span className="font-medium">{monthLabel(p.period)}</span>
+              <Badge variant="outline" className={cn("text-[8px] h-4", PERIOD_STATUS_STYLE[p.status])}>{PERIOD_STATUS_LABEL[p.status]}</Badge>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border px-4 py-8 text-center text-xs text-muted-foreground">
+          Belum ada periode payroll. Klik "Buat Periode" untuk memulai.
+        </div>
+      )}
+
+      {/* Period detail */}
+      {selectedPeriod ? (
+        <PeriodDetail
+          period={selectedPeriod}
+          onEntryClick={setDetailTarget}
+        />
+      ) : null}
 
       {createOpen ? <CreatePeriodDialog onClose={() => setCreateOpen(false)} onCreated={(id) => setSelectedPeriodId(id)} /> : null}
       {detailTarget ? <EntryDetailDialog entry={detailTarget} onClose={() => setDetailTarget(null)} /> : null}
@@ -256,82 +240,87 @@ function PeriodDetail({
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Period info bar */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Wallet className="size-5" />
+    <div className="space-y-3 sm:space-y-4">
+      {/* Period header — compact, flat */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Wallet className="size-4" />
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">{period.name}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground">
               {monthLabel(period.period)} · {formatDateMed(period.startDate)} — {formatDateMed(period.endDate)}
-              {period.generatedAt ? ` · Generated ${formatDateTimeMed(period.generatedAt)}` : ""}
             </p>
           </div>
+          <Badge variant="outline" className={cn("ml-1", PERIOD_STATUS_STYLE[period.status])}>{PERIOD_STATUS_LABEL[period.status]}</Badge>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className={PERIOD_STATUS_STYLE[period.status]}>{PERIOD_STATUS_LABEL[period.status]}</Badge>
+        <div className="flex flex-wrap items-center gap-1.5">
           {!isGenerated ? (
-            <Button size="sm" onClick={() => setGenerateOpen(true)}><Wand2 className="size-4" /> Generate</Button>
+            <Button size="sm" onClick={() => setGenerateOpen(true)} className="gap-1 rounded-xl text-xs font-semibold h-8">
+              <Wand2 className="size-3.5" /> Generate
+            </Button>
           ) : null}
           {period.status === "GENERATED" ? (
-            <Button size="sm" variant="outline" onClick={() => setReviewConfirm(true)}><CheckCircle2 className="size-4" /> Review Semua</Button>
+            <Button size="sm" variant="outline" onClick={() => setReviewConfirm(true)} className="gap-1 rounded-xl text-xs h-8">
+              <CheckCircle2 className="size-3.5" /> Review Semua
+            </Button>
           ) : null}
           {period.status === "REVIEWED" ? (
-            <Button size="sm" onClick={() => setFinalizeConfirm(true)}><Lock className="size-4" /> Finalisasi</Button>
+            <Button size="sm" onClick={() => setFinalizeConfirm(true)} className="gap-1 rounded-xl text-xs font-semibold h-8">
+              <Lock className="size-3.5" /> Finalisasi
+            </Button>
           ) : null}
           {isGenerated ? (
             <>
-              <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}><Upload className="size-4" /> Import</Button>
-              <Button size="sm" variant="outline" onClick={handleExportCSV}><FileSpreadsheet className="size-4" /> Excel</Button>
-              <Button size="sm" variant="outline" onClick={handleExportPerOutlet}><Download className="size-4" /> Per Outlet</Button>
-              <Button size="sm" variant="outline" onClick={handlePrint}><FileText className="size-4" /> PDF</Button>
+              <Button size="sm" variant="outline" onClick={() => setImportOpen(true)} className="gap-1 rounded-xl text-xs h-8"><Upload className="size-3.5" /> Import</Button>
+              <Button size="sm" variant="outline" onClick={handleExportCSV} className="gap-1 rounded-xl text-xs h-8"><FileSpreadsheet className="size-3.5" /> Excel</Button>
+              <Button size="sm" variant="outline" onClick={handleExportPerOutlet} className="gap-1 rounded-xl text-xs h-8"><Download className="size-3.5" /> Per Outlet</Button>
+              <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1 rounded-xl text-xs h-8"><FileText className="size-3.5" /> PDF</Button>
             </>
           ) : null}
         </div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats row — compact flat cards */}
       {isGenerated ? (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard label="Total Payroll" value={formatRupiah(dash.totalPayroll)} icon={Wallet} accent="primary" />
-          <StatCard label="Jumlah Karyawan" value={String(dash.employeeCount)} icon={Users} accent="info" />
-          <StatCard label="Total Gaji Dasar" value={formatRupiah(dash.totalBaseSalary)} icon={FileSpreadsheet} accent="success" />
-          <StatCard label="Total Potongan" value={formatRupiah(dash.totalDeductions)} icon={AlertCircle} accent="destructive" />
-          <StatCard label="Total Lembur" value={formatRupiah(dash.totalOvertime)} icon={CheckCircle2} accent="success" />
-          <StatCard label="Total PH" value={formatRupiah(dash.totalPH)} icon={Wallet} accent="info" />
-          <StatCard label="Total Bonus/Insentif" value={formatRupiah(dash.totalBonus)} icon={Plus} accent="warning" />
-          <StatCard label="Total Penambah" value={formatRupiah(dash.totalAdditions)} icon={Plus} accent="success" />
+          <StatCard label="Karyawan" value={String(dash.employeeCount)} icon={Users} accent="info" />
+          <StatCard label="Gaji Dasar" value={formatRupiah(dash.totalBaseSalary)} icon={FileSpreadsheet} accent="success" />
+          <StatCard label="Potongan" value={formatRupiah(dash.totalDeductions)} icon={AlertCircle} accent="destructive" />
+          <StatCard label="Lembur" value={formatRupiah(dash.totalOvertime)} icon={CheckCircle2} accent="success" />
+          <StatCard label="Bonus" value={formatRupiah(dash.totalBonus)} icon={Plus} accent="warning" />
         </div>
       ) : null}
 
       {/* Table */}
       {isGenerated ? (
-        <div className="space-y-3">
-          <FilterBar>
-            <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Outlet" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Outlet</SelectItem>
-                {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="REVIEWED">Reviewed</SelectItem>
-                <SelectItem value="FINALIZED">Finalized</SelectItem>
-              </SelectContent>
-            </Select>
-            <Badge variant="outline" className="text-xs">{filtered.length} karyawan</Badge>
-            {dash.needsReviewCount > 0 ? (
-              <Badge className="bg-warning/15 text-warning border-warning/30"><Flag className="size-3" /> {dash.needsReviewCount} perlu review</Badge>
-            ) : null}
-          </FilterBar>
+        <div className="space-y-2.5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Select value={filterOutlet} onValueChange={setFilterOutlet}>
+                <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue placeholder="Semua Outlet" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Outlet</SelectItem>
+                  {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="REVIEWED">Reviewed</SelectItem>
+                  <SelectItem value="FINALIZED">Finalized</SelectItem>
+                </SelectContent>
+              </Select>
+              <Badge variant="outline" className="text-[10px]">{filtered.length} karyawan</Badge>
+              {dash.needsReviewCount > 0 ? (
+                <Badge className="bg-warning/15 text-warning border-warning/30 text-[10px]"><Flag className="size-3" /> {dash.needsReviewCount} review</Badge>
+              ) : null}
+            </div>
+          </div>
           <DataTable
             columns={[selectionColumn<PayrollEntry>(), ...columns] as ColumnDef<PayrollEntry>[]}
             data={filtered}
@@ -515,7 +504,7 @@ function GenerateDialog({ period, onClose }: { period: PayrollPeriod; onClose: (
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Batal</Button>
           <Button onClick={run} disabled={loading}>
-            {loading ? <RotateCcw className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
+            {loading ? <Wand2 className="size-4 animate-pulse" /> : <Wand2 className="size-4" />}
             Generate
           </Button>
         </DialogFooter>

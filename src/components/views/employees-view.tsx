@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { PageHeader, FilterBar } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -45,7 +44,7 @@ import {
   Download,
   MoreVertical,
   Trash2,
-  Users,
+  Search,
 } from "lucide-react";
 
 export function EmployeesView() {
@@ -59,6 +58,7 @@ export function EmployeesView() {
   const [filterOutlet, setFilterOutlet] = React.useState<string>("all");
   const [filterStatus, setFilterStatus] = React.useState<string>("all");
   const [filterCategory, setFilterCategory] = React.useState<string>("all");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [formOpen, setFormOpen] = React.useState<{ mode: "create" | "edit"; data?: Employee } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string; action: "deactivate" | "activate" } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = React.useState<{ id: string; name: string } | null>(null);
@@ -104,6 +104,10 @@ export function EmployeesView() {
     if (filterCategory !== "all" && e.category !== filterCategory) return false;
     return true;
   });
+
+  const filteredData = filtered.filter((e) =>
+    (e.fullName + " " + e.nik).toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const activeCount = employees.filter((e) => e.status === "AKTIF").length;
   const outletCount = employees.filter((e) => e.category === "OUTLET").length;
@@ -227,69 +231,74 @@ export function EmployeesView() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      <PageHeader
-        title="Data Karyawan"
-        description={`${activeCount} aktif · ${outletCount} outlet · ${employees.length} total karyawan`}
-        actions={
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" onClick={() => setFormOpen({ mode: "create" })} className="gap-1 rounded-xl text-xs font-semibold">
-              <Plus className="size-3.5" /> Tambah
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="size-8 rounded-xl">
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setImportOpen(true)} className="gap-2">
-                  <Upload className="size-3.5" /> Import Data
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setExportOpen(true)} className="gap-2">
-                  <Download className="size-3.5" /> Export Data
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-1.5">
+          <div className="relative w-full sm:w-[200px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama / NIK..."
+              className="h-8 pl-8 text-xs rounded-xl"
+            />
           </div>
-        }
-      />
-
-      <FilterBar>
-        <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-          <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue placeholder="Semua Outlet" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Outlet</SelectItem>
-            {outlets.map((o) => (
-              <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Kategori</SelectItem>
-            <SelectItem value="OUTLET">Karyawan Outlet</SelectItem>
-            <SelectItem value="PH_KLATEN">PH Klaten</SelectItem>
-            <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
-            <SelectItem value="NON_OUTLET">Karyawan HQ</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-8 text-xs w-[120px]"><SelectValue placeholder="Semua Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Status</SelectItem>
-            <SelectItem value="AKTIF">Aktif</SelectItem>
-            <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
-            <SelectItem value="RESIGN">Resign</SelectItem>
-          </SelectContent>
-        </Select>
-      </FilterBar>
+          <Select value={filterOutlet} onValueChange={setFilterOutlet}>
+            <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue placeholder="Semua Outlet" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Outlet</SelectItem>
+              {outlets.map((o) => (
+                <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              <SelectItem value="OUTLET">Outlet</SelectItem>
+              <SelectItem value="PH_KLATEN">PH Klaten</SelectItem>
+              <SelectItem value="GUDANG_JAKARTA">Gudang Jakarta</SelectItem>
+              <SelectItem value="NON_OUTLET">HQ</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 text-xs w-[110px]"><SelectValue placeholder="Semua Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="AKTIF">Aktif</SelectItem>
+              <SelectItem value="NONAKTIF">Nonaktif</SelectItem>
+              <SelectItem value="RESIGN">Resign</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-muted-foreground">{activeCount} aktif · {filtered.length} tampil</span>
+          <Button size="sm" onClick={() => setFormOpen({ mode: "create" })} className="gap-1 rounded-xl text-xs font-semibold h-8">
+            <Plus className="size-3.5" /> Tambah
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="size-8 rounded-xl">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImportOpen(true)} className="gap-2">
+                <Upload className="size-3.5" /> Import Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setExportOpen(true)} className="gap-2">
+                <Download className="size-3.5" /> Export Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
       <DataTable
         tableKey="employees"
         columns={[selectionColumn<Employee>(), ...columns] as ColumnDef<Employee>[]}
-        data={filtered}
+        data={filteredData}
         searchPlaceholder="Cari nama atau NIK..."
         pageSize={15}
         onRowClick={(e) => (window.location.hash = `#/karyawan?id=${e.id}`)}
