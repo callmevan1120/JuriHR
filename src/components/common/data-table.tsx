@@ -47,14 +47,13 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Search,
-  ChevronDown,
-  ChevronUp,
+  X,
   Settings,
   GripVertical,
-  Trash2,
-  X,
   Plus,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -213,29 +212,31 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("space-y-2.5", className)}>
-      {/* Toolbar — compact, mobile-first */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-wrap items-center gap-1.5">
-          <div className="relative w-full sm:max-w-[220px]">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="h-9 pl-8 text-xs rounded-xl"
-            />
-          </div>
+      {/* Toolbar — compact, no search (parent handles it) */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {toolbar}
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Bulk actions */}
+          {hasSelection && bulkActions ? (
+            <div className="flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs">
+              <span className="font-medium">{selectedRows.length} dipilih</span>
+              {bulkActions(selectedRows)}
+            </div>
+          ) : null}
 
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => setConfigDialogOpen(true)}
-            className="h-9 gap-1.5 text-xs font-semibold rounded-xl border-border/60 hover:bg-muted/40"
+            className="size-8 rounded-xl border-border/60 hover:bg-muted/40"
+            title="Configure Columns"
           >
             <Settings className="size-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Kolom</span>
           </Button>
+        </div>
 
           {/* ERPNext Configure Columns Dialog (Matching User Image) */}
           <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
@@ -374,15 +375,7 @@ export function DataTable<TData, TValue>({
           </Dialog>
         </div>
 
-        {hasSelection && bulkActions ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs">
-            <span className="font-medium">{selectedRows.length} dipilih</span>
-            {bulkActions(selectedRows)}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Mobile card list (under md) */}
+        {/* Mobile card list (under md) */}
       <div className="block md:hidden">
         {table.getRowModel().rows.length ? (
           <div className="space-y-2">
