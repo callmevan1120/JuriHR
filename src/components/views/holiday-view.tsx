@@ -131,6 +131,7 @@ export function HolidayView() {
   return (
     <div className="space-y-4">
       <PageHeader
+        title="Hari Libur &amp; Penyesuaian"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {/* Desktop Action Buttons */}

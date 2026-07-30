@@ -222,29 +222,67 @@ export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 /** Cari nav item berdasarkan path. */
 export function findNavItem(path: string): NavItem | undefined {
-  const cleanPath = (path || "#/").split("?")[0] || "#/";
+  if (!path) return undefined;
 
-  if (cleanPath === "#/holiday" || cleanPath === "#/libur") {
+  let clean = path.split("?")[0] || "#/";
+  if (!clean.startsWith("#")) clean = "#" + clean;
+  if (clean.endsWith("/") && clean.length > 2) clean = clean.slice(0, -1);
+  clean = clean.toLowerCase();
+
+  // Try direct match
+  const directMatch = ALL_NAV_ITEMS.find((i) => i.path.toLowerCase() === clean);
+  if (directMatch) return directMatch;
+
+  // Fallback map for aliases & legacy paths
+  const map: Record<string, { label: string; path: string }> = {
+    "#/posisi": { label: "Posisi & Divisi", path: "#/posisi" },
+    "#/positions": { label: "Posisi & Divisi", path: "#/posisi" },
+    "#/divisi": { label: "Posisi & Divisi", path: "#/posisi" },
+    "#/karyawan": { label: "Data Karyawan", path: "#/karyawan" },
+    "#/employees": { label: "Data Karyawan", path: "#/karyawan" },
+    "#/outlet": { label: "Outlet Cabang", path: "#/outlet" },
+    "#/outlets": { label: "Outlet Cabang", path: "#/outlet" },
+    "#/domisili": { label: "Domisili & Peta", path: "#/domisili" },
+    "#/kontrak": { label: "Kontrak Kerja", path: "#/kontrak" },
+    "#/contracts": { label: "Kontrak Kerja", path: "#/kontrak" },
+    "#/shift": { label: "Shift & Pola Kerja", path: "#/shift" },
+    "#/shifts": { label: "Shift & Pola Kerja", path: "#/shift" },
+    "#/shift-groups": { label: "Shift & Pola Kerja", path: "#/shift" },
+    "#/shift-templates": { label: "Shift & Pola Kerja", path: "#/shift" },
+    "#/jadwal": { label: "Kalender Jadwal", path: "#/jadwal" },
+    "#/schedule": { label: "Kalender Jadwal", path: "#/jadwal" },
+    "#/libur": { label: "Hari Libur & Penyesuaian", path: "#/libur" },
+    "#/holiday": { label: "Hari Libur & Penyesuaian", path: "#/libur" },
+    "#/holidays": { label: "Hari Libur & Penyesuaian", path: "#/libur" },
+    "#/absensi": { label: "Absensi", path: "#/absensi" },
+    "#/attendance": { label: "Absensi", path: "#/absensi" },
+    "#/cuti": { label: "Cuti / Izin / Sakit", path: "#/cuti" },
+    "#/leave": { label: "Cuti / Izin / Sakit", path: "#/cuti" },
+    "#/lembur": { label: "Lembur", path: "#/lembur" },
+    "#/overtime": { label: "Lembur", path: "#/lembur" },
+    "#/payroll": { label: "Payroll", path: "#/payroll" },
+    "#/notifikasi": { label: "Notifikasi", path: "#/notifikasi" },
+    "#/notifications": { label: "Notifikasi", path: "#/notifikasi" },
+    "#/laporan": { label: "Laporan", path: "#/laporan" },
+    "#/reports": { label: "Laporan", path: "#/laporan" },
+    "#/audit": { label: "Audit Log", path: "#/audit" },
+    "#/pengaturan": { label: "Pengaturan", path: "#/pengaturan" },
+    "#/settings": { label: "Pengaturan", path: "#/pengaturan" },
+  };
+
+  const found = map[clean];
+  if (found) {
+    const navObj = ALL_NAV_ITEMS.find((i) => i.path === found.path);
+    if (navObj) return { ...navObj, label: found.label };
     return {
-      path: "#/libur",
-      label: "Hari Libur & Penyesuaian",
-      icon: PartyPopper,
-      phase: 3,
+      path: found.path,
+      label: found.label,
+      icon: LayoutDashboard,
+      phase: 1,
       available: true,
-      description: "Kelola hari libur, holiday swap, dan workday override.",
+      description: found.label,
     };
   }
 
-  if (cleanPath === "#/shift-templates" || cleanPath === "#/shift-groups" || cleanPath === "#/shift") {
-    return {
-      path: "#/shift",
-      label: "Shift & Pola Kerja",
-      icon: CalendarDays,
-      phase: 3,
-      available: true,
-      description: "Kelola pola shift mingguan per outlet/divisi dan master template jam kerja.",
-    };
-  }
-
-  return ALL_NAV_ITEMS.find((i) => i.path === cleanPath);
+  return undefined;
 }

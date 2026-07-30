@@ -177,6 +177,7 @@ function CalendarTab() {
   return (
     <div className="space-y-4">
       <PageHeader
+        title="Kalender Jadwal"
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
