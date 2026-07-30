@@ -43,7 +43,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Contract, ContractType } from "@/lib/types";
 import { toast } from "sonner";
 import {
-  UniversalImportExportDialog,
+  UniversalImportDialog,
+  UniversalExportDialog,
   type ImportExportField,
 } from "@/components/common/import-export-dialog";
 import {
@@ -236,7 +237,8 @@ export function ContractsView() {
     toast.success(`${rows.length} data kontrak berhasil diekspor`);
   };
 
-  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   const contractImportFields: ImportExportField[] = [
     { key: "contractNo", label: "Nomor Kontrak Kerja", priority: "wajib", defaultChecked: true, sampleValue: "PKWT/2025/001" },
@@ -254,9 +256,22 @@ export function ContractsView() {
         title="Kontrak &amp; Monitoring Masa Kerja"
         description="Pantau tanggal jatuh tempo kontrak kerja karyawan JURI Bun secara otomatis."
         actions={
-          <Button onClick={() => setImportExportOpen(true)} className="gap-1.5 rounded-xl font-semibold">
-            <FileSpreadsheet className="size-4" /> Import / Export Kontrak
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-info" /> Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Export
+            </Button>
+          </div>
         }
       />
 
@@ -354,11 +369,17 @@ export function ContractsView() {
           onClose={() => setEditTarget(null)}
         />
       ) : null}
-
-      <UniversalImportExportDialog
+      <UniversalImportDialog
         moduleTitle="Data Kontrak Kerja"
-        open={importExportOpen}
-        onOpenChange={setImportExportOpen}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fields={contractImportFields}
+      />
+
+      <UniversalExportDialog
+        moduleTitle="Data Kontrak Kerja"
+        open={exportOpen}
+        onOpenChange={setExportOpen}
         fields={contractImportFields}
         exportData={filteredContracts}
       />

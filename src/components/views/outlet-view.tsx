@@ -61,7 +61,8 @@ const EmployeeMiniMap = dynamic(
 import type { Outlet, OutletClassification } from "@/lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-  UniversalImportExportDialog,
+  UniversalImportDialog,
+  UniversalExportDialog,
   type ImportExportField,
 } from "@/components/common/import-export-dialog";
 import { toast } from "sonner";
@@ -107,7 +108,8 @@ export function OutletView() {
   const selectedId = route.query.get("id");
   const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: Outlet } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
-  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   if (dialog) {
     return (
@@ -245,12 +247,19 @@ export function OutletView() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setImportExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
             >
-              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+              <FileSpreadsheet className="size-4 text-info" /> Import
             </Button>
-            <Button onClick={() => setDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Export
+            </Button>
+            <Button onClick={() => setDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
               <Plus className="size-4" /> Tambah Outlet
             </Button>
           </div>
@@ -289,10 +298,17 @@ export function OutletView() {
         }}
       />
 
-      <UniversalImportExportDialog
+      <UniversalImportDialog
         moduleTitle="Data Outlet Cabang"
-        open={importExportOpen}
-        onOpenChange={setImportExportOpen}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fields={outletImportFields}
+      />
+
+      <UniversalExportDialog
+        moduleTitle="Data Outlet Cabang"
+        open={exportOpen}
+        onOpenChange={setExportOpen}
         fields={outletImportFields}
         exportData={outlets}
       />

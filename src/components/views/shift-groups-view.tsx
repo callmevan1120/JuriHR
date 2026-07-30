@@ -44,7 +44,8 @@ import { formatDateMed, todayISODate, shiftDurationMinutes, formatDuration, cn, 
 import type { ShiftGroup, ShiftTemplate, WeeklyPatternDay, RecordStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
-  UniversalImportExportDialog,
+  UniversalImportDialog,
+  UniversalExportDialog,
   type ImportExportField,
 } from "@/components/common/import-export-dialog";
 import {
@@ -111,7 +112,8 @@ export function ShiftGroupsView() {
     return m;
   }, [schedules]);
 
-  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   const shiftImportFields: ImportExportField[] = [
     { key: "name", label: "Nama Shift / Group", priority: "wajib", defaultChecked: true, sampleValue: "Shift Pagi Operasional" },
@@ -141,10 +143,17 @@ export function ShiftGroupsView() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setImportExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
             >
-              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+              <FileSpreadsheet className="size-4 text-info" /> Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Export
             </Button>
             {activeTab === "groups" ? (
               <Button onClick={() => setGroupDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
@@ -336,10 +345,17 @@ export function ShiftGroupsView() {
         }}
       />
 
-      <UniversalImportExportDialog
+      <UniversalImportDialog
         moduleTitle={activeTab === "groups" ? "Shift Group" : "Shift Template"}
-        open={importExportOpen}
-        onOpenChange={setImportExportOpen}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fields={shiftImportFields}
+      />
+
+      <UniversalExportDialog
+        moduleTitle={activeTab === "groups" ? "Shift Group" : "Shift Template"}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
         fields={shiftImportFields}
         exportData={activeTab === "groups" ? (shiftGroups as any[]) : (shiftTemplates as any[])}
       />

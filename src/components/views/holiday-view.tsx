@@ -21,7 +21,11 @@ import { Field, FormRow } from "@/components/common/field";
 import { DataTable } from "@/components/common/data-table";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { StatusBadge } from "@/components/common/status-badge";
-import { UniversalImportExportDialog, type ImportExportField } from "@/components/common/import-export-dialog";
+import {
+  UniversalImportDialog,
+  UniversalExportDialog,
+  type ImportExportField,
+} from "@/components/common/import-export-dialog";
 import { useStore } from "@/hooks/use-store";
 import { holidayService } from "@/lib/services/schedule";
 import { formatDateMed, todayISODate, cn, initials } from "@/lib/utils";
@@ -68,8 +72,18 @@ export function HolidayView() {
     data?: any;
   }>({ type: null, mode: "create" });
 
-  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<{ type: "group" | "holiday" | "swap"; id: string; name: string } | null>(null);
+
+  const handleGenerateNationalHolidays = () => {
+    const count = holidayService.generateNationalHolidaysByCountry("ID", 2026);
+    if (count > 0) {
+      toast.success(`${count} libur nasional Indonesia tahun 2026 berhasil ditambahkan!`);
+    } else {
+      toast.info("Seluruh libur nasional Indonesia tahun 2026 sudah terdaftar.");
+    }
+  };
 
   // Import fields for Holiday Module
   const holidayImportFields: ImportExportField[] = [
@@ -113,30 +127,48 @@ export function HolidayView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Hari Libur &amp; Penyesuaian (Holiday)"
+        title="Hari Libur &amp; Penyesuaian"
         description="Kelola kelompok libur per outlet/divisi, master libur nasional per negara, dan tukar hari libur operasional."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setImportExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
             >
-              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+              <FileSpreadsheet className="size-4 text-info" /> Import
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Export
+            </Button>
+
+            {activeTab === "holidays" && (
+              <Button
+                variant="outline"
+                onClick={handleGenerateNationalHolidays}
+                className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
+              >
+                <span>🇮🇩 Auto-Populate Libur Nasional ID</span>
+              </Button>
+            )}
+
             {activeTab === "groups" && (
-              <Button onClick={() => setFormState({ type: "group", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+              <Button onClick={() => setFormState({ type: "group", mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
                 <Plus className="size-4" /> Tambah Holiday Group
               </Button>
             )}
             {activeTab === "holidays" && (
-              <Button onClick={() => setFormState({ type: "holiday", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+              <Button onClick={() => setFormState({ type: "holiday", mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
                 <Plus className="size-4" /> Tambah Hari Libur
               </Button>
             )}
             {activeTab === "swaps" && (
-              <Button onClick={() => setFormState({ type: "swap", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
-                <Plus className="size-4" /> Buat Tukar Libur / Override
+              <Button onClick={() => setFormState({ type: "swap", mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
+                <Plus className="size-4" /> Buat Tukar Libur
               </Button>
             )}
           </div>
@@ -243,10 +275,17 @@ export function HolidayView() {
         }}
       />
 
-      <UniversalImportExportDialog
-        moduleTitle="Master Hari Libur &amp; Holiday Group"
-        open={importExportOpen}
-        onOpenChange={setImportExportOpen}
+      <UniversalImportDialog
+        moduleTitle="Master Hari Libur"
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fields={holidayImportFields}
+      />
+
+      <UniversalExportDialog
+        moduleTitle="Master Hari Libur"
+        open={exportOpen}
+        onOpenChange={setExportOpen}
         fields={holidayImportFields}
         exportData={holidays as any[]}
       />

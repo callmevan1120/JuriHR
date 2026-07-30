@@ -404,6 +404,48 @@ export const holidayService = {
     store.setCollection("holidays", store.getState().holidays.filter((h) => h.id !== id));
     if (item) logAudit({ module: "Holiday", action: "DELETE", description: `Menghapus hari libur "${item.name}".` });
   },
+  generateNationalHolidaysByCountry(country: string, year = 2026): number {
+    const store = getStore();
+    const existing = store.getState().holidays;
+
+    const PRESET_ID_2026 = [
+      { name: "Tahun Baru 2026 Masehi", date: `${year}-01-01`, type: "NASIONAL" as const, country: "ID", description: "Libur Nasional Tahun Baru Masehi" },
+      { name: "Isra Mi'raj Nabi Muhammad SAW", date: `${year}-01-16`, type: "KEAGAMAAN" as const, country: "ID", description: "Hari Libur Keagamaan Islam" },
+      { name: "Tahun Baru Imlek 2577 Kongzili", date: `${year}-02-17`, type: "NASIONAL" as const, country: "ID", description: "Tahun Baru Imlek" },
+      { name: "Hari Suci Nyepi Tahun Baru Saka 1948", date: `${year}-03-19`, type: "KEAGAMAAN" as const, country: "ID", description: "Hari Raya Nyepi" },
+      { name: "Hari Raya Idul Fitri 1447 H (Hari Ke-1)", date: `${year}-03-20`, type: "NASIONAL" as const, country: "ID", description: "Hari Raya Idul Fitri" },
+      { name: "Hari Raya Idul Fitri 1447 H (Hari Ke-2)", date: `${year}-03-21`, type: "NASIONAL" as const, country: "ID", description: "Hari Raya Idul Fitri" },
+      { name: "Wafat Yesus Kristus", date: `${year}-04-03`, type: "KEAGAMAAN" as const, country: "ID", description: "Wafat Isa Almasih" },
+      { name: "Hari Buruh Internasional", date: `${year}-05-01`, type: "NASIONAL" as const, country: "ID", description: "May Day / Hari Buruh" },
+      { name: "Kenaikan Yesus Kristus", date: `${year}-05-14`, type: "KEAGAMAAN" as const, country: "ID", description: "Kenaikan Isa Almasih" },
+      { name: "Hari Raya Waisak 2570 BE", date: `${year}-05-31`, type: "KEAGAMAAN" as const, country: "ID", description: "Hari Raya Waisak" },
+      { name: "Hari Lahir Pancasila", date: `${year}-06-01`, type: "NASIONAL" as const, country: "ID", description: "Hari Lahir Pancasila" },
+      { name: "Hari Raya Idul Adha 1447 H", date: `${year}-05-27`, type: "NASIONAL" as const, country: "ID", description: "Hari Raya Qurban" },
+      { name: "Tahun Baru Islam 1448 H", date: `${year}-06-16`, type: "KEAGAMAAN" as const, country: "ID", description: "1 Muharram 1448 H" },
+      { name: "Hari Kemerdekaan RI (HUT RI ke-81)", date: `${year}-08-17`, type: "NASIONAL" as const, country: "ID", description: "HUT Kemerdekaan Republik Indonesia" },
+      { name: "Maulid Nabi Muhammad SAW", date: `${year}-08-25`, type: "KEAGAMAAN" as const, country: "ID", description: "Maulid Nabi" },
+      { name: "Hari Raya Natal", date: `${year}-12-25`, type: "NASIONAL" as const, country: "ID", description: "Hari Raya Natal" },
+    ];
+
+    const presets = country === "ID" ? PRESET_ID_2026 : PRESET_ID_2026;
+    let addedCount = 0;
+    const nextList = [...existing];
+
+    for (const h of presets) {
+      if (!nextList.some((item) => item.date === h.date && item.name === h.name)) {
+        nextList.push({ id: uid("hol"), ...h });
+        addedCount += 1;
+      }
+    }
+
+    store.setCollection("holidays", nextList);
+    logAudit({
+      module: "Holiday",
+      action: "CREATE",
+      description: `Otomatis generate ${addedCount} hari libur nasional untuk negara ${country} tahun ${year}.`,
+    });
+    return addedCount;
+  },
   createGroup(input: Omit<HolidayGroup, "id" | "createdAt" | "updatedAt">): HolidayGroup {
     const store = getStore();
     const now = NOW();

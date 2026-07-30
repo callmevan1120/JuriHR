@@ -33,7 +33,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Division, Position, RecordStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
-  UniversalImportExportDialog,
+  UniversalImportDialog,
+  UniversalExportDialog,
   type ImportExportField,
 } from "@/components/common/import-export-dialog";
 import {
@@ -82,7 +83,8 @@ export function PositionsView() {
     return m;
   }, [employees]);
 
-  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [importOpen, setImportOpen] = React.useState(false);
+  const [exportOpen, setExportOpen] = React.useState(false);
 
   // Full-Page Forms when active
   if (formState.type === "position") {
@@ -121,16 +123,23 @@ export function PositionsView() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Posisi & Divisi Karyawan"
+        title="Posisi &amp; Divisi Karyawan"
         description="Pengelolaan struktur jabatan, departemen divisi, dan acuan default kompensasi gaji JURI Bun."
         actions={
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setImportExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80"
+              onClick={() => setImportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
             >
-              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+              <FileSpreadsheet className="size-4 text-info" /> Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Export
             </Button>
             <Button
               variant="outline"
@@ -270,10 +279,18 @@ export function PositionsView() {
           toast.success("Data berhasil diarsipkan");
         }}
       />
-      <UniversalImportExportDialog
+
+      <UniversalImportDialog
         moduleTitle={activeTab === "positions" ? "Posisi & Jabatan" : "Divisi & Departemen"}
-        open={importExportOpen}
-        onOpenChange={setImportExportOpen}
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fields={positionImportFields}
+      />
+
+      <UniversalExportDialog
+        moduleTitle={activeTab === "positions" ? "Posisi & Jabatan" : "Divisi & Departemen"}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
         fields={positionImportFields}
         exportData={activeTab === "positions" ? positions : divisions}
       />
