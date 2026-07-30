@@ -222,5 +222,29 @@ export const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 /** Cari nav item berdasarkan path. */
 export function findNavItem(path: string): NavItem | undefined {
-  return ALL_NAV_ITEMS.find((i) => i.path === path);
+  const cleanPath = (path || "#/").split("?")[0] || "#/";
+
+  if (cleanPath === "#/holiday" || cleanPath === "#/libur") {
+    return {
+      path: "#/libur",
+      label: "Hari Libur & Penyesuaian",
+      icon: PartyPopper,
+      phase: 3,
+      available: true,
+      description: "Kelola hari libur, holiday swap, dan workday override.",
+    };
+  }
+
+  if (cleanPath === "#/shift-templates" || cleanPath === "#/shift-groups" || cleanPath === "#/shift") {
+    return {
+      path: "#/shift",
+      label: "Shift & Pola Kerja",
+      icon: CalendarDays,
+      phase: 3,
+      available: true,
+      description: "Kelola pola shift mingguan per outlet/divisi dan master template jam kerja.",
+    };
+  }
+
+  return ALL_NAV_ITEMS.find((i) => i.path === cleanPath);
 }

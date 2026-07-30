@@ -49,6 +49,8 @@ import {
   Building2,
   CalendarDays,
   CheckCircle2,
+  Trash2,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const COUNTRY_OPTIONS = [
@@ -124,38 +126,54 @@ export function HolidayView() {
     );
   }
 
+  const [actionsOpen, setActionsOpen] = React.useState(false);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
-        title="Hari Libur &amp; Penyesuaian"
-        description="Kelola kelompok libur per outlet/divisi, master libur nasional per negara, dan tukar hari libur operasional."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setImportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-info" /> Import
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setExportOpen(true)}
-              className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
-            >
-              <FileSpreadsheet className="size-4 text-primary" /> Export
-            </Button>
-
-            {activeTab === "holidays" && (
+            {/* Desktop Action Buttons */}
+            <div className="hidden sm:flex items-center gap-2">
               <Button
                 variant="outline"
-                onClick={handleGenerateNationalHolidays}
-                className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
+                onClick={() => setImportOpen(true)}
+                className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
               >
-                <span>🇮🇩 Auto-Populate Libur Nasional ID</span>
+                <FileSpreadsheet className="size-4 text-info" /> Import
               </Button>
-            )}
+              <Button
+                variant="outline"
+                onClick={() => setExportOpen(true)}
+                className="gap-1.5 rounded-xl font-semibold border-border/80 text-xs"
+              >
+                <FileSpreadsheet className="size-4 text-primary" /> Export
+              </Button>
 
+              {activeTab === "holidays" && (
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateNationalHolidays}
+                  className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
+                >
+                  <span>🇮🇩 Auto-Populate Libur Nasional ID</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Mobile Collapsible Actions Toggle */}
+            <div className="sm:hidden flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActionsOpen(!actionsOpen)}
+                className="gap-1.5 text-xs rounded-xl font-semibold"
+              >
+                <SlidersHorizontal className="size-3.5 text-primary" /> Opsi Modul
+              </Button>
+            </div>
+
+            {/* Primary Action Button based on Tab */}
             {activeTab === "groups" && (
               <Button onClick={() => setFormState({ type: "group", mode: "create" })} className="gap-1.5 rounded-xl font-semibold text-xs">
                 <Plus className="size-4" /> Tambah Holiday Group
@@ -174,6 +192,39 @@ export function HolidayView() {
           </div>
         }
       />
+
+      {/* Mobile Collapsible Action Panel */}
+      {actionsOpen && (
+        <div className="sm:hidden flex flex-wrap items-center gap-2 p-3 rounded-2xl border border-border bg-muted/20 animate-in fade-in-50 duration-200">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+            className="gap-1.5 rounded-xl font-semibold text-xs"
+          >
+            <FileSpreadsheet className="size-3.5 text-info" /> Import
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExportOpen(true)}
+            className="gap-1.5 rounded-xl font-semibold text-xs"
+          >
+            <FileSpreadsheet className="size-3.5 text-primary" /> Export
+          </Button>
+
+          {activeTab === "holidays" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateNationalHolidays}
+              className="gap-1.5 rounded-xl font-semibold border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 text-xs"
+            >
+              <span>🇮🇩 Auto-Populate Libur ID</span>
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Segmented Control Tab Switcher */}
       <div className="flex items-center justify-between border-b border-border/60 pb-3">

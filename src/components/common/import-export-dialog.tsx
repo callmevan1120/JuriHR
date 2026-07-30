@@ -153,13 +153,13 @@ export function UniversalImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[560px] w-[95vw] rounded-2xl p-0 overflow-hidden shadow-2xl border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20">
+      <DialogContent showCloseButton={false} className="max-w-[540px] w-[92vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 shadow-2xl border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20 sticky top-0 z-10 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Upload className="size-5 text-info" />
             <DialogTitle className="text-base font-bold text-foreground">Import Data — {moduleTitle}</DialogTitle>
           </div>
-          <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => onOpenChange(false)}>
             <X className="size-4" />
           </Button>
         </div>
@@ -338,13 +338,13 @@ export function UniversalExportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[560px] w-[95vw] rounded-2xl p-0 overflow-hidden shadow-2xl border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20">
+      <DialogContent showCloseButton={false} className="max-w-[540px] w-[92vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 shadow-2xl border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20 sticky top-0 z-10 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Download className="size-5 text-primary" />
             <DialogTitle className="text-base font-bold text-foreground">Export Data — {moduleTitle}</DialogTitle>
           </div>
-          <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" size="icon" className="size-7 rounded-lg text-muted-foreground hover:text-foreground" onClick={() => onOpenChange(false)}>
             <X className="size-4" />
           </Button>
         </div>

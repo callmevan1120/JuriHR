@@ -241,8 +241,8 @@ export function DataTable<TData, TValue>({
 
           {/* ERPNext Configure Columns Dialog (Matching User Image) */}
           <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
-            <DialogContent className="max-w-[540px] w-[95vw] p-0 rounded-2xl border-border bg-card shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20">
+            <DialogContent showCloseButton={false} className="max-w-[540px] w-[92vw] max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-border bg-card shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border/80 p-4 bg-muted/20 sticky top-0 z-10 backdrop-blur-md">
                 <DialogTitle className="text-base font-bold text-foreground">Configure Columns</DialogTitle>
                 <Button
                   variant="ghost"

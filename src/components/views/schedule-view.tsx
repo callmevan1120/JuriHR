@@ -171,11 +171,12 @@ function CalendarTab() {
     return { from: format(first, "yyyy-MM-dd"), to: format(last, "yyyy-MM-dd"), dates };
   }, [mode, anchorDate]);
 
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const isFilterActive = filterOutlet !== "all" || filterDivision !== "all" || filterShiftGroup !== "all";
+
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Kalender Jadwal"
-        description={`Mode ${mode} — ${mode === "bulanan" ? monthLabel(format(anchorDate, "yyyy-MM")) : `${formatDateMed(range.from)} — ${formatDateMed(range.to)}`}`}
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
@@ -193,83 +194,122 @@ function CalendarTab() {
 
       {/* Toolbar */}
       <Card className="border-border shadow-soft">
-        <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center">
-          {/* Mode switcher */}
-          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
-            {(["harian", "mingguan", "bulanan"] as ViewMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                  mode === m ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {m === "harian" ? <Calendar className="size-3.5" /> : m === "mingguan" ? <CalendarDays className="size-3.5" /> : <CalendarRange className="size-3.5" />}
-                {m}
-              </button>
-            ))}
-          </div>
+        <CardContent className="flex flex-col gap-3 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Mode switcher */}
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
+              {(["harian", "mingguan", "bulanan"] as ViewMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
+                    mode === m ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {m === "harian" ? <Calendar className="size-3.5" /> : m === "mingguan" ? <CalendarDays className="size-3.5" /> : <CalendarRange className="size-3.5" />}
+                  {m}
+                </button>
+              ))}
+            </div>
 
-          {/* Navigation */}
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate(-1)}>
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setAnchorDate(new Date())}>
-              Hari Ini
-            </Button>
-            <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate(1)}>
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-
-          {/* Date picker */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Calendar className="size-4" />
-                {formatDateMed(format(anchorDate, "yyyy-MM-dd"))}
+            {/* Navigation */}
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate(-1)}>
+                <ChevronLeft className="size-4" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarPicker
-                mode="single"
-                selected={anchorDate}
-                onSelect={(d) => d && setAnchorDate(d)}
-              />
-            </PopoverContent>
-          </Popover>
+              <Button variant="ghost" size="sm" onClick={() => setAnchorDate(new Date())}>
+                Hari Ini
+              </Button>
+              <Button variant="ghost" size="icon" className="size-8" onClick={() => navigate(1)}>
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
 
-          {/* Filters */}
-          <div className="flex flex-1 flex-wrap items-center gap-2 lg:justify-end">
-            <Filter className="size-4 text-muted-foreground" />
+            {/* Date picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Calendar className="size-4" />
+                  {formatDateMed(format(anchorDate, "yyyy-MM-dd"))}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarPicker
+                  mode="single"
+                  selected={anchorDate}
+                  onSelect={(d) => d && setAnchorDate(d)}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Collapsible Filter Button */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isFilterActive ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterOpen(!filterOpen)}
+              className="gap-1.5 text-xs rounded-xl font-semibold"
+            >
+              <Filter className="size-3.5" />
+              <span>Filter Jadwal</span>
+              {isFilterActive && <span className="ml-1 rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-[10px]">Aktif</span>}
+            </Button>
+
+            <Badge variant="outline" className="text-xs">
+              <Users className="size-3 mr-1" /> {filteredEmps.length} karyawan
+            </Badge>
+          </div>
+        </CardContent>
+
+        {/* Collapsible Filter Panel */}
+        {filterOpen && (
+          <div className="border-t border-border/60 bg-muted/20 p-3 flex flex-wrap items-center gap-2 animate-in fade-in-50 duration-200">
+            <span className="text-xs font-bold text-foreground mr-1 flex items-center gap-1">
+              <Filter className="size-3 text-primary" /> Filter:
+            </span>
+
             <Select value={filterOutlet} onValueChange={setFilterOutlet}>
-              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Outlet" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[140px] text-xs bg-background rounded-xl"><SelectValue placeholder="Outlet" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Outlet</SelectItem>
                 {outlets.map((o) => <SelectItem key={o.id} value={o.id}>{o.name.replace("JURI Bun — ", "")}</SelectItem>)}
               </SelectContent>
             </Select>
+
             <Select value={filterDivision} onValueChange={setFilterDivision}>
-              <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Divisi" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[140px] text-xs bg-background rounded-xl"><SelectValue placeholder="Divisi" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Divisi</SelectItem>
                 {divisions.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
+
             <Select value={filterShiftGroup} onValueChange={setFilterShiftGroup}>
-              <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue placeholder="Shift Group" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-[160px] text-xs bg-background rounded-xl"><SelectValue placeholder="Shift Group" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Shift Group</SelectItem>
                 {shiftGroups.filter((g) => g.status === "active").map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Badge variant="outline" className="text-xs">
-              <Users className="size-3" /> {filteredEmps.length} karyawan
-            </Badge>
+
+            {isFilterActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setFilterOutlet("all");
+                  setFilterDivision("all");
+                  setFilterShiftGroup("all");
+                }}
+              >
+                Reset Filter
+              </Button>
+            )}
           </div>
-        </CardContent>
+        )}
       </Card>
 
       {/* Calendar grid */}
