@@ -40,8 +40,8 @@ import { statusLabel } from "@/components/common/status-badge";
 import { ChartSkeleton } from "@/components/common/chart-skeleton";
 import { Badge } from "@/components/ui/badge";
 
-/** Hook simulasi loading awal chart (200ms) untuk efek skeleton. */
-function useChartLoading(delay = 200) {
+/** Hook loading awal chart untuk efek skeleton. */
+function useChartLoading(delay = 150) {
   const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
     const t = setTimeout(() => setLoading(false), delay);

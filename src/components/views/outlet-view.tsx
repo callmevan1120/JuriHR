@@ -232,10 +232,9 @@ export function OutletView() {
     { key: "name", label: "Nama Outlet Cabang", priority: "wajib", defaultChecked: true, sampleValue: "JURI Bun — Sudirman" },
     { key: "classification", label: "Klasifikasi (FLAGSHIP/STANDARD/EXPRESS/KIOSK)", priority: "wajib", defaultChecked: true, sampleValue: "FLAGSHIP" },
     { key: "address", label: "Alamat Lengkap", priority: "disarankan", defaultChecked: true, sampleValue: "Jl. Jend. Sudirman No. 10, Jakarta Pusat" },
-    { key: "phone", label: "Nomor Telepon / WA Outlet", priority: "disarankan", defaultChecked: true, sampleValue: "021-5551234" },
     { key: "latitude", label: "Latitude Geofence", priority: "disarankan", defaultChecked: true, sampleValue: "-6.2088" },
     { key: "longitude", label: "Longitude Geofence", priority: "disarankan", defaultChecked: true, sampleValue: "106.8456" },
-    { key: "radiusMeters", label: "Radius Geofence (Meter)", priority: "disarankan", defaultChecked: true, sampleValue: "100" },
+    { key: "geofenceRadiusMeters", label: "Radius Geofence (Meter)", priority: "disarankan", defaultChecked: true, sampleValue: "100" },
   ];
 
   return (
@@ -302,6 +301,36 @@ export function OutletView() {
         moduleTitle="Data Outlet Cabang"
         open={importOpen}
         onOpenChange={setImportOpen}
+        onImport={(rows) => {
+          const existingCodes = new Set(outletService.list().map((o) => o.code));
+          const validClasses = ["FLAGSHIP", "STANDARD", "EXPRESS", "KIOSK"];
+          let created = 0;
+          let skipped = 0;
+          for (const row of rows) {
+            const code = row.code?.trim();
+            const name = row.name?.trim();
+            if (!code || !name || existingCodes.has(code)) { skipped++; continue; }
+            const classification = (row.classification?.trim() || "STANDARD") as OutletClassification;
+            if (!validClasses.includes(classification)) { skipped++; continue; }
+            existingCodes.add(code);
+            outletService.create({
+              code,
+              name,
+              classification,
+              address: row.address?.trim() || "",
+              latitude: Number(row.latitude) || -6.2,
+              longitude: Number(row.longitude) || 106.8,
+              geofenceRadiusMeters: Number(row.geofenceRadiusMeters) || 100,
+              status: "active",
+            });
+            created++;
+          }
+          if (skipped > 0) {
+            toast.warning(`${created} outlet berhasil ditambah, ${skipped} baris dilewati (kode kosong/duplikat atau klasifikasi invalid).`);
+          } else {
+            toast.success(`${created} outlet berhasil ditambahkan.`);
+          }
+        }}
         fields={outletImportFields}
       />
 
@@ -329,12 +358,12 @@ function OutletDetail({
   onBack: () => void;
 }) {
   const [deleteConfirm, setDeleteConfirm] = React.useState(false);
-  const stats = React.useMemo(() => outletService.stats(outlet.id), [outlet.id]);
   const employees = useStore((s) => s.employees);
   const positions = useStore((s) => s.positions);
   const domiciles = useStore((s) => s.domiciles);
   const schedules = useStore((s) => s.schedules);
   const attendances = useStore((s) => s.attendances);
+  const stats = React.useMemo(() => outletService.stats(outlet.id), [outlet.id, employees, positions, domiciles]);
 
   const outletEmps = employees.filter((e) => e.primaryOutletId === outlet.id);
   const todaySched = schedules.filter((s) => s.outletId === outlet.id).length;
@@ -544,12 +573,12 @@ function OutletDetail({
         open={deleteConfirm}
         onOpenChange={setDeleteConfirm}
         title="Hapus Outlet?"
-        description={`Apakah Anda yakin ingin menghapus outlet "${outlet.name}" (${outlet.code})? Data outlet akan dihapus dari sistem.`}
+        description={`Apakah Anda yakin ingin mengarsipkan outlet "${outlet.name}" (${outlet.code})? Outlet akan diarsipkan dan karyawan terkait akan dilepas dari penempatan ini.`}
         destructive
-        confirmLabel="Hapus Outlet"
+        confirmLabel="Arsipkan Outlet"
         onConfirm={() => {
-          outletService.delete(outlet.id);
-          toast.success("Outlet berhasil dihapus");
+          outletService.softDelete(outlet.id);
+          toast.success("Outlet berhasil diarsipkan");
           window.location.hash = "#/outlet";
         }}
       />
@@ -661,8 +690,13 @@ function OutletFormPage({
       outletService.update(data.id, payload);
       toast.success("Outlet berhasil diperbarui");
     } else {
-      outletService.create(payload);
-      toast.success("Outlet baru berhasil ditambahkan");
+      try {
+        outletService.create(payload);
+        toast.success("Outlet baru berhasil ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah outlet");
+        return;
+      }
     }
     onBack();
   };

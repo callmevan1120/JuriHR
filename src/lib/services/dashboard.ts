@@ -55,12 +55,10 @@ export function computeDashboardStats(state: DataState): DashboardStats {
     return remaining >= 0 && remaining <= 90;
   }).length;
 
-  // Lembur menunggu review (planning pending ATAU actual belum diverifikasi)
-  const overtimeAwaitingReview =
-    state.overtimePlannings.filter((o) => o.status === "PENDING").length +
-    state.overtimeActuals.filter(
-      (a) => a.verificationStatus === "DIISI" || a.verificationStatus === "BELUM_DIISI",
-    ).length;
+  // Lembur menunggu review (hanya actual yang belum diverifikasi)
+  const overtimeAwaitingReview = state.overtimeActuals.filter(
+    (a) => a.verificationStatus === "DIISI" || a.verificationStatus === "BELUM_DIISI",
+  ).length;
 
   // Payroll perlu review (Draft)
   const payrollNeedsReview = state.payrolls.filter(
@@ -87,57 +85,44 @@ export function computeAttendanceTrend(
   const today = todayISODate();
   const points: AttendanceTrendPoint[] = [];
 
+  const aggregateRange = (fromDate: string, toDate: string) => {
+    const range = state.attendances.filter((a) => a.date >= fromDate && a.date <= toDate);
+    return {
+      hadir: range.filter((a) => a.status === "HADIR").length,
+      terlambat: range.filter((a) => a.status === "TERLAMBAT").length,
+      tidakHadir: range.filter(
+        (a) => a.status === "TIDAK_HADIR" || a.status === "CUTI" || a.status === "SAKIT" || a.status === "IZIN",
+      ).length,
+    };
+  };
+
   if (mode === "daily") {
-    // 7 Hari Terakhir
     for (let i = 6; i >= 0; i--) {
       const date = addDaysISO(today, -i);
-      const dayAtt = state.attendances.filter((a) => a.date === date);
-      const hadir = dayAtt.filter((a) => a.status === "HADIR").length;
-      const terlambat = dayAtt.filter((a) => a.status === "TERLAMBAT").length;
-      const tidakHadir = dayAtt.filter(
-        (a) => a.status === "TIDAK_HADIR" || a.status === "CUTI" || a.status === "SAKIT" || a.status === "IZIN",
-      ).length;
-
+      const dayAtt = aggregateRange(date, date);
       const dObj = new Date(date);
       const dayLabel = `${dObj.getDate()} ${dObj.toLocaleString("id-ID", { month: "short" })}`;
-
-      points.push({
-        date: dayLabel,
-        hadir: hadir > 0 ? hadir : 42,
-        terlambat: terlambat > 0 ? terlambat : 4,
-        tidakHadir: tidakHadir > 0 ? tidakHadir : 2,
-      });
+      points.push({ date: dayLabel, ...dayAtt });
     }
   } else if (mode === "weekly") {
-    // 4 Minggu Terakhir
-    const weeks = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu Ini"];
-    const baseHadir = [268, 275, 282, 290];
-    const baseTerlambat = [24, 18, 22, 15];
-    const baseTidakHadir = [14, 12, 16, 10];
-
-    weeks.forEach((w, idx) => {
-      points.push({
-        date: w,
-        hadir: baseHadir[idx],
-        terlambat: baseTerlambat[idx],
-        tidakHadir: baseTidakHadir[idx],
-      });
-    });
+    const labels = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu Ini"];
+    for (let w = 3; w >= 0; w--) {
+      const weekEnd = addDaysISO(today, -w * 7);
+      const weekStart = addDaysISO(weekEnd, -6);
+      const agg = aggregateRange(weekStart, weekEnd);
+      points.push({ date: labels[3 - w], ...agg });
+    }
   } else {
-    // 6 Bulan Terakhir (Bulanan - Skala 500 Karyawan)
-    const months = ["Feb", "Mar", "Apr", "Mei", "Jun", "Jul"];
-    const baseHadir = [430, 445, 452, 468, 475, 482];
-    const baseTerlambat = [35, 28, 32, 25, 20, 18];
-    const baseTidakHadir = [22, 18, 20, 15, 14, 12];
-
-    months.forEach((m, idx) => {
-      points.push({
-        date: m,
-        hadir: baseHadir[idx],
-        terlambat: baseTerlambat[idx],
-        tidakHadir: baseTidakHadir[idx],
-      });
-    });
+    for (let m = 5; m >= 0; m--) {
+      const refDate = new Date(`${today}T00:00:00Z`);
+      refDate.setUTCMonth(refDate.getUTCMonth() - m);
+      const monthStart = `${refDate.getUTCFullYear()}-${String(refDate.getUTCMonth() + 1).padStart(2, "0")}-01`;
+      const nextMonth = new Date(refDate.getUTCFullYear(), refDate.getUTCMonth() + 1, 0);
+      const monthEnd = `${nextMonth.getUTCFullYear()}-${String(nextMonth.getUTCMonth() + 1).padStart(2, "0")}-${String(nextMonth.getUTCDate()).padStart(2, "0")}`;
+      const agg = aggregateRange(monthStart, monthEnd);
+      const label = refDate.toLocaleString("id-ID", { month: "short", timeZone: "UTC" });
+      points.push({ date: label, ...agg });
+    }
   }
 
   return points;

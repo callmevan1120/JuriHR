@@ -1,6 +1,17 @@
 "use client";
 
 import * as React from "react";
+
+/** Escape HTML special characters to prevent XSS in Excel HTML export. */
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 import {
   Dialog,
   DialogContent,
@@ -54,6 +65,59 @@ interface UniversalExportDialogProps {
 // ------------------------------------------------------------
 // 1. Separate Universal Import Dialog
 // ------------------------------------------------------------
+
+/** Parser CSV sederhana: handle quote, koma dalam quote, BOM, newline. */
+function parseCsv(text: string): string[][] {
+  const clean = text.replace(/^\ufeff/, "");
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i]!;
+    if (inQuotes) {
+      if (ch === '"') {
+        if (clean[i + 1] === '"') { cell += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        cell += ch;
+      }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ",") { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && clean[i + 1] === "\n") i++;
+        row.push(cell); cell = "";
+        if (row.length > 0 && row.some((c) => c !== "")) { rows.push(row); }
+        row = [];
+      } else {
+        cell += ch;
+      }
+    }
+  }
+  if (cell !== "" || row.length > 0) { row.push(cell); if (row.some((c) => c !== "")) rows.push(row); }
+  return rows;
+}
+
+/** Parser HTML table untuk file .xls yang sebenarnya adalah HTML. */
+function parseHtmlTable(html: string): { headers: string[]; rows: string[][] } {
+  const cleanCell = (s: string) => s.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  const thMatch = [...html.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)];
+  const headers = thMatch.map((m) => cleanCell(m[1]!));
+  const trMatches = [...html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)];
+  const rows: string[][] = [];
+  for (const tr of trMatches) {
+    const tdMatches = [...tr[1]!.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)];
+    if (tdMatches.length === 0) continue;
+    const cells = tdMatches.map((m) => cleanCell(m[1]!));
+    // Skip header row (already captured)
+    if (cells.every((c, i) => headers[i] && c === headers[i])) continue;
+    rows.push(cells);
+  }
+  return { headers, rows };
+}
+
 export function UniversalImportDialog({
   moduleTitle,
   open,
@@ -71,6 +135,7 @@ export function UniversalImportDialog({
   });
 
   const [fileName, setFileName] = React.useState<string>("");
+  const [fileObj, setFileObj] = React.useState<File | null>(null);
   const [isProcessing, setIsProcessing] = React.useState(false);
 
   React.useEffect(() => {
@@ -81,6 +146,7 @@ export function UniversalImportDialog({
       });
       setSelectedColumns(init);
       setFileName("");
+      setFileObj(null);
       setIsProcessing(false);
     }
   }, [open, fields]);
@@ -110,8 +176,8 @@ export function UniversalImportDialog({
 </head>
 <body>
 <table>
-<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-<tbody><tr>${sampleRow.map((s) => `<td>${s}</td>`).join("")}</tr></tbody>
+<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
+<tbody><tr>${sampleRow.map((s) => `<td>${escapeHtml(s)}</td>`).join("")}</tr></tbody>
 </table>
 </body>
 </html>`;
@@ -137,18 +203,75 @@ export function UniversalImportDialog({
     toast.success(`Template ${fileFormat.toUpperCase()} ${moduleTitle} diunduh!`);
   };
 
-  const handleSimulateImport = () => {
-    if (!fileName) {
+  const handleImport = async () => {
+    if (!fileObj) {
       toast.error("Pilih file spreadsheet terlebih dahulu.");
       return;
     }
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      if (onImport) onImport([]);
-      toast.success(`Import data ${moduleTitle} dari file "${fileName}" berhasil diproses!`);
+    try {
+      const text = await fileObj.text();
+      const isHtml = text.includes("<table") || text.includes("<Table");
+      let headers: string[] = [];
+      let rows: string[][] = [];
+
+      if (isHtml) {
+        const parsed = parseHtmlTable(text);
+        headers = parsed.headers;
+        rows = parsed.rows;
+      } else {
+        const parsed = parseCsv(text);
+        headers = parsed[0] ?? [];
+        rows = parsed.slice(1);
+      }
+
+      if (rows.length === 0) {
+        toast.error("File tidak berisi data. Pastikan file memiliki header dan minimal 1 baris data.");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Map header labels → field keys
+      const labelToKey = new Map<string, string>();
+      fields.forEach((f) => {
+        labelToKey.set(f.label.trim().toLowerCase(), f.key);
+        labelToKey.set(f.key.trim().toLowerCase(), f.key);
+      });
+
+      const selectedKeys = new Set(fields.filter((f) => selectedColumns[f.key]).map((f) => f.key));
+      const colKeyMap: (string | null)[] = headers.map((h) => {
+        const key = labelToKey.get(h.trim().toLowerCase());
+        return key && selectedKeys.has(key) ? key : null;
+      });
+
+      const dataRows: Record<string, string>[] = rows
+        .filter((row) => row.some((c) => c.trim() !== ""))
+        .map((row) => {
+          const obj: Record<string, string> = {};
+          colKeyMap.forEach((key, i) => {
+            if (key) obj[key] = (row[i] ?? "").trim();
+          });
+          return obj;
+        });
+
+      if (dataRows.length === 0) {
+        toast.error("Tidak ada baris yang valid. Pastikan header kolom sesuai template.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (onImport) {
+        onImport(dataRows);
+        toast.success(`${dataRows.length} data ${moduleTitle} berhasil diimport dari file "${fileName}"!`);
+      } else {
+        toast.warning(`Import berhasil diparse (${dataRows.length} baris), tetapi handler import belum dikonfigurasi untuk modul ini.`);
+      }
       onOpenChange(false);
-    }, 1000);
+    } catch (err) {
+      toast.error(`Gagal memproses file: ${err instanceof Error ? err.message : "kesalahan tidak diketahui"}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -233,7 +356,10 @@ export function UniversalImportDialog({
                 type="file"
                 accept=".csv, .xlsx, .xls"
                 onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) setFileName(e.target.files[0].name);
+                  if (e.target.files && e.target.files[0]) {
+                    setFileObj(e.target.files[0]);
+                    setFileName(e.target.files[0].name);
+                  }
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
@@ -243,7 +369,7 @@ export function UniversalImportDialog({
 
         <div className="flex items-center justify-between border-t border-border/80 p-4 bg-muted/20">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl text-xs">Batal</Button>
-          <Button onClick={handleSimulateImport} disabled={isProcessing || !fileName} className="rounded-xl font-semibold text-xs gap-1.5 px-5">
+          <Button onClick={handleImport} disabled={isProcessing || !fileObj} className="rounded-xl font-semibold text-xs gap-1.5 px-5">
             <Upload className="size-4" /> {isProcessing ? "Memproses..." : "Proses Import Data"}
           </Button>
         </div>
@@ -308,8 +434,8 @@ export function UniversalExportDialog({
 </head>
 <body>
 <table>
-<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>
-<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody>
+<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
+<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`).join("")}</tbody>
 </table>
 </body>
 </html>`;

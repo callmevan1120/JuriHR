@@ -19,6 +19,12 @@ import { haversineKm, todayISODate, uid } from "@/lib/utils";
 const ACTOR = "HRD Admin";
 const NOW = () => new Date().toISOString();
 
+function assertUniqueCode(list: { code: string }[], code: string, entity: string): void {
+  if (list.some((item) => item.code === code)) {
+    throw new Error(`Kode ${entity} "${code}" sudah ada. Gunakan kode lain.`);
+  }
+}
+
 // ------------------------------------------------------------
 // Posisi
 // ------------------------------------------------------------
@@ -31,6 +37,7 @@ export const positionService = {
   },
   create(input: Omit<Position, "id" | "createdAt" | "updatedAt">): Position {
     const store = getStore();
+    assertUniqueCode(store.getState().positions, input.code, "posisi");
     const now = NOW();
     const item: Position = { ...input, id: uid("pos"), createdAt: now, updatedAt: now };
     store.setCollection("positions", [item, ...store.getState().positions]);
@@ -52,9 +59,14 @@ export const positionService = {
   },
   softDelete(id: string): void {
     const store = getStore();
-    const list = store.getState().positions;
+    const state = store.getState();
+    const list = state.positions;
     const item = list.find((p) => p.id === id);
     if (!item) return;
+    const inUse = state.employees.filter((e) => e.positionId === id && e.status === "AKTIF").length;
+    if (inUse > 0) {
+      throw new Error(`Posisi "${item.name}" masih digunakan oleh ${inUse} karyawan aktif. Alihkan terlebih dahulu.`);
+    }
     store.setCollection(
       "positions",
       list.map((p) => (p.id === id ? { ...p, status: "archived", updatedAt: NOW() } : p)),
@@ -62,9 +74,6 @@ export const positionService = {
     logAudit({ module: "Posisi", action: "DELETE", description: `Mengarsipkan posisi "${item.name}".` });
   },
 };
-
-// ------------------------------------------------------------
-// Divisi
 // ------------------------------------------------------------
 export const divisionService = {
   list(): Division[] {
@@ -75,6 +84,7 @@ export const divisionService = {
   },
   create(input: Omit<Division, "id" | "createdAt" | "updatedAt">): Division {
     const store = getStore();
+    assertUniqueCode(store.getState().divisions, input.code, "divisi");
     const now = NOW();
     const item: Division = { ...input, id: uid("div"), createdAt: now, updatedAt: now };
     store.setCollection("divisions", [item, ...store.getState().divisions]);
@@ -96,9 +106,14 @@ export const divisionService = {
   },
   softDelete(id: string): void {
     const store = getStore();
-    const list = store.getState().divisions;
+    const state = store.getState();
+    const list = state.divisions;
     const item = list.find((d) => d.id === id);
     if (!item) return;
+    const inUse = state.employees.filter((e) => e.divisionId === id && e.status === "AKTIF").length;
+    if (inUse > 0) {
+      throw new Error(`Divisi "${item.name}" masih digunakan oleh ${inUse} karyawan aktif. Alihkan terlebih dahulu.`);
+    }
     store.setCollection(
       "divisions",
       list.map((d) => (d.id === id ? { ...d, status: "archived", updatedAt: NOW() } : d)),
@@ -122,6 +137,7 @@ export const outletService = {
   },
   create(input: Omit<Outlet, "id" | "createdAt" | "updatedAt">): Outlet {
     const store = getStore();
+    assertUniqueCode(store.getState().outlets, input.code, "outlet");
     const now = NOW();
     const item: Outlet = { ...input, id: uid("out"), createdAt: now, updatedAt: now };
     store.setCollection("outlets", [item, ...store.getState().outlets]);
@@ -143,25 +159,39 @@ export const outletService = {
   },
   softDelete(id: string): void {
     const store = getStore();
-    const list = store.getState().outlets;
-    const item = list.find((o) => o.id === id);
+    const state = store.getState();
+    const item = state.outlets.find((o) => o.id === id);
     if (!item) return;
+    const now = NOW();
     store.setCollection(
       "outlets",
-      list.map((o) => (o.id === id ? { ...o, status: "archived", updatedAt: NOW() } : o)),
+      state.outlets.map((o) => (o.id === id ? { ...o, status: "archived", updatedAt: now } : o)),
     );
-    logAudit({ module: "Outlet", action: "DELETE", description: `Mengarsipkan outlet "${item.name}".` });
+    // Clear primaryOutletId pada karyawan yang mengacu outlet ini
+    store.setCollection(
+      "employees",
+      store.getState().employees.map((e) =>
+        e.primaryOutletId === id ? { ...e, primaryOutletId: undefined, updatedAt: now } : e,
+      ),
+    );
+    logAudit({ module: "Outlet", action: "DELETE", description: `Mengarsipkan outlet "${item.name}" dan melepas penempatan karyawan terkait.` });
   },
   delete(id: string): void {
     const store = getStore();
-    const list = store.getState().outlets;
-    const item = list.find((o) => o.id === id);
+    const state = store.getState();
+    const item = state.outlets.find((o) => o.id === id);
     if (!item) return;
+    const now = NOW();
+    // Hapus outlet
+    store.setCollection("outlets", state.outlets.filter((o) => o.id !== id));
+    // Clear primaryOutletId pada karyawan yang mengacu outlet ini
     store.setCollection(
-      "outlets",
-      list.filter((o) => o.id !== id),
+      "employees",
+      store.getState().employees.map((e) =>
+        e.primaryOutletId === id ? { ...e, primaryOutletId: undefined, updatedAt: now } : e,
+      ),
     );
-    logAudit({ module: "Outlet", action: "DELETE", description: `Menghapus outlet "${item.name}".` });
+    logAudit({ module: "Outlet", action: "DELETE", description: `Menghapus outlet "${item.name}" dan melepas penempatan karyawan terkait.` });
   },
   /** Statistik karyawan per outlet + jarak domisili rata-rata. */
   stats(outletId: string) {
@@ -196,6 +226,84 @@ export const outletService = {
 };
 
 // ------------------------------------------------------------
+// Helper: Sinkronisasi memberIds ShiftGroup & HolidayGroup
+// ------------------------------------------------------------
+function syncGroupMembership(
+  store: ReturnType<typeof getStore>,
+  employeeId: string,
+  newShiftGroupId?: string,
+  newHolidayGroupId?: string,
+  now = NOW(),
+  oldShiftGroupId?: string,
+  oldHolidayGroupId?: string,
+): void {
+  // Hapus dari group lama jika berubah
+  if (oldShiftGroupId && oldShiftGroupId !== newShiftGroupId) {
+    removeFromGroupCollection(store, "shiftGroups", oldShiftGroupId, employeeId, now);
+  }
+  if (oldHolidayGroupId && oldHolidayGroupId !== newHolidayGroupId) {
+    removeFromGroupCollection(store, "holidayGroups", oldHolidayGroupId, employeeId, now);
+  }
+
+  // Tambah ke group baru
+  if (newShiftGroupId) {
+    addToGroupCollection(store, "shiftGroups", newShiftGroupId, employeeId, now);
+  }
+  if (newHolidayGroupId) {
+    addToGroupCollection(store, "holidayGroups", newHolidayGroupId, employeeId, now);
+  }
+}
+
+function addToGroupCollection(
+  store: ReturnType<typeof getStore>,
+  key: "shiftGroups" | "holidayGroups",
+  groupId: string,
+  employeeId: string,
+  now: string,
+): void {
+  const groups = store.getState()[key] as Array<{ id: string; memberIds: string[]; updatedAt: string }>;
+  const idx = groups.findIndex((g) => g.id === groupId);
+  if (idx < 0) return;
+  const g = groups[idx]!;
+  if (g.memberIds.includes(employeeId)) return;
+  const updated = [...groups];
+  updated[idx] = { ...g, memberIds: [...g.memberIds, employeeId], updatedAt: now };
+  store.setCollection(key, updated as never);
+}
+
+function removeFromGroupCollection(
+  store: ReturnType<typeof getStore>,
+  key: "shiftGroups" | "holidayGroups",
+  groupId: string,
+  employeeId: string,
+  now: string,
+): void {
+  const groups = store.getState()[key] as Array<{ id: string; memberIds: string[]; updatedAt: string }>;
+  const idx = groups.findIndex((g) => g.id === groupId);
+  if (idx < 0) return;
+  const g = groups[idx]!;
+  if (!g.memberIds.includes(employeeId)) return;
+  const updated = [...groups];
+  updated[idx] = { ...g, memberIds: g.memberIds.filter((id) => id !== employeeId), updatedAt: now };
+  store.setCollection(key, updated as never);
+}
+
+function removeFromGroups(
+  store: ReturnType<typeof getStore>,
+  employeeId: string,
+  oldShiftGroupId?: string,
+  oldHolidayGroupId?: string,
+  now = NOW(),
+): void {
+  if (oldShiftGroupId) {
+    removeFromGroupCollection(store, "shiftGroups", oldShiftGroupId, employeeId, now);
+  }
+  if (oldHolidayGroupId) {
+    removeFromGroupCollection(store, "holidayGroups", oldHolidayGroupId, employeeId, now);
+  }
+}
+
+// ------------------------------------------------------------
 // Karyawan
 // ------------------------------------------------------------
 export const employeeService = {
@@ -207,23 +315,15 @@ export const employeeService = {
   },
   create(input: Omit<Employee, "id" | "createdAt" | "updatedAt">): Employee {
     const store = getStore();
+    if (store.getState().employees.some((e) => e.nik === input.nik)) {
+      throw new Error(`NIK "${input.nik}" sudah terdaftar. Gunakan NIK lain.`);
+    }
     const now = NOW();
     const item: Employee = { ...input, id: uid("emp"), createdAt: now, updatedAt: now };
     store.setCollection("employees", [item, ...store.getState().employees]);
 
-    // Otomatis daftarkan karyawan ke memberIds ShiftGroup
-    if (item.shiftGroupId) {
-      const sgs = store.getState().shiftGroups;
-      const sgIdx = sgs.findIndex((s) => s.id === item.shiftGroupId);
-      if (sgIdx >= 0) {
-        const sg = sgs[sgIdx]!;
-        if (!sg.memberIds.includes(item.id)) {
-          const newSgs = [...sgs];
-          newSgs[sgIdx] = { ...sg, memberIds: [...sg.memberIds, item.id], updatedAt: now };
-          store.setCollection("shiftGroups", newSgs);
-        }
-      }
-    }
+    // Otomatis daftarkan karyawan ke memberIds ShiftGroup & HolidayGroup
+    syncGroupMembership(store, item.id, item.shiftGroupId, item.holidayGroupId, now);
 
     logAudit({ module: "Karyawan", action: "CREATE", description: `Menambah karyawan "${item.fullName}".`, after: item });
     return item;
@@ -239,19 +339,15 @@ export const employeeService = {
     next[idx] = after;
     store.setCollection("employees", next);
 
-    // Otomatis daftarkan karyawan ke memberIds ShiftGroup jika berubah
-    if (after.shiftGroupId) {
-      const sgs = store.getState().shiftGroups;
-      const sgIdx = sgs.findIndex((s) => s.id === after.shiftGroupId);
-      if (sgIdx >= 0) {
-        const sg = sgs[sgIdx]!;
-        if (!sg.memberIds.includes(id)) {
-          const newSgs = [...sgs];
-          newSgs[sgIdx] = { ...sg, memberIds: [...sg.memberIds, id], updatedAt: NOW() };
-          store.setCollection("shiftGroups", newSgs);
-        }
-      }
+    // Sinkronisasi ShiftGroup & HolidayGroup jika berubah
+    const oldShift = before.shiftGroupId;
+    const newShift = after.shiftGroupId;
+    const oldHoliday = before.holidayGroupId;
+    const newHoliday = after.holidayGroupId;
+    if (oldShift !== newShift || oldHoliday !== newHoliday) {
+      syncGroupMembership(store, id, newShift, newHoliday, NOW(), oldShift, oldHoliday);
     }
+
     logAudit({ module: "Karyawan", action: "UPDATE", description: `Memperbarui data karyawan "${after.fullName}".`, before, after });
     // Catat histori untuk field penting
     const tracked: (keyof Employee)[] = ["positionId", "divisionId", "primaryOutletId", "status", "salaryAmount", "shiftGroupId", "holidayGroupId", "supervisorId"];
@@ -291,14 +387,36 @@ export const employeeService = {
   },
   delete(id: string): void {
     const store = getStore();
-    const list = store.getState().employees;
-    const item = list.find((e) => e.id === id);
+    const state = store.getState();
+    const item = state.employees.find((e) => e.id === id);
     if (!item) return;
+    const now = NOW();
+
+    // 1. Hapus karyawan dari employees
+    store.setCollection("employees", state.employees.filter((e) => e.id !== id));
+
+    // 2. Hapus dari shiftGroups.memberIds & holidayGroups.memberIds
+    removeFromGroups(store, id, item.shiftGroupId, item.holidayGroupId, now);
+
+    // 3. Hapus referensi supervisorId pada karyawan lain
     store.setCollection(
       "employees",
-      list.filter((e) => e.id !== id),
+      store.getState().employees.map((e) =>
+        e.supervisorId === id ? { ...e, supervisorId: undefined, updatedAt: now } : e,
+      ),
     );
-    logAudit({ module: "Karyawan", action: "DELETE", description: `Menghapus data karyawan "${item.fullName}" (${item.nik}).` });
+
+    // 4. Cascade: hapus semua data terkait
+    store.setCollection("contracts", state.contracts.filter((c) => c.employeeId !== id));
+    store.setCollection("schedules", state.schedules.filter((s) => s.employeeId !== id));
+    store.setCollection("attendances", state.attendances.filter((a) => a.employeeId !== id));
+    store.setCollection("leaves", state.leaves.filter((l) => l.employeeId !== id));
+    store.setCollection("overtimeActuals", state.overtimeActuals.filter((o) => o.employeeId !== id));
+    store.setCollection("overtimePlannings", state.overtimePlannings.filter((o) => !o.employeeIds.includes(id)));
+    store.setCollection("payrolls", state.payrolls.filter((p) => p.employeeId !== id));
+    store.setCollection("domiciles", state.domiciles.filter((d) => d.employeeId !== id));
+
+    logAudit({ module: "Karyawan", action: "DELETE", description: `Menghapus data karyawan "${item.fullName}" (${item.nik}) beserta seluruh data terkait.` });
   },
   histories(entityId: string) {
     return getStore().getState().changeHistories.filter((h) => h.entityId === entityId);
@@ -333,17 +451,37 @@ export const domicileService = {
   },
   upsert(input: Omit<Domicile, "id" | "lastUpdated"> & { id?: string; employeeId: string }): Domicile {
     const store = getStore();
+    const lat = Number(input.latitude);
+    const lon = Number(input.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      throw new Error("Koordinat latitude/longitude tidak valid.");
+    }
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      throw new Error("Latitude harus -90..90, Longitude harus -180..180.");
+    }
     const list = store.getState().domiciles;
     const existing = list.find((d) => d.employeeId === input.employeeId);
     const now = NOW();
     if (existing) {
       const after: Domicile = { ...existing, ...input, id: existing.id, lastUpdated: now };
       store.setCollection("domiciles", list.map((d) => (d.id === existing.id ? after : d)));
+      // Sinkronkan ke Employee record
+      employeeService.update(input.employeeId, {
+        homeAddress: input.address,
+        latitude: lat,
+        longitude: lon,
+      });
       logAudit({ module: "Domisili", action: "UPDATE", description: `Memperbarui domisili karyawan.`, before: existing, after });
       return after;
     }
     const item: Domicile = { ...input, id: uid("dom"), lastUpdated: now };
     store.setCollection("domiciles", [item, ...list]);
+    // Sinkronkan ke Employee record
+    employeeService.update(input.employeeId, {
+      homeAddress: input.address,
+      latitude: lat,
+      longitude: lon,
+    });
     logAudit({ module: "Domisili", action: "CREATE", description: `Menambah data domisili karyawan.`, after: item });
     return item;
   },
@@ -374,6 +512,9 @@ export const contractService = {
   },
   create(input: Omit<Contract, "id" | "createdAt" | "updatedAt">): Contract {
     const store = getStore();
+    if (input.startDate >= input.endDate) {
+      throw new Error("Tanggal berakhir kontrak harus setelah tanggal mulai.");
+    }
     const now = NOW();
     const item: Contract = { ...input, id: uid("ctr"), createdAt: now, updatedAt: now };
     store.setCollection("contracts", [item, ...store.getState().contracts]);
@@ -404,10 +545,17 @@ export const contractService = {
     // Tandai kontrak lama
     const updatedOld: Contract = { ...old, status: "DIPERPANJANG", decision: "PERPANJANG", updatedAt: now };
     store.setCollection("contracts", list.map((c) => (c.id === old.id ? updatedOld : c)));
+    // Generate contractNo unik berdasarkan max sequence tahun berjalan
+    const year = todayISODate().slice(0, 4);
+    const maxSeq = store.getState().contracts.reduce((max, c) => {
+      const m = c.contractNo.match(/\/(\d{4})\/(\d{3,4})$/);
+      if (m && m[1] === year) return Math.max(max, Number(m[2]));
+      return max;
+    }, 0);
     // Buat kontrak baru
     const newContract: Contract = {
       id: uid("ctr"),
-      contractNo: `CTR/${todayISODate().slice(0, 4)}/${String(list.length + 1).padStart(4, "0")}`,
+      contractNo: `CTR/${year}/${String(maxSeq + 1).padStart(4, "0")}`,
       employeeId: old.employeeId,
       type: input.type,
       startDate: input.newStartDate,
@@ -425,6 +573,11 @@ export const contractService = {
       updatedAt: now,
     };
     store.setCollection("contracts", [newContract, ...store.getState().contracts]);
+    // Sinkronisasi data kontrak ke record karyawan
+    employeeService.update(old.employeeId, {
+      contractType: input.type,
+      contractEndDate: input.newEndDate,
+    });
     logAudit({
       module: "Kontrak",
       action: "EXTEND",
@@ -443,6 +596,7 @@ export const contractService = {
   } {
     const today = todayISODate();
     const days = Math.ceil((new Date(endDate).getTime() - new Date(today).getTime()) / 86_400_000);
+    if (!Number.isFinite(days)) return { days: 0, bucket: "aman", label: "Invalid" };
     if (days < 0) return { days, bucket: "lewat", label: "Lewat jatuh tempo" };
     if (days <= 3) return { days, bucket: "3h", label: "≤ 3 hari" };
     if (days <= 7) return { days, bucket: "7h", label: "≤ 7 hari" };
@@ -459,19 +613,27 @@ export const contractService = {
 // ------------------------------------------------------------
 export const lookupService = {
   positionName(id?: string): string {
-    if (!id) return "-";
-    return getStore().getState().positions.find((p) => p.id === id)?.name ?? "-";
+    if (!id) return "";
+    return getStore().getState().positions.find((p) => p.id === id)?.name ?? "";
   },
   divisionName(id?: string): string {
-    if (!id) return "-";
-    return getStore().getState().divisions.find((d) => d.id === id)?.name ?? "-";
+    if (!id) return "";
+    return getStore().getState().divisions.find((d) => d.id === id)?.name ?? "";
   },
   outletName(id?: string): string {
-    if (!id) return "-";
-    return getStore().getState().outlets.find((o) => o.id === id)?.name ?? "-";
+    if (!id) return "";
+    return getStore().getState().outlets.find((o) => o.id === id)?.name ?? "";
+  },
+  shiftGroupName(id?: string): string {
+    if (!id) return "";
+    return getStore().getState().shiftGroups.find((g) => g.id === id)?.name ?? "";
+  },
+  holidayGroupName(id?: string): string {
+    if (!id) return "";
+    return getStore().getState().holidayGroups.find((g) => g.id === id)?.name ?? "";
   },
   employeeName(id?: string): string {
-    if (!id) return "-";
-    return getStore().getState().employees.find((e) => e.id === id)?.fullName ?? "-";
+    if (!id) return "";
+    return getStore().getState().employees.find((e) => e.id === id)?.fullName ?? "";
   },
 };

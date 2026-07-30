@@ -41,6 +41,9 @@ export const shiftTemplateService = {
   },
   create(input: Omit<ShiftTemplate, "id" | "createdAt" | "updatedAt">): ShiftTemplate {
     const store = getStore();
+    if (store.getState().shiftTemplates.some((s) => s.name.toLowerCase() === input.name.toLowerCase())) {
+      throw new Error(`Nama shift "${input.name}" sudah ada. Gunakan nama lain.`);
+    }
     const now = NOW();
     const item: ShiftTemplate = { ...input, id: uid("shift"), createdAt: now, updatedAt: now };
     store.setCollection("shiftTemplates", [item, ...store.getState().shiftTemplates]);
@@ -238,8 +241,8 @@ export const scheduleService = {
         const dow = new Date(`${cursor}T00:00:00Z`).getUTCDay();
         const pattern = shiftGroupService.patternForDay(group, dow);
         const existingIdx = list.findIndex((s) => s.employeeId === empId && s.date === cursor);
-        if (existingIdx >= 0 && !overwrite) {
-          // skip jika sudah ada & tidak overwrite
+        if (existingIdx >= 0 && (!overwrite || list[existingIdx]!.locked)) {
+          // skip jika sudah ada & tidak overwrite, atau jadwal terkunci
         } else {
           const newSched: Schedule = {
             id: existingIdx >= 0 ? list[existingIdx]!.id : uid("sch"),
@@ -286,6 +289,7 @@ export const scheduleService = {
         if (!src) continue;
         const existingIdx = list.findIndex((s) => s.employeeId === empId && s.date === dstDate);
         if (existingIdx >= 0) {
+          if (list[existingIdx]!.locked) continue;
           list[existingIdx] = {
             ...list[existingIdx]!,
             shiftTemplateId: src.shiftTemplateId,
@@ -336,16 +340,10 @@ export const scheduleService = {
     if (onLeave) {
       conflicts.push({ type: "CUTI", message: `Sedang ${onLeave.type} pada tanggal ini.` });
     }
-    // Hari libur (cek holiday group karyawan + holidays)
-    const emp = state.employees.find((e) => e.id === employeeId);
-    if (emp?.holidayGroupId) {
-      const hg = state.holidayGroups.find((g) => g.id === emp.holidayGroupId);
-      if (hg) {
-        const onHoliday = hg.holidayIds.some((hid) => state.holidays.find((h) => h.id === hid)?.date === date);
-        if (onHoliday) {
-          conflicts.push({ type: "LIBUR", message: "Tanggal ini adalah hari libur sesuai holiday group karyawan." });
-        }
-      }
+    // Hari libur (cek via holidayService untuk include override)
+    const hol = holidayService.isHolidayForEmployee(employeeId, date);
+    if (hol.holiday || hol.override) {
+      conflicts.push({ type: "LIBUR", message: "Tanggal ini adalah hari libur sesuai holiday group karyawan." });
     }
     return conflicts;
   },

@@ -240,7 +240,7 @@ function ShiftFormDialog({
       name: name.trim(),
       startTime,
       endTime,
-      toleranceLateMinutes: Number(tolerance) || 0,
+      toleranceLateMinutes: Math.max(0, Number(tolerance) || 0),
       crossesMidnight,
       color,
       status,
@@ -253,8 +253,13 @@ function ShiftFormDialog({
       shiftTemplateService.update(data.id, payload);
       toast.success("Shift template diperbarui");
     } else {
-      shiftTemplateService.create(payload);
-      toast.success("Shift template ditambahkan");
+      try {
+        shiftTemplateService.create(payload);
+        toast.success("Shift template ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah shift template");
+        return;
+      }
     }
     onOpenChange(false);
   };

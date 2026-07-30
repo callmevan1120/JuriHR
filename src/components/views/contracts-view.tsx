@@ -68,7 +68,8 @@ const REMINDER_BUCKETS = [
   { key: "14h", label: "≤ 14 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
   { key: "30h", label: "≤ 30 hari", color: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
   { key: "60h", label: "≤ 60 hari", color: "bg-info/15 text-info border-info/30" },
-  { key: "aman", label: "Aman (>60 hari)", color: "bg-success/15 text-success border-success/30" },
+  { key: "90h", label: "≤ 90 hari", color: "bg-info/10 text-info border-info/20" },
+  { key: "aman", label: "Aman (>90 hari)", color: "bg-success/15 text-success border-success/30" },
 ] as const;
 
 export function ContractsView() {
@@ -243,7 +244,7 @@ export function ContractsView() {
   const contractImportFields: ImportExportField[] = [
     { key: "contractNo", label: "Nomor Kontrak Kerja", priority: "wajib", defaultChecked: true, sampleValue: "PKWT/2025/001" },
     { key: "employeeId", label: "NIK / ID Karyawan", priority: "wajib", defaultChecked: true, sampleValue: "JBD0001" },
-    { key: "type", label: "Tipe Kontrak (PKWT/PKWTT/OUTSOURCING/MAGANG)", priority: "wajib", defaultChecked: true, sampleValue: "PKWT" },
+    { key: "type", label: "Tipe Kontrak (PKWT/PKWTT/PROBATION/MAGANG/HARIAN)", priority: "wajib", defaultChecked: true, sampleValue: "PKWT" },
     { key: "startDate", label: "Tanggal Mulai Kontrak", priority: "wajib", defaultChecked: true, sampleValue: "2025-01-01" },
     { key: "endDate", label: "Tanggal Berakhir Kontrak", priority: "wajib", defaultChecked: true, sampleValue: "2026-01-01" },
     { key: "salaryAmount", label: "Nominal Gaji Kontrak", priority: "disarankan", defaultChecked: true, sampleValue: "4500000" },
@@ -373,6 +374,38 @@ export function ContractsView() {
         moduleTitle="Data Kontrak Kerja"
         open={importOpen}
         onOpenChange={setImportOpen}
+        onImport={(rows) => {
+          const allEmployees = employees;
+          const validTypes = ["PROBATION", "PKWT", "PKWTT", "MAGANG", "HARIAN"];
+          let created = 0, skipped = 0;
+          for (const row of rows) {
+            const contractNo = row.contractNo?.trim();
+            const nikOrId = row.employeeId?.trim();
+            if (!contractNo || !nikOrId) { skipped++; continue; }
+            const emp = allEmployees.find((e) => e.nik === nikOrId || e.id === nikOrId);
+            if (!emp) { skipped++; continue; }
+            const type = (row.type?.trim() || "PKWT") as ContractType;
+            if (!validTypes.includes(type)) { skipped++; continue; }
+            const startDate = row.startDate?.trim();
+            const endDate = row.endDate?.trim();
+            if (!startDate || !endDate || startDate >= endDate) { skipped++; continue; }
+            contractService.create({
+              contractNo,
+              employeeId: emp.id,
+              type,
+              startDate,
+              endDate,
+              positionId: emp.positionId,
+              divisionId: emp.divisionId,
+              outletId: emp.primaryOutletId,
+              status: "AKTIF",
+              decision: "PENDING",
+            });
+            created++;
+          }
+          if (skipped > 0) toast.warning(`${created} kontrak ditambah, ${skipped} dilewati (data invalid/employee tidak ditemukan).`);
+          else toast.success(`${created} kontrak berhasil ditambahkan.`);
+        }}
         fields={contractImportFields}
       />
 

@@ -65,6 +65,21 @@ function employeeMarkerIcon(initial: string, isNear: boolean) {
   });
 }
 
+/** Auto-fit map bounds to all markers when data changes. */
+function FitBounds({ positions }: { positions: [number, number][] }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (positions.length === 0) return;
+    if (positions.length === 1) {
+      map.setView(positions[0]!, 13);
+      return;
+    }
+    const bounds = L.latLngBounds(positions);
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }, [positions, map]);
+  return null;
+}
+
 export function DomicileView() {
   const employees = useStore((s) => s.employees.filter((e) => e.status === "AKTIF"));
   const domiciles = useStore((s) => s.domiciles);
@@ -168,6 +183,10 @@ export function DomicileView() {
                   attribution='&copy; OpenStreetMap'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <FitBounds positions={[
+                  ...outlets.map((o) => [o.latitude, o.longitude] as [number, number]),
+                  ...points.map(({ domicile }) => [domicile.latitude, domicile.longitude] as [number, number]),
+                ]} />
                 {/* Outlet markers + geofence */}
                 {outlets.map((o) => (
                   <React.Fragment key={o.id}>
@@ -237,7 +256,7 @@ export function DomicileView() {
               {points
                 .map(({ employee, domicile }) => {
                   const outlet = outlets.find((o) => o.id === employee.primaryOutletId);
-                  const dist = outlet ? haversineKm(domicile.latitude, domicile.longitude, outlet.latitude, outlet.longitude) : 0;
+                  const dist = outlet ? haversineKm(domicile.latitude, domicile.longitude, outlet.latitude, outlet.longitude) : Infinity;
                   return { employee, domicile, outlet, dist };
                 })
                 .sort((a, b) => a.dist - b.dist)

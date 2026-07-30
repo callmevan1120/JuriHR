@@ -53,6 +53,7 @@ interface Props {
   employee: Employee;
   editing: boolean;
   onClose: () => void;
+  onEdit: () => void;
 }
 
 const SOURCE_LABEL: Record<CoordinateSource, string> = {
@@ -62,7 +63,7 @@ const SOURCE_LABEL: Record<CoordinateSource, string> = {
   OUTLET_BASED: "Outlet Based",
 };
 
-export function DomicileEditor({ employee, editing, onClose }: Props) {
+export function DomicileEditor({ employee, editing, onClose, onEdit }: Props) {
   const domiciles = useStore((s) => s.domiciles);
   const outlets = useStore((s) => s.outlets);
   const domicile = domiciles.find((d) => d.employeeId === employee.id);
@@ -83,7 +84,7 @@ export function DomicileEditor({ employee, editing, onClose }: Props) {
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">Belum ada data domisili untuk karyawan ini.</p>
-        <Button onClick={onClose ? () => { onClose(); } : undefined}>
+        <Button onClick={onEdit}>
           <Pencil className="size-4" /> Tambah Domisili
         </Button>
       </div>
@@ -189,7 +190,9 @@ function DomicileForm({
   const [postalCode, setPostalCode] = React.useState(initial?.postalCode ?? "");
   const [lat, setLat] = React.useState(String(initial?.latitude ?? primaryOutlet?.latitude ?? -6.2));
   const [lon, setLon] = React.useState(String(initial?.longitude ?? primaryOutlet?.longitude ?? 106.8));
-  const [source, setSource] = React.useState<CoordinateSource>(initial?.source ?? "MAP_PICKER");
+  const hasInitialCoords = initial?.latitude != null;
+  const hasOutletFallback = !hasInitialCoords && !!primaryOutlet;
+  const [source, setSource] = React.useState<CoordinateSource>(initial?.source ?? (hasOutletFallback ? "OUTLET_BASED" : "MANUAL"));
   const [note, setNote] = React.useState(initial?.note ?? "");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [searching, setSearching] = React.useState(false);
@@ -208,8 +211,12 @@ function DomicileForm({
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1&countrycodes=id`,
-        { headers: { "Accept-Language": "id" } },
+        { headers: { "Accept-Language": "id", "User-Agent": "JURI-HR/1.0 (hrd@juribun.id)" } },
       );
+      if (!res.ok) {
+        setError(`Pencarian gagal (HTTP ${res.status}). Coba lagi nanti.`);
+        return;
+      }
       const data = await res.json();
       if (data && data[0]) {
         setCoords(Number(data[0].lat), Number(data[0].lon));
@@ -230,6 +237,16 @@ function DomicileForm({
       setError("Alamat wajib diisi.");
       return;
     }
+    const latNum = Number(lat);
+    const lonNum = Number(lon);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) {
+      setError("Koordinat latitude/longitude tidak valid.");
+      return;
+    }
+    if (Math.abs(latNum) > 90 || Math.abs(lonNum) > 180) {
+      setError("Latitude harus -90..90, Longitude harus -180..180.");
+      return;
+    }
     domicileService.upsert({
       id: initial?.id,
       employeeId: employee.id,
@@ -239,8 +256,8 @@ function DomicileForm({
       district: district.trim(),
       village: village.trim(),
       postalCode: postalCode.trim(),
-      latitude: Number(lat),
-      longitude: Number(lon),
+      latitude: latNum,
+      longitude: lonNum,
       source,
       note: note.trim() || undefined,
     });

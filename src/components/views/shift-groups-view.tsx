@@ -349,6 +349,31 @@ export function ShiftGroupsView() {
         moduleTitle={activeTab === "groups" ? "Shift Group" : "Shift Template"}
         open={importOpen}
         onOpenChange={setImportOpen}
+        onImport={(rows) => {
+          if (activeTab === "templates") {
+            let created = 0, skipped = 0;
+            for (const row of rows) {
+              const name = row.name?.trim();
+              const startTime = row.startTime?.trim();
+              const endTime = row.endTime?.trim();
+              if (!name || !startTime || !endTime) { skipped++; continue; }
+              const crosses = row.crossesMidnight?.trim().toLowerCase() === "true";
+              shiftTemplateService.create({
+                name, startTime, endTime,
+                toleranceLateMinutes: Number(row.toleranceLateMinutes) || 5,
+                crossesMidnight: crosses,
+                color: row.color?.trim() || "#FCBA0C",
+                status: "active",
+                phConfig: { isPH: false },
+              });
+              created++;
+            }
+            if (skipped > 0) toast.warning(`${created} shift template ditambah, ${skipped} dilewati (data invalid).`);
+            else toast.success(`${created} shift template berhasil ditambahkan.`);
+          } else {
+            toast.info("Import Shift Group belum didukung. Silakan gunakan form tambah Shift Group untuk membuat kelompok shift lengkap dengan pola mingguan dan anggota.");
+          }
+        }}
         fields={shiftImportFields}
       />
 
@@ -560,9 +585,16 @@ function ShiftGroupFormPage({
       setError("Nama group wajib diisi.");
       return;
     }
+    if (effectiveUntil && effectiveFrom > effectiveUntil) {
+      setError("Tanggal berlaku sampai harus setelah tanggal berlaku dari.");
+      return;
+    }
+    const scopeType = outletIds.length > 0 && divisionIds.length > 0 ? "MULTI_OUTLET" as const
+      : divisionIds.length > 0 ? "MULTI_DIVISI" as const
+      : "MULTI_OUTLET" as const;
     const payload = {
       name: name.trim(),
-      scopeType: "MULTI_OUTLET" as const,
+      scopeType,
       outletIds,
       divisionIds,
       effectiveFrom,
@@ -820,7 +852,7 @@ function ShiftTemplateDialog({
       name: name.trim(),
       startTime,
       endTime,
-      toleranceLateMinutes: Number(tolerance) || 0,
+      toleranceLateMinutes: Math.max(0, Number(tolerance) || 0),
       crossesMidnight,
       color,
       status,
@@ -833,8 +865,13 @@ function ShiftTemplateDialog({
       shiftTemplateService.update(data.id, payload);
       toast.success("Shift template diperbarui");
     } else {
-      shiftTemplateService.create(payload);
-      toast.success("Shift template ditambahkan");
+      try {
+        shiftTemplateService.create(payload);
+        toast.success("Shift template ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah shift template");
+        return;
+      }
     }
     onOpenChange(false);
   };

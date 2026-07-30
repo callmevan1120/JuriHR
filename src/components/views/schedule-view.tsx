@@ -46,6 +46,7 @@ import { useStore } from "@/hooks/use-store";
 import {
   scheduleService,
   shiftSwapService,
+  holidayService,
   type ConflictInfo,
 } from "@/lib/services/schedule";
 import { lookupService } from "@/lib/services/master-data";
@@ -432,6 +433,7 @@ function WeeklyView({
 }) {
   const schedules = useStore((s) => s.schedules);
   const shiftTemplates = useStore((s) => s.shiftTemplates);
+  const holidays = useStore((s) => s.holidays);
   const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
   return (
@@ -443,11 +445,13 @@ function WeeklyView({
             {dates.map((d) => {
               const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
               const isToday = d === todayISODate();
+              const hol = holidays.find((h) => h.date === d);
               return (
                 <th key={d} className={cn("min-w-[110px] px-2 py-2 text-center font-semibold", isToday ? "text-primary" : "text-muted-foreground")}>
                   <div className="flex flex-col">
                     <span>{dayNames[dow]}</span>
                     <span className={cn("text-sm", isToday && "font-bold")}>{d.slice(8)}</span>
+                    {hol && <span className="text-[9px] font-normal text-destructive">🔴 {hol.name.slice(0, 12)}</span>}
                   </div>
                 </th>
               );
@@ -479,6 +483,7 @@ function WeeklyView({
                   const sched = schedules.find((s) => s.employeeId === emp.id && s.date === d);
                   const shift = sched?.shiftTemplateId ? shiftTemplates.find((st) => st.id === sched.shiftTemplateId) : undefined;
                   const conflicts = sched?.shiftTemplateId ? scheduleService.detectConflicts(emp.id, d) : [];
+                  const hol = holidays.find((h) => h.date === d);
                   return (
                     <td key={d} className="px-1 py-1 text-center">
                       <button
@@ -487,12 +492,14 @@ function WeeklyView({
                           "flex h-full min-h-[44px] w-full flex-col items-center justify-center gap-0.5 rounded-md border text-[10px] transition-all hover:scale-[1.03]",
                           shift
                             ? "border-transparent text-white shadow-soft"
+                            : hol
+                            ? "border-destructive/30 bg-destructive/5 text-destructive"
                             : sched
                             ? "border-dashed border-border bg-muted/30 text-muted-foreground"
                             : "border-dashed border-border/50 text-muted-foreground/50 hover:border-primary/40",
                         )}
                         style={shift ? { background: shift.color } : undefined}
-                        title={shift ? `${shift.name} (${shift.startTime}-${shift.endTime})` : "Klik untuk atur jadwal"}
+                        title={shift ? `${shift.name} (${shift.startTime}-${shift.endTime})` : hol ? `Libur: ${hol.name}` : "Klik untuk atur jadwal"}
                       >
                         {shift ? (
                           <>
@@ -500,6 +507,8 @@ function WeeklyView({
                             {sched?.locked ? <Lock className="size-2.5" /> : null}
                             {conflicts.length > 0 ? <AlertTriangle className="size-2.5 text-destructive" /> : null}
                           </>
+                        ) : hol ? (
+                          <span className="text-[8px] font-semibold">🔴 Libur</span>
                         ) : sched ? (
                           <span>Libur</span>
                         ) : (
@@ -534,6 +543,7 @@ function MonthlyView({
 }) {
   const schedules = useStore((s) => s.schedules);
   const shiftTemplates = useStore((s) => s.shiftTemplates);
+  const holidays = useStore((s) => s.holidays);
   const [selectedDate, setSelectedDate] = React.useState<string | null>(null);
   const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 
@@ -561,6 +571,7 @@ function MonthlyView({
             const dayScheds = schedules.filter((s) => s.date === d);
             const isToday = d === todayISODate();
             const isSelected = d === selectedDate;
+            const hol = holidays.find((h) => h.date === d);
             return (
               <button
                 key={d}
@@ -568,11 +579,13 @@ function MonthlyView({
                 className={cn(
                   "flex aspect-square flex-col items-center justify-start gap-0.5 rounded-md border p-1 text-center transition-all hover:scale-[1.03]",
                   isSelected ? "border-primary ring-2 ring-primary/20" : "border-border",
-                  isToday ? "bg-primary/10" : "bg-card",
+                  isToday ? "bg-primary/10" : hol ? "bg-destructive/5" : "bg-card",
                 )}
               >
                 <span className={cn("text-xs font-bold", isToday ? "text-primary" : "text-foreground")}>{d.slice(8)}</span>
-                {dayScheds.length > 0 ? (
+                {hol ? (
+                  <span className="text-[7px] text-destructive font-medium truncate w-full text-center">🔴 {hol.name.slice(0, 10)}</span>
+                ) : dayScheds.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-0.5">
                     {dayScheds.slice(0, 4).map((s) => {
                       const shift = s.shiftTemplateId ? shiftTemplates.find((st) => st.id === s.shiftTemplateId) : undefined;
@@ -821,6 +834,7 @@ function GenerateDialog({ range, onClose }: { range: { from: string; to: string 
 
   const run = () => {
     if (!groupId) { setError("Pilih shift group."); return; }
+    if (from > to) { setError("Tanggal akhir harus setelah tanggal awal."); return; }
     const count = scheduleService.generateFromShiftGroup(groupId, from, to, overwrite);
     toast.success(`${count} jadwal digenerate`);
     onClose();

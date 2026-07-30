@@ -284,6 +284,49 @@ export function PositionsView() {
         moduleTitle={activeTab === "positions" ? "Posisi & Jabatan" : "Divisi & Departemen"}
         open={importOpen}
         onOpenChange={setImportOpen}
+        onImport={(rows) => {
+          if (activeTab === "positions") {
+            const existingCodes = new Set(positionService.list().map((p) => p.code));
+            const validCats = ["OUTLET", "NON_OUTLET"];
+            let created = 0, skipped = 0;
+            for (const row of rows) {
+              const code = row.code?.trim();
+              const name = row.name?.trim();
+              if (!code || !name || existingCodes.has(code)) { skipped++; continue; }
+              const category = (row.category?.trim() || "OUTLET") as "OUTLET" | "NON_OUTLET";
+              if (!validCats.includes(category)) { skipped++; continue; }
+              existingCodes.add(code);
+              positionService.create({
+                code, name, category,
+                defaultMonthlySalary: Number(row.defaultMonthlySalary) || 0,
+                defaultDailySalary: Number(row.defaultDailySalary) || 0,
+                status: "active",
+                note: row.note?.trim() || undefined,
+              });
+              created++;
+            }
+            if (skipped > 0) toast.warning(`${created} posisi ditambah, ${skipped} dilewati (kode duplikat/invalid).`);
+            else toast.success(`${created} posisi berhasil ditambahkan.`);
+          } else {
+            const existingCodes = new Set(divisionService.list().map((d) => d.code));
+            let created = 0, skipped = 0;
+            for (const row of rows) {
+              const code = row.code?.trim();
+              const name = row.name?.trim();
+              if (!code || !name || existingCodes.has(code)) { skipped++; continue; }
+              const category = (row.category?.trim() || "NON_OUTLET") as "OUTLET" | "NON_OUTLET";
+              existingCodes.add(code);
+              divisionService.create({
+                code, name, category,
+                status: "active",
+                note: row.note?.trim() || undefined,
+              });
+              created++;
+            }
+            if (skipped > 0) toast.warning(`${created} divisi ditambah, ${skipped} dilewati (kode duplikat/invalid).`);
+            else toast.success(`${created} divisi berhasil ditambahkan.`);
+          }
+        }}
         fields={positionImportFields}
       />
 
@@ -621,8 +664,13 @@ function PositionFormPage({
       positionService.update(data.id, payload);
       toast.success("Data posisi berhasil diperbarui");
     } else {
-      positionService.create(payload);
-      toast.success("Posisi baru berhasil ditambahkan");
+      try {
+        positionService.create(payload);
+        toast.success("Posisi baru berhasil ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah posisi");
+        return;
+      }
     }
     onBack();
   };
@@ -768,8 +816,13 @@ function DivisionFormPage({
       divisionService.update(data.id, payload);
       toast.success("Data divisi berhasil diperbarui");
     } else {
-      divisionService.create(payload);
-      toast.success("Divisi baru berhasil ditambahkan");
+      try {
+        divisionService.create(payload);
+        toast.success("Divisi baru berhasil ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah divisi");
+        return;
+      }
     }
     onBack();
   };
@@ -844,7 +897,7 @@ function DivisionFormPage({
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih Kepala Divisi..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">-- Belum Ada --</SelectItem>
-                    {employees.map((e) => (
+                    {employees.filter((e) => e.status === "AKTIF").map((e) => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.fullName} ({e.nik})
                       </SelectItem>

@@ -230,6 +230,14 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       setError("Penempatan outlet wajib dipilih untuk Karyawan Outlet.");
       return;
     }
+    if (!email.trim()) {
+      setError("Email wajib diisi.");
+      return;
+    }
+    if (!birthDate) {
+      setError("Tanggal lahir wajib diisi.");
+      return;
+    }
     
     // Cek NIK unik
     const dup = employees.find((e) => e.nik === nik.trim() && e.id !== data?.id);
@@ -291,8 +299,13 @@ export function EmployeeFormDialog({ open, onOpenChange, mode, data }: Props) {
       employeeService.update(data.id, payload);
       toast.success("Data karyawan berhasil diperbarui");
     } else {
-      employeeService.create(payload as any);
-      toast.success("Karyawan baru berhasil ditambahkan");
+      try {
+        employeeService.create(payload as any);
+        toast.success("Karyawan baru berhasil ditambahkan");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah karyawan");
+        return;
+      }
     }
     onOpenChange(false);
   };

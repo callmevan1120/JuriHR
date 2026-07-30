@@ -268,7 +268,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
         <div className="flex items-center gap-3 rounded-xl border border-info/30 bg-info/5 p-3.5 text-xs text-info dark:text-info-foreground">
           <KeyRound className="size-4 shrink-0 text-info" />
           <span>
-            <b>Kredensial Login (Persiapan v2):</b> Email (<code>{employee.email || "—"}</code>) dan Tanggal Lahir (<code>{employee.birthDate ? formatDateLong(employee.birthDate) : "20 Mei 1998"}</code>) akan berfungsi untuk login akun <i>Employee App</i>.
+            <b>Kredensial Login (Persiapan v2):</b> Email (<code>{employee.email || "—"}</code>) dan Tanggal Lahir (<code>{employee.birthDate ? formatDateLong(employee.birthDate) : "—"}</code>) akan berfungsi untuk login akun <i>Employee App</i>.
           </span>
         </div>
 
@@ -298,7 +298,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
               label="Tanggal Lahir (Kredensial Login v2)"
               value={
                 <span className="inline-flex items-center gap-1 text-foreground font-medium">
-                  <Cake className="size-3.5 text-primary" /> {employee.birthDate ? formatDateLong(employee.birthDate) : "20 Mei 1998"}
+                  <Cake className="size-3.5 text-primary" /> {employee.birthDate ? formatDateLong(employee.birthDate) : "—"}
                 </span>
               }
             />
@@ -388,8 +388,8 @@ function ProfilTab({ employee }: { employee: Employee }) {
             <CreditCard className="size-3.5 text-primary" /> 3. Data Rekening Bank (Payroll)
           </h4>
           <div className="divide-y divide-border/60 text-xs bg-muted/10 rounded-xl border border-border/60 px-4">
-            <InfoRow label="Nama Bank Payroll" value={<span className="font-semibold text-foreground">{employee.bankName || "BCA"}</span>} />
-            <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "1234567890"}</span>} />
+            <InfoRow label="Nama Bank Payroll" value={<span className="font-semibold text-foreground">{employee.bankName || "—"}</span>} />
+            <InfoRow label="Nomor Rekening" value={<span className="font-mono font-bold text-foreground">{employee.accountNumber || "—"}</span>} />
             <InfoRow label="Atas Nama Rekening" value={employee.accountHolderName || employee.fullName} />
             <InfoRow label="Tipe Skema Gaji" value={employee.salaryType === "BULANAN" ? "Bulanan" : "Harian"} />
             <InfoRow label="Nominal Gaji" value={<span className="font-bold tabular-nums text-foreground">{formatRupiah(employee.salaryAmount)}</span>} />
@@ -426,7 +426,7 @@ function ProfilTab({ employee }: { employee: Employee }) {
                 )
               }
             />
-            <InfoRow label="Shift Group" value={lookupService.outletName(employee.shiftGroupId) || "—"} />
+            <InfoRow label="Shift Group" value={lookupService.shiftGroupName(employee.shiftGroupId) || "—"} />
             <InfoRow label="Alamat Rumah Lengkap" value={employee.homeAddress || "—"} block />
             <InfoRow
               label="Koordinat Lokasi (LU / LT)"
@@ -497,7 +497,7 @@ function DomicileTab({ employee }: { employee: Employee }) {
           </Button>
         </CardHeader>
         <div className="p-6">
-          <DomicileEditor employee={employee} editing={editing} onClose={() => setEditing(false)} />
+          <DomicileEditor employee={employee} editing={editing} onClose={() => setEditing(false)} onEdit={() => setEditing(true)} />
         </div>
       </Card>
     </div>

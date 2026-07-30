@@ -274,6 +274,17 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
       return;
     }
 
+    if (!email.trim()) {
+      setError("Email wajib diisi.");
+      setActiveTab("identitas");
+      return;
+    }
+    if (!birthDate) {
+      setError("Tanggal lahir wajib diisi.");
+      setActiveTab("identitas");
+      return;
+    }
+
     const dup = employees.find((e) => e.nik === nik.trim() && e.id !== data?.id);
     if (dup) {
       setError(`NIK "${nik.trim()}" sudah digunakan oleh ${dup.fullName}.`);
@@ -334,8 +345,13 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
       employeeService.update(data.id, payload);
       toast.success(`Data karyawan "${fullName}" berhasil diperbarui.`);
     } else {
-      employeeService.create(payload as any);
-      toast.success(`Karyawan baru "${fullName}" berhasil ditambahkan.`);
+      try {
+        employeeService.create(payload as any);
+        toast.success(`Karyawan baru "${fullName}" berhasil ditambahkan.`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Gagal menambah karyawan");
+        return;
+      }
     }
 
     onBack();
@@ -613,12 +629,6 @@ export function EmployeeFormPage({ mode, data, onBack }: EmployeeFormPageProps) 
             </FormRow>
 
             <FormRow>
-              <Field label="No. Telepon / WA">
-                <div className="relative">
-                  <Phone className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="081234567890" className="pl-8 font-mono" />
-                </div>
-              </Field>
               <Field label="Posisi / Jabatan" required>
                 <Select value={positionId} onValueChange={setPositionId}>
                   <SelectTrigger><SelectValue placeholder="Pilih posisi..." /></SelectTrigger>

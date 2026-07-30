@@ -29,7 +29,7 @@ import {
 import { useStore } from "@/hooks/use-store";
 import { holidayService } from "@/lib/services/schedule";
 import { formatDateMed, todayISODate, cn, initials } from "@/lib/utils";
-import type { Holiday, HolidayGroup, HolidayOverride, HolidayType, RecordStatus } from "@/lib/types";
+import type { Holiday, HolidayGroup, HolidayOverride, HolidayOverrideType, HolidayType, RecordStatus } from "@/lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -76,6 +76,7 @@ export function HolidayView() {
 
   const [importOpen, setImportOpen] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
+  const [actionsOpen, setActionsOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<{ type: "group" | "holiday" | "swap"; id: string; name: string } | null>(null);
 
   const handleGenerateNationalHolidays = () => {
@@ -125,8 +126,6 @@ export function HolidayView() {
       />
     );
   }
-
-  const [actionsOpen, setActionsOpen] = React.useState(false);
 
   return (
     <div className="space-y-4">
@@ -323,6 +322,9 @@ export function HolidayView() {
           } else if (confirmDelete.type === "holiday") {
             holidayService.deleteHoliday(confirmDelete.id);
             toast.success("Hari libur dihapus");
+          } else if (confirmDelete.type === "swap") {
+            holidayService.deleteOverride(confirmDelete.id);
+            toast.success("Penyesuaian libur dihapus");
           }
         }}
       />
@@ -331,6 +333,24 @@ export function HolidayView() {
         moduleTitle="Master Hari Libur"
         open={importOpen}
         onOpenChange={setImportOpen}
+        onImport={(rows) => {
+          const validTypes = ["NASIONAL", "KEAGAMAAN", "PERUSAHAAN", "ADDITIONAL", "CANCELLED"];
+          let created = 0, skipped = 0;
+          for (const row of rows) {
+            const name = row.name?.trim();
+            const date = row.date?.trim();
+            if (!name || !date) { skipped++; continue; }
+            const type = (row.type?.trim() || "PERUSAHAAN") as any;
+            if (!validTypes.includes(type)) { skipped++; continue; }
+            holidayService.createHoliday({
+              name, date, type,
+              description: row.description?.trim() || undefined,
+            });
+            created++;
+          }
+          if (skipped > 0) toast.warning(`${created} hari libur ditambah, ${skipped} dilewati (data invalid).`);
+          else toast.success(`${created} hari libur berhasil ditambahkan.`);
+        }}
         fields={holidayImportFields}
       />
 
@@ -576,11 +596,14 @@ function HolidaySwapsSection({
             <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onEdit(row.original)}>
               <Pencil className="size-3.5" />
             </Button>
+            <Button variant="ghost" size="icon" className="size-7 rounded-lg text-destructive hover:text-destructive" onClick={() => onDelete(row.original)}>
+              <Trash2 className="size-3.5" />
+            </Button>
           </div>
         ),
       },
     ],
-    [outlets, onEdit]
+    [outlets, onEdit, onDelete]
   );
 
   return <DataTable tableKey="holiday_swaps" data={swaps} columns={columns} searchPlaceholder="Cari penyesuaian libur..." />;
@@ -644,6 +667,7 @@ function HolidayGroupFormPage({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setError("Nama kelompok wajib diisi."); return; }
+    if (effectiveUntil && effectiveFrom > effectiveUntil) { setError("Tanggal berlaku sampai harus setelah tanggal berlaku dari."); return; }
     const payload = {
       name: name.trim(),
       description: description.trim() ? description.trim() : undefined,
@@ -743,6 +767,27 @@ function HolidayGroupFormPage({
                     </div>
                   </div>
                 </div>
+              </Field>
+
+              <Field label="Pilih Hari Libur yang Berlaku untuk Group Ini" hint="Centang hari libur yang akan diterapkan ke seluruh anggota group">
+                <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-2.5 max-h-[160px] overflow-y-auto">
+                  {holidays.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">Belum ada hari libur terdaftar. Tambahkan hari libur di tab Hari Libur terlebih dahulu.</p>
+                  ) : (
+                    holidays.map((h) => {
+                      const checked = holidayIds.includes(h.id);
+                      return (
+                        <label key={h.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                          <Checkbox checked={checked} onCheckedChange={() => setHolidayIds((prev) => prev.includes(h.id) ? prev.filter((x) => x !== h.id) : [...prev, h.id])} className="size-3.5" />
+                          <span>{formatDateMed(h.date)} — {h.name}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+                {holidayIds.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-1">{holidayIds.length} hari libur terpilih</p>
+                )}
               </Field>
             </CardContent>
           </Card>
@@ -927,7 +972,10 @@ function HolidaySwapFormPage({
 }) {
   const outlets = useStore((s) => s.outlets);
   const employees = useStore((s) => s.employees);
+  const holidayGroups = useStore((s) => s.holidayGroups);
 
+  const [holidayGroupId, setHolidayGroupId] = React.useState(data?.holidayGroupId ?? holidayGroups[0]?.id ?? "");
+  const [overrideType, setOverrideType] = React.useState<HolidayOverrideType>(data?.type ?? "HOLIDAY_SWAP");
   const [reason, setReason] = React.useState(data?.reason ?? "");
   const [originalDate, setOriginalDate] = React.useState(data?.originalHolidayDate ?? todayISODate());
   const [replacementDate, setReplacementDate] = React.useState(data?.replacementDate ?? "");
@@ -946,7 +994,34 @@ function HolidaySwapFormPage({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) { setError("Alasan penyesuaian libur wajib diisi."); return; }
-    toast.success("Tukar libur / override berhasil disimpan!");
+    if (!holidayGroupId) { setError("Holiday Group wajib dipilih."); return; }
+
+    // Resolve employee IDs based on scope
+    let employeeIds: string[] = [];
+    if (scopeType === "MULTI_OUTLET") {
+      employeeIds = employees
+        .filter((e) => e.status === "AKTIF" && e.primaryOutletId && selectedOutletIds.includes(e.primaryOutletId))
+        .map((e) => e.id);
+    }
+
+    const payload = {
+      holidayGroupId,
+      type: overrideType,
+      employeeIds,
+      originalHolidayDate: originalDate || undefined,
+      replacementDate: replacementDate || undefined,
+      reason: reason.trim(),
+      status: "active" as const,
+    };
+
+    if (mode === "edit" && data) {
+      holidayService.createOverride(payload);
+      holidayService.deleteOverride(data.id);
+      toast.success("Penyesuaian libur berhasil diperbarui!");
+    } else {
+      holidayService.createOverride(payload);
+      toast.success("Tukar libur / override berhasil disimpan!");
+    }
     onBack();
   };
 
@@ -986,6 +1061,31 @@ function HolidaySwapFormPage({
           <CardTitle className="text-base font-bold text-foreground">Detail Penyesuaian Tanggal &amp; Target Outlet</CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
+          <FormRow>
+            <Field label="Holiday Group" required>
+              <Select value={holidayGroupId} onValueChange={setHolidayGroupId}>
+                <SelectTrigger className="rounded-xl font-semibold"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {holidayGroups.filter((g) => g.status === "active").map((g) => (
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Tipe Penyesuaian" required>
+              <Select value={overrideType} onValueChange={(v) => setOverrideType(v as HolidayOverrideType)}>
+                <SelectTrigger className="rounded-xl font-semibold"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HOLIDAY_SWAP">Tukar Hari Libur</SelectItem>
+                  <SelectItem value="WORKDAY_OVERRIDE">Hari Kerja → Libur</SelectItem>
+                  <SelectItem value="ADDITIONAL_HOLIDAY">Libur Tambahan</SelectItem>
+                  <SelectItem value="CANCELLED_HOLIDAY">Batalkan Libur</SelectItem>
+                  <SelectItem value="EMPLOYEE_SPECIFIC">Khusus Karyawan</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </FormRow>
+
           <Field label="Alasan Penyesuaian / Alasan Tukar Libur" required>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Penyesuaian shift Idul Fitri cabang mall" className="font-semibold" />
           </Field>
