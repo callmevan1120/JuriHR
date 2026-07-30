@@ -9,7 +9,7 @@ export interface ParsedRoute {
   hash: string;
 }
 
-function parseHash(rawHash: string): ParsedRoute {
+export function parseHash(rawHash: string): ParsedRoute {
   let h = rawHash || "#/";
   if (!h.startsWith("#")) h = "#" + h;
   if (h === "#" || h === "#/") return { path: "#/", query: new URLSearchParams(), hash: h };
@@ -24,32 +24,33 @@ function parseHash(rawHash: string): ParsedRoute {
   return { path, query, hash: h };
 }
 
-/** Hook untuk membaca route saat ini (hash-based). */
+function subscribe(callback: () => void) {
+  window.addEventListener("hashchange", callback);
+  window.addEventListener("popstate", callback);
+  return () => {
+    window.removeEventListener("hashchange", callback);
+    window.removeEventListener("popstate", callback);
+  };
+}
+
+function getSnapshot() {
+  return typeof window !== "undefined" ? window.location.hash : "#/";
+}
+
+function getServerSnapshot() {
+  return "#/";
+}
+
+/** Hook berbasis useSyncExternalStore untuk merespons perubahan rute URL hash secara real-time */
 export function useRoute(): ParsedRoute {
-  const [route, setRoute] = React.useState<ParsedRoute>(() =>
-    parseHash(typeof window !== "undefined" ? window.location.hash : "#/"),
-  );
-
-  React.useEffect(() => {
-    const onChange = () => {
-      setRoute(parseHash(window.location.hash));
-    };
-    window.addEventListener("hashchange", onChange);
-    // Pastikan ada hash awal
-    if (!window.location.hash) {
-      window.location.hash = "#/";
-    }
-    return () => window.removeEventListener("hashchange", onChange);
-  }, []);
-
-  return route;
+  const rawHash = React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return React.useMemo(() => parseHash(rawHash), [rawHash]);
 }
 
 /** Navigasi ke path tertentu. */
 export function navigate(path: string): void {
   if (typeof window === "undefined") return;
   if (window.location.hash === path) {
-    // trigger manual jika sama
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   } else {
     window.location.hash = path;

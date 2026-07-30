@@ -286,3 +286,42 @@ export function findNavItem(path: string): NavItem | undefined {
 
   return undefined;
 }
+
+/** Cari NavGroup & NavItem berdasarkan path untuk breadcrumb ERPNext-style. */
+export function findNavGroupAndItem(path: string): { group?: NavGroup; item?: NavItem } {
+  if (!path) return {};
+  let clean = path.split("?")[0] || "#/";
+  if (!clean.startsWith("#")) clean = "#" + clean;
+  if (clean.endsWith("/") && clean.length > 2) clean = clean.slice(0, -1);
+  clean = clean.toLowerCase();
+
+  const ALIAS: Record<string, string> = {
+    "#/positions": "#/posisi",
+    "#/divisi": "#/posisi",
+    "#/employees": "#/karyawan",
+    "#/outlets": "#/outlet",
+    "#/contracts": "#/kontrak",
+    "#/shifts": "#/shift",
+    "#/shift-groups": "#/shift",
+    "#/shift-templates": "#/shift",
+    "#/schedule": "#/jadwal",
+    "#/holiday": "#/libur",
+    "#/holidays": "#/libur",
+    "#/attendance": "#/absensi",
+    "#/leave": "#/cuti",
+    "#/overtime": "#/lembur",
+    "#/notifications": "#/notifikasi",
+    "#/reports": "#/laporan",
+    "#/settings": "#/pengaturan",
+  };
+
+  const targetPath = ALIAS[clean] || clean;
+
+  for (const group of NAV_GROUPS) {
+    const item = group.items.find((i) => i.path.toLowerCase() === targetPath);
+    if (item) return { group, item };
+  }
+
+  const item = findNavItem(path);
+  return { item };
+}
