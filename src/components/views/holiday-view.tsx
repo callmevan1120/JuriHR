@@ -447,7 +447,7 @@ function HolidayGroupFormPage({
       .filter(
         (e) =>
           e.status === "AKTIF" &&
-          (selectedOutlets.includes(e.primaryOutletId) || selectedDivisions.includes(e.divisionId))
+          ((e.primaryOutletId && selectedOutlets.includes(e.primaryOutletId)) || selectedDivisions.includes(e.divisionId))
       )
       .map((e) => e.id);
 
@@ -471,13 +471,13 @@ function HolidayGroupFormPage({
     if (!name.trim()) { setError("Nama wajib diisi."); return; }
     const payload = {
       name: name.trim(),
-      description: description.trim() || undefined,
+      description: description.trim() ? description.trim() : undefined,
       outletIds,
       divisionIds,
       memberIds,
       holidayIds,
       effectiveFrom,
-      effectiveUntil: effectiveUntil || undefined,
+      effectiveUntil: effectiveUntil ? effectiveUntil : undefined,
       status,
     };
     if (mode === "edit" && data) {

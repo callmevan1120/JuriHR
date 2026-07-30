@@ -474,7 +474,7 @@ function ShiftGroupFormPage({
       .filter(
         (e) =>
           e.status === "AKTIF" &&
-          (selectedOutlets.includes(e.primaryOutletId) || selectedDivisions.includes(e.divisionId))
+          ((e.primaryOutletId && selectedOutlets.includes(e.primaryOutletId)) || selectedDivisions.includes(e.divisionId))
       )
       .map((e) => e.id);
     
@@ -517,7 +517,7 @@ function ShiftGroupFormPage({
       outletIds,
       divisionIds,
       effectiveFrom,
-      effectiveUntil: effectiveUntil || undefined,
+      effectiveUntil: effectiveUntil ? effectiveUntil : undefined,
       status,
       weeklyPattern,
       memberIds,
