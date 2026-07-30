@@ -317,3 +317,19 @@
     margin: 1.5cm;
   }
 }
+
+/* Responsive: touch-friendly tap targets on mobile */
+@media (max-width: 640px) {
+  [data-slot="sidebar-trigger"] {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Horizontal scroll for tables on tablet */
+@media (max-width: 768px) {
+  .data-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

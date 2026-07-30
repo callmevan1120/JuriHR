@@ -15,19 +15,19 @@ export function AppShell() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="min-w-0 flex-1 flex flex-col">
+      <SidebarInset className="min-w-0 flex-1 flex flex-col overflow-hidden">
         <AppTopbar />
-        <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
-          <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 sm:px-6 sm:py-6 min-w-0">
-            <div key={typeof window !== "undefined" ? window.location.hash : "init"} className="animate-fade-in min-w-0">
+        <div className="flex flex-1 flex-col min-w-0 overflow-y-auto overflow-x-hidden">
+          <main className="mx-auto w-full max-w-[1400px] flex-1 px-3 py-3 sm:px-5 sm:py-5 min-w-0">
+            <div className="animate-fade-in min-w-0">
               <RouteView />
             </div>
           </main>
-          <footer className="mt-auto border-t border-border bg-card px-4 py-3 sm:px-6">
+          <footer className="mt-auto border-t border-border bg-card px-3 py-3 sm:px-5">
             <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-1 text-xs text-muted-foreground sm:flex-row">
               <p>
                 © {new Date().getFullYear()} JURI HR — Sistem Manajemen HR
-                Bakery &amp; Coffee Bun
+                Bakery & Coffee Bun
               </p>
               <p className="flex items-center gap-1.5">
                 <span className="size-1.5 rounded-full bg-success" />

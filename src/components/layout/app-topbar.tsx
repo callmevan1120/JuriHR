@@ -60,7 +60,7 @@ export function AppTopbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 shrink-0 flex h-16 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 sm:px-6">
+    <header className="sticky top-0 z-40 shrink-0 flex h-14 sm:h-16 items-center gap-2 sm:gap-3 border-b border-border/80 bg-background/90 px-2 sm:px-4 lg:px-6 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <AppBreadcrumb />
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
