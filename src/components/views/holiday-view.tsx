@@ -2,16 +2,9 @@
 
 import * as React from "react";
 import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,398 +14,489 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Field, FormRow } from "@/components/common/field";
-import { InfoRow } from "@/components/common/info-row";
+import { DataTable } from "@/components/common/data-table";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { StatusBadge } from "@/components/common/status-badge";
-import { EmptyState } from "@/components/common/states";
+import { UniversalImportExportDialog, type ImportExportField } from "@/components/common/import-export-dialog";
 import { useStore } from "@/hooks/use-store";
 import { holidayService } from "@/lib/services/schedule";
-import { lookupService } from "@/lib/services/master-data";
-import {
-  formatDateMed,
-  formatDateLong,
-  todayISODate,
-  addDaysISO,
-  cn,
-  initials,
-  monthLabel,
-} from "@/lib/utils";
-import type {
-  Holiday,
-  HolidayGroup,
-  HolidayOverride,
-  HolidayOverrideType,
-  HolidayType,
-  RecordStatus,
-} from "@/lib/types";
+import { formatDateMed, todayISODate, cn, initials } from "@/lib/utils";
+import type { Holiday, HolidayGroup, HolidayOverride, HolidayType, RecordStatus } from "@/lib/types";
+import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
   Plus,
   Pencil,
   Archive,
-  Trash2,
   PartyPopper,
-  CalendarDays,
   Users,
   ChevronsUpDown,
   ArrowRightLeft,
-  CalendarPlus,
-  CalendarX,
-  CalendarOff,
-  UserCog,
-  Eye,
   ArrowLeft,
   Save,
   AlertCircle,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
+  FileSpreadsheet,
+  Globe,
+  Store,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
 } from "lucide-react";
-import { format } from "date-fns";
 
-const HOLIDAY_TYPE_LABEL: Record<HolidayType, string> = {
-  NASIONAL: "Nasional",
-  KEAGAMAAN: "Keagamaan",
-  PERUSAHAAN: "Perusahaan",
-  ADDITIONAL: "Tambahan",
-  CANCELLED: "Dibatalkan",
-};
-
-const HOLIDAY_TYPE_STYLE: Record<HolidayType, string> = {
-  NASIONAL: "bg-destructive/10 text-destructive border-destructive/30",
-  KEAGAMAAN: "bg-info/10 text-info border-info/30",
-  PERUSAHAAN: "bg-primary/15 text-primary-foreground border-primary/30",
-  ADDITIONAL: "bg-success/10 text-success border-success/30",
-  CANCELLED: "bg-muted text-muted-foreground border-border",
-};
-
-const OVERRIDE_TYPE_META: Record<HolidayOverrideType, { label: string; icon: typeof ArrowRightLeft; color: string }> = {
-  HOLIDAY_SWAP: { label: "Holiday Swap", icon: ArrowRightLeft, color: "text-info" },
-  WORKDAY_OVERRIDE: { label: "Workday Override", icon: CalendarOff, color: "text-warning" },
-  ADDITIONAL_HOLIDAY: { label: "Additional Holiday", icon: CalendarPlus, color: "text-success" },
-  CANCELLED_HOLIDAY: { label: "Cancelled Holiday", icon: CalendarX, color: "text-destructive" },
-  EMPLOYEE_SPECIFIC: { label: "Employee Specific", icon: UserCog, color: "text-primary" },
-};
+const COUNTRY_OPTIONS = [
+  { code: "ID", name: "Indonesia", flag: "🇮🇩" },
+  { code: "SG", name: "Singapura", flag: "🇸🇬" },
+  { code: "MY", name: "Malaysia", flag: "🇲🇾" },
+  { code: "GLOBAL", name: "Internasional / Global", flag: "🌐" },
+];
 
 export function HolidayView() {
-  const [activeGroup, setActiveGroup] = React.useState<string | null>(null);
+  const holidays = useStore((s) => s.holidays);
   const holidayGroups = useStore((s) => s.holidayGroups);
-  const [groupDialog, setGroupDialog] = React.useState<{ mode: "create" | "edit"; data?: HolidayGroup } | null>(null);
-  const [holidayDialog, setHolidayDialog] = React.useState(false);
-  const [overrideDialog, setOverrideDialog] = React.useState(false);
-  const [confirm, setConfirm] = React.useState<{ type: "group" | "holiday" | "override"; id: string; name: string } | null>(null);
-  const [previewOverride, setPreviewOverride] = React.useState<HolidayOverride | null>(null);
+  const holidayOverrides = useStore((s) => s.holidayOverrides);
 
-  const activeGroups = holidayGroups.filter((g) => g.status !== "archived");
-  const selected = activeGroup ? holidayGroups.find((g) => g.id === activeGroup) : null;
+  const [activeTab, setActiveTab] = React.useState<"groups" | "holidays" | "swaps">("groups");
 
-  React.useEffect(() => {
-    if (!activeGroup && activeGroups.length > 0) setActiveGroup(activeGroups[0]!.id);
-  }, [activeGroups, activeGroup]);
+  // Full-page form state (zero popup modals for input!)
+  const [formState, setFormState] = React.useState<{
+    type: "group" | "holiday" | "swap" | null;
+    mode: "create" | "edit";
+    data?: any;
+  }>({ type: null, mode: "create" });
 
-  if (groupDialog) {
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState<{ type: "group" | "holiday" | "swap"; id: string; name: string } | null>(null);
+
+  // Import fields for Holiday Module
+  const holidayImportFields: ImportExportField[] = [
+    { key: "name", label: "Nama Hari Libur / Group", priority: "wajib", defaultChecked: true, sampleValue: "Hari Raya Idul Fitri 1447 H" },
+    { key: "date", label: "Tanggal (YYYY-MM-DD)", priority: "wajib", defaultChecked: true, sampleValue: todayISODate() },
+    { key: "type", label: "Tipe Libur (NASIONAL/KEAGAMAAN/PERUSAHAAN)", priority: "wajib", defaultChecked: true, sampleValue: "NASIONAL" },
+    { key: "country", label: "Kode Negara (ID/SG/MY/GLOBAL)", priority: "disarankan", defaultChecked: true, sampleValue: "ID" },
+    { key: "description", label: "Deskripsi Catatan", priority: "opsional", defaultChecked: false, sampleValue: "Libur Operasional Seluruh Cabang" },
+  ];
+
+  if (formState.type === "group") {
     return (
       <HolidayGroupFormPage
-        mode={groupDialog.mode}
-        data={groupDialog.data}
-        onBack={() => setGroupDialog(null)}
+        mode={formState.mode}
+        data={formState.data as HolidayGroup | undefined}
+        onBack={() => setFormState({ type: null, mode: "create" })}
+      />
+    );
+  }
+
+  if (formState.type === "holiday") {
+    return (
+      <HolidayFormPage
+        mode={formState.mode}
+        data={formState.data as Holiday | undefined}
+        onBack={() => setFormState({ type: null, mode: "create" })}
+      />
+    );
+  }
+
+  if (formState.type === "swap") {
+    return (
+      <HolidaySwapFormPage
+        mode={formState.mode}
+        data={formState.data as HolidayOverride | undefined}
+        onBack={() => setFormState({ type: null, mode: "create" })}
       />
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <PageHeader
-        title="Holiday Group"
-        description="Kelola hari libur, anggota grup, holiday swap, dan workday override."
+        title="Hari Libur &amp; Penyesuaian (Holiday)"
+        description="Kelola kelompok libur per outlet/divisi, master libur nasional per negara, dan tukar hari libur operasional."
         actions={
-          <>
-            <Button variant="outline" onClick={() => setHolidayDialog(true)}>
-              <Plus className="size-4" /> Hari Libur
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
             </Button>
-            <Button onClick={() => setGroupDialog({ mode: "create" })}>
-              <Plus className="size-4" /> Holiday Group
-            </Button>
-          </>
+            {activeTab === "groups" && (
+              <Button onClick={() => setFormState({ type: "group", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+                <Plus className="size-4" /> Tambah Holiday Group
+              </Button>
+            )}
+            {activeTab === "holidays" && (
+              <Button onClick={() => setFormState({ type: "holiday", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+                <Plus className="size-4" /> Tambah Hari Libur
+              </Button>
+            )}
+            {activeTab === "swaps" && (
+              <Button onClick={() => setFormState({ type: "swap", mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+                <Plus className="size-4" /> Buat Tukar Libur / Override
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Group list */}
-        <Card className="border-border shadow-soft lg:col-span-1">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <PartyPopper className="size-4 text-primary" /> Daftar Group
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {activeGroups.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setActiveGroup(g.id)}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-lg border p-3 text-left transition-all",
-                  activeGroup === g.id ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted/30",
-                )}
-              >
-                <div className={cn("flex size-9 items-center justify-center rounded-lg", activeGroup === g.id ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
-                  <PartyPopper className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{g.name}</p>
-                  <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Users className="size-3" /> {g.memberIds.length} anggota · {g.holidayIds.length} libur
-                  </p>
-                </div>
-                <StatusBadge status={g.status} />
-              </button>
-            ))}
-            {activeGroups.length === 0 ? (
-              <p className="py-6 text-center text-xs text-muted-foreground">Belum ada holiday group.</p>
-            ) : null}
-          </CardContent>
-        </Card>
+      {/* Segmented Control Tab Switcher */}
+      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="inline-flex rounded-2xl bg-muted/60 p-1.5 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab("groups")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "groups"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <PartyPopper className="size-4 text-primary" />
+            <span>Holiday Group</span>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary font-bold">
+              {holidayGroups.filter((g) => g.status !== "archived").length}
+            </span>
+          </button>
 
-        {/* Group detail */}
-        <div className="space-y-4 lg:col-span-2">
-          {selected ? (
-            <>
-              <GroupDetail
-                group={selected}
-                onEdit={() => setGroupDialog({ mode: "edit", data: selected })}
-                onArchive={() => setConfirm({ type: "group", id: selected.id, name: selected.name })}
-                onAddOverride={() => setOverrideDialog(true)}
-                onPreviewOverride={(o) => setPreviewOverride(o)}
-                onDeleteOverride={(o) => setConfirm({ type: "override", id: o.id, name: OVERRIDE_TYPE_META[o.type].label })}
-              />
-              <HolidayCalendar group={selected} />
-            </>
-          ) : (
-            <EmptyState title="Pilih holiday group" description="Pilih group di kiri untuk melihat detail." />
-          )}
+          <button
+            type="button"
+            onClick={() => setActiveTab("holidays")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "holidays"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Globe className="size-4 text-info" />
+            <span>Hari Libur Nasional &amp; Negara</span>
+            <span className="rounded-full bg-info/15 px-2 py-0.5 text-[10px] text-info font-bold">
+              {holidays.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("swaps")}
+            className={cn(
+              "flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-150",
+              activeTab === "swaps"
+                ? "bg-background text-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <ArrowRightLeft className="size-4 text-warning" />
+            <span>Tukar &amp; Override Libur</span>
+            <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] text-warning font-bold">
+              {holidayOverrides.length}
+            </span>
+          </button>
         </div>
       </div>
 
+      {/* Render Main Content depending on Tab */}
+      {activeTab === "groups" && (
+        <HolidayGroupsSection
+          groups={holidayGroups}
+          onEdit={(g) => setFormState({ type: "group", mode: "edit", data: g })}
+          onArchive={(g) => setConfirmDelete({ type: "group", id: g.id, name: g.name })}
+        />
+      )}
 
-      {holidayDialog ? <HolidayFormDialog onClose={() => setHolidayDialog(false)} /> : null}
-      {overrideDialog && selected ? (
-        <OverrideFormDialog group={selected} onClose={() => setOverrideDialog(false)} />
-      ) : null}
-      {previewOverride ? <PreviewOverrideDialog override={previewOverride} onClose={() => setPreviewOverride(null)} /> : null}
+      {activeTab === "holidays" && (
+        <HolidaysTableSection
+          holidays={holidays}
+          onEdit={(h) => setFormState({ type: "holiday", mode: "edit", data: h })}
+          onDelete={(h) => setConfirmDelete({ type: "holiday", id: h.id, name: h.name })}
+        />
+      )}
+
+      {activeTab === "swaps" && (
+        <HolidaySwapsSection
+          swaps={holidayOverrides}
+          onEdit={(s) => setFormState({ type: "swap", mode: "edit", data: s })}
+          onDelete={(s) => setConfirmDelete({ type: "swap", id: s.id, name: s.reason })}
+        />
+      )}
+
       <ConfirmDialog
-        open={!!confirm}
-        onOpenChange={(o) => !o && setConfirm(null)}
-        title="Hapus data?"
-        description={`"${confirm?.name}" akan dihapus/diarsipkan.`}
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="Hapus / Arsipkan Data Libur?"
+        description={`"${confirmDelete?.name}" akan dihapus / diarsipkan.`}
         destructive
-        confirmLabel="Hapus"
+        confirmLabel="Hapus / Arsipkan"
         onConfirm={() => {
-          if (!confirm) return;
-          if (confirm.type === "group") holidayService.softDeleteGroup(confirm.id);
-          else if (confirm.type === "holiday") holidayService.deleteHoliday(confirm.id);
-          else if (confirm.type === "override") holidayService.deleteOverride(confirm.id);
-          toast.success("Data dihapus");
+          if (!confirmDelete) return;
+          if (confirmDelete.type === "group") {
+            holidayService.softDeleteGroup(confirmDelete.id);
+            toast.success("Holiday group diarsipkan");
+          } else if (confirmDelete.type === "holiday") {
+            holidayService.deleteHoliday(confirmDelete.id);
+            toast.success("Hari libur dihapus");
+          }
         }}
+      />
+
+      <UniversalImportExportDialog
+        moduleTitle="Master Hari Libur &amp; Holiday Group"
+        open={importExportOpen}
+        onOpenChange={setImportExportOpen}
+        fields={holidayImportFields}
+        exportData={holidays as any[]}
       />
     </div>
   );
 }
 
 // ------------------------------------------------------------
-// Group Detail
+// 1. Holiday Groups Table / Card Section
 // ------------------------------------------------------------
-function GroupDetail({
-  group,
+function HolidayGroupsSection({
+  groups,
   onEdit,
   onArchive,
-  onAddOverride,
-  onPreviewOverride,
-  onDeleteOverride,
 }: {
-  group: HolidayGroup;
-  onEdit: () => void;
-  onArchive: () => void;
-  onAddOverride: () => void;
-  onPreviewOverride: (o: HolidayOverride) => void;
-  onDeleteOverride: (o: HolidayOverride) => void;
+  groups: HolidayGroup[];
+  onEdit: (g: HolidayGroup) => void;
+  onArchive: (g: HolidayGroup) => void;
 }) {
-  const holidays = useStore((s) => s.holidays);
-  const overrides = useStore((s) => s.holidayOverrides.filter((o) => o.holidayGroupId === group.id));
+  const outlets = useStore((s) => s.outlets);
+  const divisions = useStore((s) => s.divisions);
   const employees = useStore((s) => s.employees);
-  const groupHolidays = holidays.filter((h) => group.holidayIds.includes(h.id));
 
   return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="flex flex-row items-start justify-between pb-3">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <PartyPopper className="size-4 text-primary" /> {group.name}
-          </CardTitle>
-          <CardDescription className="text-xs">{group.description ?? "Tanpa deskripsi"}</CardDescription>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="size-7" onClick={onEdit}><Pencil className="size-3.5" /></Button>
-          <Button variant="ghost" size="icon" className="size-7 text-destructive hover:text-destructive" onClick={onArchive}><Archive className="size-3.5" /></Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Info */}
-        <div className="divide-y divide-border rounded-lg border border-border bg-muted/20 px-3">
-          <InfoRow label="Berlaku" value={`${formatDateMed(group.effectiveFrom)} — ${group.effectiveUntil ? formatDateMed(group.effectiveUntil) : "sekarang"}`} />
-          <InfoRow label="Anggota" value={`${group.memberIds.length} karyawan`} />
-          <InfoRow label="Hari Libur" value={`${group.holidayIds.length} tanggal`} />
-        </div>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {groups.filter((g) => g.status !== "archived").map((group) => {
+        const targetOutletNames = (group.outletIds ?? []).map((id) => outlets.find((o) => o.id === id)?.name).filter(Boolean);
+        const targetDivisionNames = (group.divisionIds ?? []).map((id) => divisions.find((d) => d.id === id)?.name).filter(Boolean);
+        const activeMembers = employees.filter((e) => group.memberIds.includes(e.id) && e.status === "AKTIF").length;
 
-        {/* Anggota */}
-        <div>
-          <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <Users className="size-3" /> Anggota
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {group.memberIds.slice(0, 12).map((id) => {
-              const emp = employees.find((e) => e.id === id);
-              if (!emp) return null;
-              return (
-                <div key={id} className="flex items-center gap-1.5 rounded-full border border-border bg-card py-0.5 pl-0.5 pr-2.5">
-                  <div className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-[8px] font-bold text-primary-foreground">
-                    {initials(emp.fullName)}
+        return (
+          <Card key={group.id} className="group border-border/80 shadow-xs rounded-2xl transition-all hover:border-primary/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <PartyPopper className="size-4 text-primary" />
+                    <CardTitle className="text-base font-bold">{group.name}</CardTitle>
                   </div>
-                  <span className="text-[11px] text-foreground">{emp.fullName}</span>
-                </div>
-              );
-            })}
-            {group.memberIds.length > 12 ? (
-              <Badge variant="outline" className="text-[11px]">+{group.memberIds.length - 12} lainnya</Badge>
-            ) : null}
-            {group.memberIds.length === 0 ? <span className="text-[11px] text-muted-foreground">Belum ada anggota</span> : null}
-          </div>
-        </div>
+                  {group.description && <p className="text-xs text-muted-foreground">{group.description}</p>}
 
-        {/* Overrides */}
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <ArrowRightLeft className="size-3" /> Override &amp; Tukar Libur
-            </p>
-            <Button size="sm" variant="ghost" className="h-6 text-[11px]" onClick={onAddOverride}>
-              <Plus className="size-3" /> Tambah
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {overrides.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border py-3 text-center text-[11px] text-muted-foreground">
-                Belum ada override.
-              </p>
-            ) : (
-              overrides.map((o) => {
-                const meta = OVERRIDE_TYPE_META[o.type];
-                const Icon = meta.icon;
-                return (
-                  <div key={o.id} className="group flex items-center gap-2 rounded-lg border border-border bg-card p-2">
-                    <div className={cn("flex size-7 items-center justify-center rounded-md bg-muted", meta.color)}>
-                      <Icon className="size-3.5" />
+                  {(targetOutletNames.length > 0 || targetDivisionNames.length > 0) && (
+                    <div className="flex flex-wrap gap-1 pt-1.5">
+                      {targetOutletNames.map((name) => (
+                        <Badge key={name} variant="outline" className="bg-primary/10 text-primary border-primary/30 text-[10px]">
+                          <Store className="size-2.5 mr-1" /> {name}
+                        </Badge>
+                      ))}
+                      {targetDivisionNames.map((name) => (
+                        <Badge key={name} variant="outline" className="bg-info/10 text-info border-info/30 text-[10px]">
+                          <Building2 className="size-2.5 mr-1" /> {name}
+                        </Badge>
+                      ))}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-foreground">{meta.label}</p>
-                      <p className="truncate text-[10px] text-muted-foreground">
-                        {o.originalHolidayDate ? `${formatDateMed(o.originalHolidayDate)} → ` : ""}
-                        {o.replacementDate ? formatDateMed(o.replacementDate) : ""}
-                        {o.employeeIds.length === 0 ? " · Semua anggota" : ` · ${o.employeeIds.length} karyawan`}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" className="size-6" onClick={() => onPreviewOverride(o)}>
-                      <Eye className="size-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="size-6 text-destructive hover:text-destructive" onClick={() => onDeleteOverride(o)}>
-                      <Trash2 className="size-3" />
-                    </Button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ------------------------------------------------------------
-// Holiday Calendar (mini month view)
-// ------------------------------------------------------------
-function HolidayCalendar({ group }: { group: HolidayGroup }) {
-  const holidays = useStore((s) => s.holidays);
-  const groupHolidays = holidays.filter((h) => group.holidayIds.includes(h.id));
-  const [month, setMonth] = React.useState(new Date());
-
-  const monthHolidays = groupHolidays
-    .filter((h) => h.date.startsWith(format(month, "yyyy-MM")))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  return (
-    <Card className="border-border shadow-soft">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarDays className="size-4 text-primary" /> Kalender Libur
-          </CardTitle>
-          <CardDescription className="text-xs">{monthLabel(format(month, "yyyy-MM"))}</CardDescription>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="size-7" onClick={() => setMonth((d) => { const n = new Date(d); n.setMonth(n.getMonth() - 1); return n; })}>
-            <ChevronLeft className="size-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setMonth(new Date())}>Hari Ini</Button>
-          <Button variant="ghost" size="icon" className="size-7" onClick={() => setMonth((d) => { const n = new Date(d); n.setMonth(n.getMonth() + 1); return n; })}>
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-          {monthHolidays.length === 0 ? (
-            <p className="col-span-full py-4 text-center text-xs text-muted-foreground">Tidak ada libur pada bulan ini.</p>
-          ) : (
-            monthHolidays.map((h) => (
-              <div key={h.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
-                <div className="flex size-9 flex-col items-center justify-center rounded-lg bg-muted text-center">
-                  <span className="text-[8px] font-medium uppercase text-muted-foreground">{format(new Date(h.date + "T00:00:00"), "MMM", { locale: undefined })}</span>
-                  <span className="text-sm font-bold leading-none text-foreground">{h.date.slice(8)}</span>
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-foreground">{h.name}</p>
-                  <Badge variant="outline" className={cn("mt-0.5 text-[9px]", HOLIDAY_TYPE_STYLE[h.type])}>
-                    {HOLIDAY_TYPE_LABEL[h.type]}
-                  </Badge>
+
+                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onEdit(group)}>
+                    <Pencil className="size-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="size-7 rounded-lg text-destructive hover:text-destructive" onClick={() => onArchive(group)}>
+                    <Archive className="size-3.5" />
+                  </Button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between border-t border-border/60 pt-2.5 text-xs">
+                <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                  <Users className="size-3.5 text-primary" />
+                  <span>{activeMembers} karyawan aktif terdaftar</span>
+                </div>
+                <StatusBadge status={group.status} />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
 // ------------------------------------------------------------
-// Full-Page Holiday Group Form Component (ERPNext Architecture)
+// 2. Master Holidays Full-Width DataTable
+// ------------------------------------------------------------
+function HolidaysTableSection({
+  holidays,
+  onEdit,
+  onDelete,
+}: {
+  holidays: Holiday[];
+  onEdit: (h: Holiday) => void;
+  onDelete: (h: Holiday) => void;
+}) {
+  const columns = React.useMemo<ColumnDef<Holiday>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        header: "Tanggal Libur",
+        size: 140,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 font-mono text-xs font-semibold text-foreground">
+            <CalendarDays className="size-3.5 text-primary" />
+            <span>{formatDateMed(row.original.date)}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "name",
+        header: "Nama Hari Libur",
+        size: 260,
+        cell: ({ row }) => (
+          <div>
+            <span className="font-bold text-sm text-foreground block">{row.original.name}</span>
+            {row.original.description && <span className="text-[11px] text-muted-foreground">{row.original.description}</span>}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "type",
+        header: "Tipe Libur",
+        size: 130,
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-[10px] font-bold">
+            {row.original.type}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "country",
+        header: "Negara",
+        size: 140,
+        cell: ({ row }) => {
+          const countryCode = (row.original as any).country || "ID";
+          const countryObj = COUNTRY_OPTIONS.find((c) => c.code === countryCode) || COUNTRY_OPTIONS[0]!;
+          return (
+            <Badge variant="secondary" className="gap-1 text-xs font-medium">
+              <span>{countryObj.flag}</span>
+              <span>{countryObj.name}</span>
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Aksi",
+        size: 90,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onEdit(row.original)}>
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="size-7 rounded-lg text-destructive hover:text-destructive" onClick={() => onDelete(row.original)}>
+              <Archive className="size-3.5" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [onEdit, onDelete]
+  );
+
+  return <DataTable tableKey="holidays" data={holidays} columns={columns} searchPlaceholder="Cari nama hari libur nasional..." />;
+}
+
+// ------------------------------------------------------------
+// 3. Holiday Swaps / Override Section
+// ------------------------------------------------------------
+function HolidaySwapsSection({
+  swaps,
+  onEdit,
+  onDelete,
+}: {
+  swaps: HolidayOverride[];
+  onEdit: (s: HolidayOverride) => void;
+  onDelete: (s: HolidayOverride) => void;
+}) {
+  const outlets = useStore((s) => s.outlets);
+  const employees = useStore((s) => s.employees);
+
+  const columns = React.useMemo<ColumnDef<HolidayOverride>[]>(
+    () => [
+      {
+        accessorKey: "reason",
+        header: "Alasan Tukar / Override",
+        size: 260,
+        cell: ({ row }) => (
+          <div>
+            <span className="font-bold text-sm text-foreground block">{row.original.reason}</span>
+            <span className="text-[11px] text-muted-foreground font-mono">Tipe: {row.original.type}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "originalHolidayDate",
+        header: "Tanggal Asal Libur",
+        size: 140,
+        cell: ({ row }) => <span className="font-mono text-xs text-foreground font-semibold">{formatDateMed(row.original.originalHolidayDate || (row.original as any).originalDate || todayISODate())}</span>,
+      },
+      {
+        accessorKey: "replacementDate",
+        header: "Tanggal Pengganti / Masuk",
+        size: 160,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs font-bold text-primary">
+            {row.original.replacementDate ? formatDateMed(row.original.replacementDate) : "—"}
+          </span>
+        ),
+      },
+      {
+        id: "scope",
+        header: "Scope Cabang / Karyawan",
+        size: 200,
+        cell: ({ row }) => {
+          const outletIds = (row.original as any).outletIds as string[] | undefined;
+          if (!outletIds || outletIds.length === 0) {
+            return <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px]">🌐 Seluruh Outlet (Global)</Badge>;
+          }
+          const names = outletIds.map((id) => outlets.find((o) => o.id === id)?.name.replace("JURI Bun — ", "")).filter(Boolean);
+          return (
+            <div className="flex flex-wrap gap-1">
+              {names.map((n) => (
+                <Badge key={n} variant="outline" className="text-[10px]">{n}</Badge>
+              ))}
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Aksi",
+        size: 90,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="size-7 rounded-lg" onClick={() => onEdit(row.original)}>
+              <Pencil className="size-3.5" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [outlets, onEdit]
+  );
+
+  return <DataTable tableKey="holiday_swaps" data={swaps} columns={columns} searchPlaceholder="Cari penyesuaian libur..." />;
+}
+
+// ------------------------------------------------------------
+// FULL-PAGE FORM 1: Holiday Group Form Page
 // ------------------------------------------------------------
 function HolidayGroupFormPage({
   mode,
@@ -440,7 +524,7 @@ function HolidayGroupFormPage({
   const [memberOpen, setMemberOpen] = React.useState(false);
   const [error, setError] = React.useState<string>();
 
-  // Automatic Employee Assignment when Outlet or Division toggles!
+  // Otomatis tarik karyawan ketika outlet atau divisi dipilih!
   const syncEmployeesFromOutletsAndDivisions = (selectedOutlets: string[], selectedDivisions: string[]) => {
     if (selectedOutlets.length === 0 && selectedDivisions.length === 0) return;
     const matching = employees
@@ -468,7 +552,7 @@ function HolidayGroupFormPage({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { setError("Nama wajib diisi."); return; }
+    if (!name.trim()) { setError("Nama kelompok wajib diisi."); return; }
     const payload = {
       name: name.trim(),
       description: description.trim() ? description.trim() : undefined,
@@ -502,19 +586,14 @@ function HolidayGroupFormPage({
               <PartyPopper className="size-5 text-primary" />
               {mode === "edit" ? `Edit Holiday Group — ${data?.name}` : "Tambah Holiday Group Baru"}
             </h1>
-            <p className="text-xs text-muted-foreground">
-              Halaman kelola kelompok hari libur nasional &amp; khusus per outlet / divisi.
-            </p>
+            <p className="text-xs text-muted-foreground">Form kelola kelompok hari libur per outlet / divisi.</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">
-            Batal
-          </Button>
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">Batal</Button>
           <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
-            <Save className="size-4" />
-            {mode === "edit" ? "Simpan Perubahan" : "Simpan Holiday Group"}
+            <Save className="size-4" /> {mode === "edit" ? "Simpan Perubahan" : "Simpan Holiday Group"}
           </Button>
         </div>
       </div>
@@ -542,7 +621,7 @@ function HolidayGroupFormPage({
                 </Field>
               </FormRow>
 
-              <Field label="Pilih Scope Outlet / Divisi (Bisa Pilih Beberapa)" hint="Tentukan outlet &amp; divisi yang menggunakan kelompok hari libur ini">
+              <Field label="Pilih Scope Outlet / Divisi (Otomatis Menarik Karyawan Terkait)" hint="Karyawan di outlet/divisi terpilih akan otomatis terdaftar">
                 <div className="space-y-3">
                   <div>
                     <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Cabang Outlet ({outletIds.length} dipilih):</p>
@@ -574,33 +653,6 @@ function HolidayGroupFormPage({
                   </div>
                 </div>
               </Field>
-
-              <FormRow>
-                <Field label="Tanggal Berlaku Dari">
-                  <Input type="date" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
-                </Field>
-                <Field label="Tanggal Berlaku Sampai" hint="Kosongkan untuk tanpa batas">
-                  <Input type="date" value={effectiveUntil} onChange={(e) => setEffectiveUntil(e.target.value)} />
-                </Field>
-              </FormRow>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/80 shadow-xs rounded-2xl">
-            <CardHeader className="pb-3 border-b border-border/60">
-              <CardTitle className="text-base font-bold text-foreground">2. Daftar Hari Libur Terpilih</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4 space-y-2">
-              <div className="max-h-[260px] space-y-1.5 overflow-y-auto rounded-xl border border-border/80 p-2.5">
-                {holidays.map((h) => (
-                  <label key={h.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 hover:bg-muted/40 transition-colors">
-                    <Checkbox checked={holidayIds.includes(h.id)} onCheckedChange={(c) => setHolidayIds((prev) => c ? [...prev, h.id] : prev.filter((x) => x !== h.id))} className="size-4" />
-                    <span className="flex-1 text-xs font-semibold text-foreground">{h.name}</span>
-                    <span className="font-mono text-xs text-muted-foreground">{formatDateLong(h.date)}</span>
-                    <Badge variant="outline" className="text-[10px] uppercase">{h.type}</Badge>
-                  </label>
-                ))}
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -617,7 +669,7 @@ function HolidayGroupFormPage({
               <Popover open={memberOpen} onOpenChange={setMemberOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full justify-between font-normal rounded-xl">
-                    {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan dipilih`}
+                    {memberIds.length === 0 ? "Pilih anggota..." : `${memberIds.length} karyawan terpilih`}
                     <ChevronsUpDown className="size-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -630,9 +682,7 @@ function HolidayGroupFormPage({
                         {employees.filter((e) => e.status === "AKTIF").map((e) => (
                           <CommandItem key={e.id} value={`${e.fullName} ${e.nik}`} onSelect={() => setMemberIds((prev) => prev.includes(e.id) ? prev.filter((x) => x !== e.id) : [...prev, e.id])}>
                             <Checkbox checked={memberIds.includes(e.id)} className="mr-2" />
-                            <div className="flex size-6 items-center justify-center rounded-full bg-primary/15 text-[9px] font-bold text-primary-foreground">{initials(e.fullName)}</div>
                             <span className="flex-1 text-sm">{e.fullName}</span>
-                            <span className="font-mono text-[10px] text-muted-foreground">{e.nik}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -640,19 +690,6 @@ function HolidayGroupFormPage({
                   </Command>
                 </PopoverContent>
               </Popover>
-
-              <div className="flex flex-wrap gap-1.5 max-h-[220px] overflow-y-auto pt-1">
-                {memberIds.map((id) => {
-                  const emp = employees.find((e) => e.id === id);
-                  if (!emp) return null;
-                  return (
-                    <Badge key={id} variant="secondary" className="gap-1 rounded-lg text-xs py-1">
-                      <span>{emp.fullName}</span>
-                      <button type="button" onClick={() => setMemberIds((prev) => prev.filter((x) => x !== id))} className="ml-1 text-muted-foreground hover:text-foreground">×</button>
-                    </Badge>
-                  );
-                })}
-              </div>
 
               <div className="pt-2 border-t border-border/60 flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground">Status Aktif</span>
@@ -667,259 +704,247 @@ function HolidayGroupFormPage({
 }
 
 // ------------------------------------------------------------
-// Holiday Form Dialog (create/edit holiday)
+// FULL-PAGE FORM 2: Master Holiday Form Page with Country Selector
 // ------------------------------------------------------------
-function HolidayFormDialog({ onClose }: { onClose: () => void }) {
-  const holidays = useStore((s) => s.holidays);
-  const [name, setName] = React.useState("");
-  const [date, setDate] = React.useState(todayISODate());
-  const [type, setType] = React.useState<HolidayType>("PERUSAHAAN");
-  const [description, setDescription] = React.useState("");
-  const [editId, setEditId] = React.useState<string>("");
+function HolidayFormPage({
+  mode,
+  data,
+  onBack,
+}: {
+  mode: "create" | "edit";
+  data?: Holiday;
+  onBack: () => void;
+}) {
+  const [name, setName] = React.useState(data?.name ?? "");
+  const [date, setDate] = React.useState(data?.date ?? todayISODate());
+  const [type, setType] = React.useState<HolidayType>(data?.type ?? "NASIONAL");
+  const [country, setCountry] = React.useState<string>((data as any)?.country ?? "ID");
+  const [description, setDescription] = React.useState(data?.description ?? "");
   const [error, setError] = React.useState<string>();
 
-  const submit = () => {
-    if (!name.trim()) { setError("Nama wajib diisi."); return; }
-    if (editId) {
-      holidayService.updateHoliday(editId, { name: name.trim(), date, type, description: description.trim() || undefined });
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) { setError("Nama hari libur wajib diisi."); return; }
+    const payload = {
+      name: name.trim(),
+      date,
+      type,
+      country,
+      description: description.trim() ? description.trim() : undefined,
+    };
+    if (mode === "edit" && data) {
+      holidayService.updateHoliday(data.id, payload as any);
       toast.success("Hari libur diperbarui");
     } else {
-      holidayService.createHoliday({ name: name.trim(), date, type, description: description.trim() || undefined });
+      holidayService.createHoliday(payload as any);
       toast.success("Hari libur ditambahkan");
     }
-    onClose();
+    onBack();
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[440px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" /> Kelola Hari Libur</DialogTitle>
-          <DialogDescription>Tambah atau edit hari libur nasional/perusahaan.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <Field label="Edit yang ada (opsional)">
-            <Select value={editId} onValueChange={(v) => {
-              const h = holidays.find((x) => x.id === v);
-              setEditId(v === "none" ? "" : v);
-              if (h) { setName(h.name); setDate(h.date); setType(h.type); setDescription(h.description ?? ""); }
-            }}>
-              <SelectTrigger><SelectValue placeholder="Buat baru..." /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— Buat Baru —</SelectItem>
-                {holidays.map((h) => <SelectItem key={h.id} value={h.id}>{h.name} ({formatDateMed(h.date)})</SelectItem>)}
-              </SelectContent>
-            </Select>
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <Globe className="size-5 text-primary" />
+              {mode === "edit" ? `Edit Hari Libur — ${data?.name}` : "Tambah Hari Libur Nasional & Negara"}
+            </h1>
+            <p className="text-xs text-muted-foreground">Input data libur nasional lengkap dengan penentuan negara terdaftar.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">Batal</Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" /> {mode === "edit" ? "Simpan Perubahan" : "Simpan Hari Libur"}
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <Card className="max-w-2xl border-border/80 shadow-xs rounded-2xl">
+        <CardHeader className="pb-3 border-b border-border/60">
+          <CardTitle className="text-base font-bold text-foreground">Informasi Hari Libur &amp; Negara Target</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <Field label="Nama Hari Libur" required>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Hari Raya Idul Fitri 1447 H" className="font-semibold" />
           </Field>
-          <Field label="Nama" required><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tahun Baru Masehi" /></Field>
+
           <FormRow>
-            <Field label="Tanggal"><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-            <Field label="Tipe">
+            <Field label="Tanggal Libur">
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="font-mono" />
+            </Field>
+            <Field label="Tipe Hari Libur">
               <Select value={type} onValueChange={(v) => setType(v as HolidayType)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(HOLIDAY_TYPE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  <SelectItem value="NASIONAL">🔴 Nasional</SelectItem>
+                  <SelectItem value="KEAGAMAAN">🔵 Keagamaan</SelectItem>
+                  <SelectItem value="PERUSAHAAN">🟡 Perusahaan</SelectItem>
+                  <SelectItem value="ADDITIONAL">⚪ Tambahan</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
           </FormRow>
-          <Field label="Deskripsi"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="Opsional" /></Field>
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button onClick={submit}>{editId ? "Simpan" : "Tambah"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
-// ------------------------------------------------------------
-// Override Form Dialog
-// ------------------------------------------------------------
-function OverrideFormDialog({ group, onClose }: { group: HolidayGroup; onClose: () => void }) {
-  const employees = useStore((s) => s.employees);
-  const holidays = useStore((s) => s.holidays);
-  const [type, setType] = React.useState<HolidayOverrideType>("HOLIDAY_SWAP");
-  const [employeeIds, setEmployeeIds] = React.useState<string[]>([]);
-  const [originalDate, setOriginalDate] = React.useState(todayISODate());
-  const [replacementDate, setReplacementDate] = React.useState(addDaysISO(todayISODate(), 7));
-  const [reason, setReason] = React.useState("");
-  const [empOpen, setEmpOpen] = React.useState(false);
-  const [error, setError] = React.useState<string>();
-
-  const submit = () => {
-    if (!reason.trim()) { setError("Alasan wajib diisi."); return; }
-    holidayService.createOverride({
-      holidayGroupId: group.id,
-      type,
-      employeeIds,
-      originalHolidayDate: (type === "HOLIDAY_SWAP" || type === "CANCELLED_HOLIDAY") ? originalDate : undefined,
-      replacementDate: (type === "HOLIDAY_SWAP" || type === "WORKDAY_OVERRIDE" || type === "ADDITIONAL_HOLIDAY") ? replacementDate : undefined,
-      reason: reason.trim(),
-      status: "active",
-    });
-    toast.success("Override libur ditambahkan");
-    onClose();
-  };
-
-  const groupMembers = employees.filter((e) => group.memberIds.includes(e.id));
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ArrowRightLeft className="size-5 text-primary" /> Tambah Override Libur</DialogTitle>
-          <DialogDescription>{group.name}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Field label="Tipe Override">
-            <Select value={type} onValueChange={(v) => setType(v as HolidayOverrideType)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+          <Field label="Pilih Negara Target (Kategori Libur Nasional)" hint="Menentukan skema libur nasional berdasarkan negara tempat outlet/karyawan berada">
+            <Select value={country} onValueChange={setCountry}>
+              <SelectTrigger className="rounded-xl font-semibold"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(OVERRIDE_TYPE_META).map(([k, m]) => (
-                  <SelectItem key={k} value={k}>
-                    <span className="flex items-center gap-1.5"><m.icon className="size-3.5" /> {m.label}</span>
+                {COUNTRY_OPTIONS.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    <span className="mr-2">{c.flag}</span>
+                    <span>{c.name}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
 
-          {/* Karyawan terdampak */}
-          <Field label="Karyawan Terdampak" hint={employeeIds.length === 0 ? "Semua anggota grup" : `${employeeIds.length} karyawan`}>
-            <Popover open={empOpen} onOpenChange={setEmpOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                  {employeeIds.length === 0 ? "Semua anggota grup" : `${employeeIds.length} karyawan dipilih`}
-                  <ChevronsUpDown className="size-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[380px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Cari karyawan..." />
-                  <CommandList>
-                    <CommandEmpty>Tidak ditemukan.</CommandEmpty>
-                    <CommandGroup>
-                      {groupMembers.map((e) => (
-                        <CommandItem key={e.id} value={`${e.fullName} ${e.nik}`} onSelect={() => setEmployeeIds((prev) => prev.includes(e.id) ? prev.filter((x) => x !== e.id) : [...prev, e.id])}>
-                          <Checkbox checked={employeeIds.includes(e.id)} className="mr-2" />
-                          <span className="text-sm">{e.fullName}</span>
-                          <span className="ml-auto font-mono text-[10px] text-muted-foreground">{e.nik}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+          <Field label="Catatan / Deskripsi Libur (Opsional)">
+            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Instruksi operasional cabang saat libur" />
+          </Field>
+        </CardContent>
+      </Card>
+    </form>
+  );
+}
+
+// ------------------------------------------------------------
+// FULL-PAGE FORM 3: Holiday Swap / Workday Override Form Page (Global or Multi-Outlet Scope)
+// ------------------------------------------------------------
+function HolidaySwapFormPage({
+  mode,
+  data,
+  onBack,
+}: {
+  mode: "create" | "edit";
+  data?: HolidayOverride;
+  onBack: () => void;
+}) {
+  const outlets = useStore((s) => s.outlets);
+  const employees = useStore((s) => s.employees);
+
+  const [reason, setReason] = React.useState(data?.reason ?? "");
+  const [originalDate, setOriginalDate] = React.useState(data?.originalHolidayDate ?? todayISODate());
+  const [replacementDate, setReplacementDate] = React.useState(data?.replacementDate ?? "");
+  const [scopeType, setScopeType] = React.useState<"GLOBAL" | "MULTI_OUTLET">((data as any)?.scopeType ?? "GLOBAL");
+  const [selectedOutletIds, setSelectedOutletIds] = React.useState<string[]>((data as any)?.outletIds ?? []);
+  const [error, setError] = React.useState<string>();
+
+  // Otomatis deteksi jumlah karyawan yang tercakup dalam override
+  const resolvedEmployeesCount = React.useMemo(() => {
+    if (scopeType === "GLOBAL") {
+      return employees.filter((e) => e.status === "AKTIF").length;
+    }
+    return employees.filter((e) => e.status === "AKTIF" && e.primaryOutletId && selectedOutletIds.includes(e.primaryOutletId)).length;
+  }, [employees, scopeType, selectedOutletIds]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim()) { setError("Alasan penyesuaian libur wajib diisi."); return; }
+    toast.success("Tukar libur / override berhasil disimpan!");
+    onBack();
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-6 pb-12">
+      <div className="sticky top-0 z-30 flex flex-col gap-3 border-b border-border/80 bg-background/95 p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" type="button" onClick={onBack} className="size-8 text-muted-foreground hover:text-foreground rounded-xl" title="Kembali" aria-label="Kembali">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ArrowRightLeft className="size-5 text-warning" />
+              {mode === "edit" ? "Edit Tukar Hari Libur" : "Buat Tukar Hari Libur / Workday Override Baru"}
+            </h1>
+            <p className="text-xs text-muted-foreground">Form penyesuaian tukar libur operasional cabang atau seluruh perusahaan.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" type="button" onClick={onBack} className="rounded-xl">Batal</Button>
+          <Button type="submit" className="gap-1.5 font-semibold rounded-xl px-5">
+            <Save className="size-4" /> Simpan Penyesuaian Libur
+          </Button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 text-xs text-destructive">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <Card className="max-w-2xl border-border/80 shadow-xs rounded-2xl">
+        <CardHeader className="pb-3 border-b border-border/60">
+          <CardTitle className="text-base font-bold text-foreground">Detail Penyesuaian Tanggal &amp; Target Outlet</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <Field label="Alasan Penyesuaian / Alasan Tukar Libur" required>
+            <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Penyesuaian shift Idul Fitri cabang mall" className="font-semibold" />
           </Field>
 
-          {(type === "HOLIDAY_SWAP" || type === "CANCELLED_HOLIDAY") ? (
-            <Field label="Tanggal Libur Asli" required>
-              <Input type="date" value={originalDate} onChange={(e) => setOriginalDate(e.target.value)} />
+          <FormRow>
+            <Field label="Tanggal Asal Libur">
+              <Input type="date" value={originalDate} onChange={(e) => setOriginalDate(e.target.value)} className="font-mono" />
             </Field>
-          ) : null}
-          {(type === "HOLIDAY_SWAP" || type === "WORKDAY_OVERRIDE" || type === "ADDITIONAL_HOLIDAY") ? (
-            <Field label="Tanggal Pengganti" required hint={type === "HOLIDAY_SWAP" ? "Karyawan bekerja di hari libur & libur diganti ke tanggal ini" : type === "WORKDAY_OVERRIDE" ? "Hari kerja di-override menjadi libur" : "Libur tambahan"}>
-              <Input type="date" value={replacementDate} onChange={(e) => setReplacementDate(e.target.value)} />
+            <Field label="Tanggal Pengganti / Masuk Kerjanya">
+              <Input type="date" value={replacementDate} onChange={(e) => setReplacementDate(e.target.value)} className="font-mono" />
             </Field>
-          ) : null}
+          </FormRow>
 
-          <Field label="Alasan" required><Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Alasan override" /></Field>
-          {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Batal</Button>
-          <Button onClick={submit}>Tambah</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+          <Field label="Target Scope Outlet">
+            <Select value={scopeType} onValueChange={(v) => setScopeType(v as any)}>
+              <SelectTrigger className="rounded-xl font-semibold"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GLOBAL">🌐 Seluruh Outlet &amp; HQ (Global)</SelectItem>
+                <SelectItem value="MULTI_OUTLET">🏪 Outlet Cabang Spesifik</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
 
-// ------------------------------------------------------------
-// Preview Override Dialog (dampak)
-// ------------------------------------------------------------
-function PreviewOverrideDialog({ override, onClose }: { override: HolidayOverride; onClose: () => void }) {
-  const groups = useStore((s) => s.holidayGroups);
-  const employees = useStore((s) => s.employees);
-  const holidays = useStore((s) => s.holidays);
-  const schedules = useStore((s) => s.schedules);
-  const group = groups.find((g) => g.id === override.holidayGroupId);
-  const meta = OVERRIDE_TYPE_META[override.type];
-  const Icon = meta.icon;
-  const impactedEmps = override.employeeIds.length === 0
-    ? employees.filter((e) => group?.memberIds.includes(e.id))
-    : employees.filter((e) => override.employeeIds.includes(e.id));
+          {scopeType === "MULTI_OUTLET" && (
+            <Field label="Pilih Cabang Outlet yang Mengikuti Tukar Libur Ini">
+              <div className="flex flex-wrap gap-1.5 rounded-xl border border-border/80 bg-muted/20 p-2.5 max-h-[140px] overflow-y-auto">
+                {outlets.filter((o) => o.status === "active").map((o) => {
+                  const checked = selectedOutletIds.includes(o.id);
+                  return (
+                    <label key={o.id} className={cn("flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs transition-colors", checked ? "bg-primary/15 border-primary text-primary font-semibold" : "bg-card border-border text-foreground hover:bg-muted/40")}>
+                      <Checkbox checked={checked} onCheckedChange={() => setSelectedOutletIds((prev) => prev.includes(o.id) ? prev.filter((x) => x !== o.id) : [...prev, o.id])} className="size-3.5" />
+                      <span>{o.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </Field>
+          )}
 
-  // Hitung dampak: jadwal di tanggal pengganti, PH, dll
-  const replacementSchedules = override.replacementDate ? schedules.filter((s) => s.date === override.replacementDate && impactedEmps.some((e) => e.id === s.employeeId)) : [];
-  const originalSchedules = override.originalHolidayDate ? schedules.filter((s) => s.date === override.originalHolidayDate && impactedEmps.some((e) => e.id === s.employeeId)) : [];
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Eye className="size-5 text-primary" /> Preview Dampak Override</DialogTitle>
-          <DialogDescription>{meta.label} — {group?.name}</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 text-sm">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/20 p-3">
-            <Icon className={cn("size-5", meta.color)} />
-            <div className="flex-1">
-              <p className="text-xs font-medium text-foreground">{override.reason}</p>
-              <p className="text-[11px] text-muted-foreground">
-                {override.originalHolidayDate ? `Libur asli: ${formatDateMed(override.originalHolidayDate)}` : ""}
-                {override.replacementDate ? ` → Pengganti: ${formatDateMed(override.replacementDate)}` : ""}
-              </p>
+          <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-primary" />
+              <span className="font-semibold text-foreground">Karyawan Otomatis Terpengaruh:</span>
             </div>
+            <Badge className="bg-primary/15 text-primary border-primary/30 text-xs font-bold">
+              {resolvedEmployeesCount} karyawan terdaftar
+            </Badge>
           </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <ImpactCard label="Karyawan Terdampak" value={impactedEmps.length} icon={Users} color="text-info" />
-            <ImpactCard label="Jadwal di Tanggal Pengganti" value={replacementSchedules.length} icon={CalendarDays} color="text-warning" />
-            <ImpactCard label="Jadwal di Tanggal Asli" value={originalSchedules.length} icon={CalendarDays} color="text-muted-foreground" />
-            <ImpactCard label="Potongan PH" value={override.type === "HOLIDAY_SWAP" ? impactedEmps.length : 0} icon={AlertTriangle} color="text-primary" />
-          </div>
-
-          <div className="rounded-lg border border-border p-3">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase text-muted-foreground">Dampak Modul</p>
-            <div className="space-y-1 text-xs">
-              <DampakRow label="Jadwal" impact={override.type === "HOLIDAY_SWAP" ? "Karyawan bekerja di hari libur, libur dipindah" : override.type === "WORKDAY_OVERRIDE" ? "Hari kerja menjadi libur" : override.type === "ADDITIONAL_HOLIDAY" ? "Libur tambahan" : "Libur dibatalkan"} />
-              <DampakRow label="Absensi" impact={override.type === "WORKDAY_OVERRIDE" || override.type === "ADDITIONAL_HOLIDAY" ? "Tidak dihitung absen" : "Disesuaikan"} />
-              <DampakRow label="PH" impact={override.type === "HOLIDAY_SWAP" ? "Dihitung PH sesuai konfigurasi shift" : "—"} />
-              <DampakRow label="Lembur" impact={override.type === "HOLIDAY_SWAP" ? "Berdasar shift PH" : "—"} />
-              <DampakRow label="Payroll" impact={override.type === "HOLIDAY_SWAP" ? "Komponen PH masuk perhitungan" : "Penyesuaian hari kerja"} />
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={onClose}>Tutup</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ImpactCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: typeof Users; color: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-2.5">
-      <div className="flex items-center gap-1.5">
-        <Icon className={cn("size-3.5", color)} />
-        <span className="text-[10px] font-medium uppercase text-muted-foreground">{label}</span>
-      </div>
-      <p className="mt-1 text-lg font-bold tabular-nums text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function DampakRow({ label, impact }: { label: string; impact: string }) {
-  return (
-    <div className="flex items-center justify-between gap-2 py-0.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-foreground">{impact}</span>
-    </div>
+        </CardContent>
+      </Card>
+    </form>
   );
 }

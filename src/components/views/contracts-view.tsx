@@ -43,6 +43,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Contract, ContractType } from "@/lib/types";
 import { toast } from "sonner";
 import {
+  UniversalImportExportDialog,
+  type ImportExportField,
+} from "@/components/common/import-export-dialog";
+import {
   FileText,
   CalendarClock,
   RotateCcw,
@@ -52,6 +56,7 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const REMINDER_BUCKETS = [
@@ -231,14 +236,26 @@ export function ContractsView() {
     toast.success(`${rows.length} data kontrak berhasil diekspor`);
   };
 
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
+
+  const contractImportFields: ImportExportField[] = [
+    { key: "contractNo", label: "Nomor Kontrak Kerja", priority: "wajib", defaultChecked: true, sampleValue: "PKWT/2025/001" },
+    { key: "employeeId", label: "NIK / ID Karyawan", priority: "wajib", defaultChecked: true, sampleValue: "JBD0001" },
+    { key: "type", label: "Tipe Kontrak (PKWT/PKWTT/OUTSOURCING/MAGANG)", priority: "wajib", defaultChecked: true, sampleValue: "PKWT" },
+    { key: "startDate", label: "Tanggal Mulai Kontrak", priority: "wajib", defaultChecked: true, sampleValue: "2025-01-01" },
+    { key: "endDate", label: "Tanggal Berakhir Kontrak", priority: "wajib", defaultChecked: true, sampleValue: "2026-01-01" },
+    { key: "salaryAmount", label: "Nominal Gaji Kontrak", priority: "disarankan", defaultChecked: true, sampleValue: "4500000" },
+    { key: "note", label: "Catatan Kontrak", priority: "opsional", defaultChecked: false, sampleValue: "Perpanjangan tahun ke-2" },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Kontrak &amp; Monitoring Masa Kerja"
         description="Pantau tanggal jatuh tempo kontrak kerja karyawan JURI Bun secara otomatis."
         actions={
-          <Button variant="outline" onClick={handleExport} className="gap-1.5 rounded-xl font-semibold">
-            <Download className="size-4 text-primary" /> Export Data CSV
+          <Button onClick={() => setImportExportOpen(true)} className="gap-1.5 rounded-xl font-semibold">
+            <FileSpreadsheet className="size-4" /> Import / Export Kontrak
           </Button>
         }
       />
@@ -337,6 +354,14 @@ export function ContractsView() {
           onClose={() => setEditTarget(null)}
         />
       ) : null}
+
+      <UniversalImportExportDialog
+        moduleTitle="Data Kontrak Kerja"
+        open={importExportOpen}
+        onOpenChange={setImportExportOpen}
+        fields={contractImportFields}
+        exportData={filteredContracts}
+      />
     </div>
   );
 }

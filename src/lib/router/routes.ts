@@ -111,19 +111,11 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         path: "#/shift",
-        label: "Shift Template",
-        icon: CalendarClock,
-        phase: 3,
-        available: true,
-        description: "Template shift dengan toleransi keterlambatan dan konfigurasi PH.",
-      },
-      {
-        path: "#/shift-group",
-        label: "Shift Group",
+        label: "Shift",
         icon: CalendarDays,
         phase: 3,
         available: true,
-        description: "Pola shift mingguan per outlet/divisi beserta anggota.",
+        description: "Kelola pola shift mingguan per outlet/divisi dan master template jam kerja.",
       },
       {
         path: "#/jadwal",

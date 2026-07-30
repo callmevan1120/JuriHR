@@ -44,6 +44,10 @@ import { formatDateMed, todayISODate, shiftDurationMinutes, formatDuration, cn, 
 import type { ShiftGroup, ShiftTemplate, WeeklyPatternDay, RecordStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
+  UniversalImportExportDialog,
+  type ImportExportField,
+} from "@/components/common/import-export-dialog";
+import {
   Plus,
   Pencil,
   Archive,
@@ -61,6 +65,7 @@ import {
   Palette,
   Building2,
   Store,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const DAYS = [
@@ -106,6 +111,17 @@ export function ShiftGroupsView() {
     return m;
   }, [schedules]);
 
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
+
+  const shiftImportFields: ImportExportField[] = [
+    { key: "name", label: "Nama Shift / Group", priority: "wajib", defaultChecked: true, sampleValue: "Shift Pagi Operasional" },
+    { key: "startTime", label: "Jam Mulai (HH:mm)", priority: "wajib", defaultChecked: true, sampleValue: "07:00" },
+    { key: "endTime", label: "Jam Selesai (HH:mm)", priority: "wajib", defaultChecked: true, sampleValue: "15:00" },
+    { key: "toleranceLateMinutes", label: "Toleransi Terlambat (Menit)", priority: "disarankan", defaultChecked: true, sampleValue: "5" },
+    { key: "crossesMidnight", label: "Lewat Malam (true/false)", priority: "disarankan", defaultChecked: true, sampleValue: "false" },
+    { key: "color", label: "Kode Warna (Hex)", priority: "opsional", defaultChecked: false, sampleValue: "#FCBA0C" },
+  ];
+
   if (groupDialog) {
     return (
       <ShiftGroupFormPage
@@ -122,15 +138,24 @@ export function ShiftGroupsView() {
         title="Shift &amp; Pola Kerja"
         description="Kelola pola shift mingguan per outlet/divisi dan master template jam kerja dalam satu modul."
         actions={
-          activeTab === "groups" ? (
-            <Button onClick={() => setGroupDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
-              <Plus className="size-4" /> Tambah Shift Group
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
             </Button>
-          ) : (
-            <Button onClick={() => setTemplateDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
-              <Plus className="size-4" /> Tambah Shift Template
-            </Button>
-          )
+            {activeTab === "groups" ? (
+              <Button onClick={() => setGroupDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+                <Plus className="size-4" /> Tambah Shift Group
+              </Button>
+            ) : (
+              <Button onClick={() => setTemplateDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+                <Plus className="size-4" /> Tambah Shift Template
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -309,6 +334,14 @@ export function ShiftGroupsView() {
             toast.success("Shift template diarsipkan");
           }
         }}
+      />
+
+      <UniversalImportExportDialog
+        moduleTitle={activeTab === "groups" ? "Shift Group" : "Shift Template"}
+        open={importExportOpen}
+        onOpenChange={setImportExportOpen}
+        fields={shiftImportFields}
+        exportData={activeTab === "groups" ? (shiftGroups as any[]) : (shiftTemplates as any[])}
       />
     </div>
   );

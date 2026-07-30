@@ -60,6 +60,10 @@ const EmployeeMiniMap = dynamic(
 );
 import type { Outlet, OutletClassification } from "@/lib/types";
 import type { ColumnDef } from "@tanstack/react-table";
+import {
+  UniversalImportExportDialog,
+  type ImportExportField,
+} from "@/components/common/import-export-dialog";
 import { toast } from "sonner";
 import {
   Building2,
@@ -78,6 +82,9 @@ import {
   Trash2,
   ArrowLeft,
   Save,
+  FileSpreadsheet,
+  Phone,
+  User,
 } from "lucide-react";
 
 const CLASSIFICATION_LABEL: Record<OutletClassification, string> = {
@@ -100,6 +107,7 @@ export function OutletView() {
   const selectedId = route.query.get("id");
   const [dialog, setDialog] = React.useState<{ mode: "create" | "edit"; data?: Outlet } | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; name: string } | null>(null);
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
 
   if (dialog) {
     return (
@@ -217,15 +225,35 @@ export function OutletView() {
     },
   ];
 
+  const outletImportFields: ImportExportField[] = [
+    { key: "code", label: "Kode Outlet", priority: "wajib", defaultChecked: true, sampleValue: "OUT-001" },
+    { key: "name", label: "Nama Outlet Cabang", priority: "wajib", defaultChecked: true, sampleValue: "JURI Bun — Sudirman" },
+    { key: "classification", label: "Klasifikasi (FLAGSHIP/STANDARD/EXPRESS/KIOSK)", priority: "wajib", defaultChecked: true, sampleValue: "FLAGSHIP" },
+    { key: "address", label: "Alamat Lengkap", priority: "disarankan", defaultChecked: true, sampleValue: "Jl. Jend. Sudirman No. 10, Jakarta Pusat" },
+    { key: "phone", label: "Nomor Telepon / WA Outlet", priority: "disarankan", defaultChecked: true, sampleValue: "021-5551234" },
+    { key: "latitude", label: "Latitude Geofence", priority: "disarankan", defaultChecked: true, sampleValue: "-6.2088" },
+    { key: "longitude", label: "Longitude Geofence", priority: "disarankan", defaultChecked: true, sampleValue: "106.8456" },
+    { key: "radiusMeters", label: "Radius Geofence (Meter)", priority: "disarankan", defaultChecked: true, sampleValue: "100" },
+  ];
+
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Outlet"
+        title="Outlet Cabang"
         description="Master outlet dengan geofence, kepala outlet, dan statistik karyawan."
         actions={
-          <Button onClick={() => setDialog({ mode: "create" })}>
-            <Plus className="size-4" /> Tambah Outlet
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+            </Button>
+            <Button onClick={() => setDialog({ mode: "create" })} className="gap-1.5 rounded-xl font-semibold">
+              <Plus className="size-4" /> Tambah Outlet
+            </Button>
+          </div>
         }
       />
 
@@ -255,10 +283,18 @@ export function OutletView() {
         confirmLabel="Hapus Outlet"
         onConfirm={() => {
           if (confirm) {
-            outletService.delete(confirm.id);
+            outletService.softDelete(confirm.id);
             toast.success("Outlet berhasil dihapus");
           }
         }}
+      />
+
+      <UniversalImportExportDialog
+        moduleTitle="Data Outlet Cabang"
+        open={importExportOpen}
+        onOpenChange={setImportExportOpen}
+        fields={outletImportFields}
+        exportData={outlets}
       />
     </div>
   );

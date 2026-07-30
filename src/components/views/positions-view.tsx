@@ -33,6 +33,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { Division, Position, RecordStatus } from "@/lib/types";
 import { toast } from "sonner";
 import {
+  UniversalImportExportDialog,
+  type ImportExportField,
+} from "@/components/common/import-export-dialog";
+import {
   Plus,
   Pencil,
   Archive,
@@ -44,6 +48,7 @@ import {
   Save,
   AlertCircle,
   Banknote,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export function PositionsView() {
@@ -77,6 +82,8 @@ export function PositionsView() {
     return m;
   }, [employees]);
 
+  const [importExportOpen, setImportExportOpen] = React.useState(false);
+
   // Full-Page Forms when active
   if (formState.type === "position") {
     return (
@@ -102,6 +109,15 @@ export function PositionsView() {
   const activeDivisionsCount = divisions.filter((d) => d.status === "active").length;
   const outletPositionsCount = positions.filter((p) => p.category === "OUTLET").length;
 
+  const positionImportFields: ImportExportField[] = [
+    { key: "code", label: "Kode Posisi", priority: "wajib", defaultChecked: true, sampleValue: "BAR" },
+    { key: "name", label: "Nama Posisi / Jabatan", priority: "wajib", defaultChecked: true, sampleValue: "Barista Senior" },
+    { key: "category", label: "Kategori Operasional", priority: "wajib", defaultChecked: true, sampleValue: "OUTLET" },
+    { key: "defaultMonthlySalary", label: "Default Gaji Bulanan", priority: "disarankan", defaultChecked: true, sampleValue: "4500000" },
+    { key: "defaultDailySalary", label: "Default Gaji Harian", priority: "disarankan", defaultChecked: true, sampleValue: "180000" },
+    { key: "note", label: "Catatan Jabatan", priority: "opsional", defaultChecked: false, sampleValue: "Posisi operasional cabang" },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -109,6 +125,13 @@ export function PositionsView() {
         description="Pengelolaan struktur jabatan, departemen divisi, dan acuan default kompensasi gaji JURI Bun."
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportExportOpen(true)}
+              className="gap-1.5 rounded-xl font-semibold border-border/80"
+            >
+              <FileSpreadsheet className="size-4 text-primary" /> Import / Export
+            </Button>
             <Button
               variant="outline"
               onClick={() => setFormState({ type: "division", mode: "create" })}
@@ -246,6 +269,13 @@ export function PositionsView() {
           else divisionService.softDelete(confirm.id);
           toast.success("Data berhasil diarsipkan");
         }}
+      />
+      <UniversalImportExportDialog
+        moduleTitle={activeTab === "positions" ? "Posisi & Jabatan" : "Divisi & Departemen"}
+        open={importExportOpen}
+        onOpenChange={setImportExportOpen}
+        fields={positionImportFields}
+        exportData={activeTab === "positions" ? positions : divisions}
       />
     </div>
   );

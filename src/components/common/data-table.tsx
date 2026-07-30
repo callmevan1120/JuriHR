@@ -99,6 +99,21 @@ export function DataTable<TData, TValue>({
     }
     return {};
   });
+
+  const [columnSizing, setColumnSizing] = React.useState<Record<string, number>>(() => {
+    if (tableKey && typeof window !== "undefined") {
+      const saved = localStorage.getItem(`juri_table_sizes_${tableKey}`);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return {};
+  });
+
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [globalFilter, setGlobalFilter] = React.useState("");
 
@@ -115,16 +130,30 @@ export function DataTable<TData, TValue>({
     [tableKey],
   );
 
+  const handleColumnSizingChange = React.useCallback(
+    (updaterOrValue: React.SetStateAction<Record<string, number>>) => {
+      setColumnSizing((prev) => {
+        const next = typeof updaterOrValue === "function" ? updaterOrValue(prev) : updaterOrValue;
+        if (tableKey && typeof window !== "undefined") {
+          localStorage.setItem(`juri_table_sizes_${tableKey}`, JSON.stringify(next));
+        }
+        return next;
+      });
+    },
+    [tableKey],
+  );
+
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters, columnVisibility, rowSelection, globalFilter },
+    state: { sorting, columnFilters, columnVisibility, rowSelection, globalFilter, columnSizing },
     enableRowSelection: true,
     enableColumnResizing: true,
     columnResizeMode: "onChange",
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: handleColumnVisibilityChange,
+    onColumnSizingChange: handleColumnSizingChange,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: globalFilterFn
@@ -189,12 +218,14 @@ export function DataTable<TData, TValue>({
                   className="h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     table.getAllColumns().forEach((c) => c.toggleVisibility(true));
+                    table.resetColumnSizing();
                     if (tableKey && typeof window !== "undefined") {
                       localStorage.removeItem(`juri_table_vis_${tableKey}`);
+                      localStorage.removeItem(`juri_table_sizes_${tableKey}`);
                     }
                   }}
                 >
-                  <RotateCcw className="mr-1 size-3" /> Reset
+                  <RotateCcw className="mr-1 size-3" /> Reset Bawaan
                 </Button>
               </div>
 
@@ -218,7 +249,7 @@ export function DataTable<TData, TValue>({
                             onCheckedChange={(val) => col.toggleVisibility(!!val)}
                             className="size-3.5"
                           />
-                          <span className="truncate">{label}</span>
+                          <span className="truncate font-semibold">{label}</span>
                         </label>
 
                         {isVis && (
@@ -227,13 +258,16 @@ export function DataTable<TData, TValue>({
                             <Input
                               type="number"
                               min={80}
-                              max={500}
+                              max={600}
                               value={currentSize}
                               onChange={(e) => {
-                                const val = Math.min(500, Math.max(80, Number(e.target.value) || 150));
-                                col.columnDef.size = val;
+                                const val = Math.min(600, Math.max(80, Number(e.target.value) || 150));
+                                handleColumnSizingChange((prev) => ({
+                                  ...prev,
+                                  [col.id]: val,
+                                }));
                               }}
-                              className="h-6 w-16 px-1.5 text-right font-mono text-[11px] rounded-md"
+                              className="h-6 w-16 px-1.5 text-right font-mono text-[11px] rounded-md font-semibold"
                             />
                             <span className="text-[10px] text-muted-foreground">px</span>
                           </div>
